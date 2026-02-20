@@ -20,7 +20,7 @@
 
 ## 🚧 平台覆盖与当前版本
 
-1. 已覆盖 20+ 平台能力，详见 [api-catalog](./references/api-catalog/index.md)。
+1. 已覆盖 20+ 平台能力，包括抖音、小红书、TikTok、YouTube、X/Twitter、Threads、Instagram、微博、Bilibili、快手、知乎、Reddit、LinkedIn、Lemon8、皮皮虾、头条、西瓜、微信公众号、微信视频号等。
 2. 目录覆盖表示可路由调用；固定流程化 playbook 持续按平台发布。
 
 `v0.1.0-direct`（2026-02-20）：

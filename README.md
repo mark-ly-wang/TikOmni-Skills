@@ -20,7 +20,7 @@ Platform entry:
 
 ## 🚧 Coverage and Current Version
 
-1. 20+ platform domains are available in [api-catalog](./references/api-catalog/index.md), including Douyin, Xiaohongshu, TikTok, YouTube, X/Twitter, Threads, Instagram, Weibo, Bilibili, Kuaishou, Zhihu, Reddit, LinkedIn, Lemon8, Pipixia, Toutiao, Xigua, WeChat MP, and WeChat Channels.
+1. 20+ platform domains are covered, including Douyin, Xiaohongshu, TikTok, YouTube, X/Twitter, Threads, Instagram, Weibo, Bilibili, Kuaishou, Zhihu, Reddit, LinkedIn, Lemon8, Pipixia, Toutiao, Xigua, WeChat MP, and WeChat Channels.
 2. Catalog coverage means endpoint routing is available; fixed workflow playbooks are released incrementally.
 
 `v0.1.0-direct` (2026-02-20):

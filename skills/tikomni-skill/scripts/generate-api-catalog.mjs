@@ -4,12 +4,24 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const HTTP_METHODS = ['get', 'post', 'put', 'patch', 'delete', 'head', 'options'];
+const HTTP_METHODS = [
+  'get',
+  'post',
+  'put',
+  'patch',
+  'delete',
+  'head',
+  'options',
+];
 const PUBLIC_PREFIXES = ['/api/u1/v1/', '/api/u2/v1/'];
-const DEFAULT_OPENAPI = 'public/openapi/tikomni-openapi.full.with-u2.public.latest.json';
+const DEFAULT_OPENAPI =
+  'public/openapi/tikomni-openapi.full.with-u2.public.latest.json';
 const DEFAULT_OUTPUT_DIR = 'skills/tikomni-skill/references/api-catalog';
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+const repoRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../..'
+);
 
 function argValue(name, fallback) {
   const idx = process.argv.indexOf(name);
@@ -52,7 +64,10 @@ function resolveRef(spec, ref) {
   if (typeof ref !== 'string' || !ref.startsWith('#/')) {
     return null;
   }
-  const segments = ref.slice(2).split('/').map((segment) => decodeRefSegment(segment));
+  const segments = ref
+    .slice(2)
+    .split('/')
+    .map((segment) => decodeRefSegment(segment));
   let current = spec;
   for (const segment of segments) {
     if (!isRecord(current) || !(segment in current)) {
@@ -129,7 +144,8 @@ function mergeParameters(pathItem, operation) {
       continue;
     }
     const name = typeof item.name === 'string' ? item.name.trim() : '';
-    const location = typeof item.in === 'string' ? item.in.trim().toLowerCase() : '';
+    const location =
+      typeof item.in === 'string' ? item.in.trim().toLowerCase() : '';
     if (!name || !location) {
       continue;
     }
@@ -146,7 +162,9 @@ function collectRequestBodyParams(spec, requestBodyLike) {
     return { required, optional };
   }
 
-  const media = requestBody.content['application/json'] || Object.values(requestBody.content)[0];
+  const media =
+    requestBody.content['application/json'] ||
+    Object.values(requestBody.content)[0];
   const mediaObj = isRecord(media) ? media : null;
   const schema = resolveObject(spec, mediaObj?.schema);
   if (!schema || !isRecord(schema)) {
@@ -167,7 +185,11 @@ function collectRequestBodyParams(spec, requestBodyLike) {
     return { required, optional };
   }
 
-  const requiredSet = new Set(Array.isArray(schema.required) ? schema.required.filter((key) => typeof key === 'string') : []);
+  const requiredSet = new Set(
+    Array.isArray(schema.required)
+      ? schema.required.filter((key) => typeof key === 'string')
+      : []
+  );
   for (const key of Object.keys(schema.properties)) {
     const name = `body:${key}`;
     if (requiredSet.has(key)) {
@@ -202,20 +224,41 @@ function dedupeParams(params) {
 }
 
 function suggestIntent(pathname, summary, tags) {
-  const haystack = `${pathname} ${summary} ${(tags || []).join(' ')}`.toLowerCase();
+  const haystack =
+    `${pathname} ${summary} ${(tags || []).join(' ')}`.toLowerCase();
   if (haystack.includes('/health/') || haystack.includes('health')) {
     return 'health';
   }
-  if (haystack.includes('/services/audio/asr') || haystack.includes('transcription') || haystack.includes('subtitle')) {
+  if (
+    haystack.includes('/services/audio/asr') ||
+    haystack.includes('transcription') ||
+    haystack.includes('subtitle')
+  ) {
     return 'asr_transcription';
   }
-  if (haystack.includes('fetch_user_post_videos') || haystack.includes('fetch_home_notes') || haystack.includes('get_user_notes') || haystack.includes('home') || haystack.includes('timeline')) {
+  if (
+    haystack.includes('fetch_user_post_videos') ||
+    haystack.includes('fetch_home_notes') ||
+    haystack.includes('get_user_notes') ||
+    haystack.includes('home') ||
+    haystack.includes('timeline')
+  ) {
     return 'home_posts';
   }
-  if (haystack.includes('user_profile') || haystack.includes('fetch_user_info') || haystack.includes('get_user_info') || haystack.includes('profile')) {
+  if (
+    haystack.includes('user_profile') ||
+    haystack.includes('fetch_user_info') ||
+    haystack.includes('get_user_info') ||
+    haystack.includes('profile')
+  ) {
     return 'author_profile';
   }
-  if (haystack.includes('fetch_one_video') || haystack.includes('note_info') || haystack.includes('detail') || haystack.includes('post_detail')) {
+  if (
+    haystack.includes('fetch_one_video') ||
+    haystack.includes('note_info') ||
+    haystack.includes('detail') ||
+    haystack.includes('post_detail')
+  ) {
     return 'single_post';
   }
   if (haystack.includes('comment')) {
@@ -224,7 +267,11 @@ function suggestIntent(pathname, summary, tags) {
   if (haystack.includes('search')) {
     return 'search';
   }
-  if (haystack.includes('hot') || haystack.includes('trending') || haystack.includes('billboard')) {
+  if (
+    haystack.includes('hot') ||
+    haystack.includes('trending') ||
+    haystack.includes('billboard')
+  ) {
     return 'trend';
   }
   return 'other';
@@ -250,7 +297,10 @@ function escapeCell(value) {
 
 function sortByMethodAndPath(a, b) {
   if (a.path === b.path) {
-    return HTTP_METHODS.indexOf(a.method.toLowerCase()) - HTTP_METHODS.indexOf(b.method.toLowerCase());
+    return (
+      HTTP_METHODS.indexOf(a.method.toLowerCase()) -
+      HTTP_METHODS.indexOf(b.method.toLowerCase())
+    );
   }
   return a.path.localeCompare(b.path);
 }
@@ -276,9 +326,16 @@ function buildOperations(spec) {
       }
 
       const operation = resolveObject(spec, opLike) || opLike;
-      const summary = compactText(operation.summary || operation.operationId || `${method.toUpperCase()} ${pathname}`, 140);
+      const summary = compactText(
+        operation.summary ||
+          operation.operationId ||
+          `${method.toUpperCase()} ${pathname}`,
+        140
+      );
       const description = compactText(operation.description, 220);
-      const tags = Array.isArray(operation.tags) ? operation.tags.filter((tag) => typeof tag === 'string') : [];
+      const tags = Array.isArray(operation.tags)
+        ? operation.tags.filter((tag) => typeof tag === 'string')
+        : [];
 
       const mergedParams = mergeParameters(pathItem, operation);
       const requiredParams = [];
@@ -290,7 +347,8 @@ function buildOperations(spec) {
           continue;
         }
         const name = typeof param.name === 'string' ? param.name.trim() : '';
-        const location = typeof param.in === 'string' ? param.in.trim().toLowerCase() : '';
+        const location =
+          typeof param.in === 'string' ? param.in.trim().toLowerCase() : '';
         if (!name || !location) {
           continue;
         }
@@ -307,7 +365,9 @@ function buildOperations(spec) {
       optionalParams.push(...bodyParams.optional);
 
       const required = dedupeParams(requiredParams);
-      const optional = dedupeParams(optionalParams.filter((item) => !required.includes(item)));
+      const optional = dedupeParams(
+        optionalParams.filter((item) => !required.includes(item))
+      );
 
       operations.push({
         platform: getPlatform(pathname),
@@ -341,23 +401,37 @@ function buildIndexMarkdown(openapiFile, operations, grouped) {
   lines.push('| Platform | Operations | Catalog |');
   lines.push('| --- | ---: | --- |');
 
-  const sortedPlatforms = Object.keys(grouped).sort((a, b) => grouped[b].length - grouped[a].length);
+  const sortedPlatforms = Object.keys(grouped).sort(
+    (a, b) => grouped[b].length - grouped[a].length
+  );
   for (const platform of sortedPlatforms) {
-    lines.push(`| ${platform} | ${grouped[platform].length} | [${platform}.md](./${platform}.md) |`);
+    lines.push(
+      `| ${platform} | ${grouped[platform].length} | [${platform}.md](./${platform}.md) |`
+    );
   }
 
   lines.push('');
   lines.push('## Core References');
   lines.push('');
-  lines.push('- Douyin homepage: `GET /api/u1/v1/douyin/app/v3/handler_user_profile`, `GET /api/u1/v1/douyin/app/v3/fetch_user_post_videos`');
-  lines.push('- Xiaohongshu homepage: `GET /api/u1/v1/xiaohongshu/web_v2/fetch_user_info_app`, `GET /api/u1/v1/xiaohongshu/web_v2/fetch_home_notes_app`');
-  lines.push('- U2 ASR: `POST /api/u2/v1/services/audio/asr/transcription`, `GET /api/u2/v1/tasks/{task_id}`');
+  lines.push(
+    '- Douyin homepage: `GET /api/u1/v1/douyin/app/v3/handler_user_profile`, `GET /api/u1/v1/douyin/app/v3/fetch_user_post_videos`'
+  );
+  lines.push(
+    '- Xiaohongshu homepage: `GET /api/u1/v1/xiaohongshu/web_v2/fetch_user_info_app`, `GET /api/u1/v1/xiaohongshu/web_v2/fetch_home_notes_app`'
+  );
+  lines.push(
+    '- U2 ASR: `POST /api/u2/v1/services/audio/asr/transcription`, `GET /api/u2/v1/tasks/{task_id}`'
+  );
   lines.push('');
   lines.push('## Selection Baseline');
   lines.push('');
   lines.push('1. Same platform + same intent: prefer `app > web_v2 > web`.');
-  lines.push('2. Douyin homepage default sort: latest (`sort_type=0`), switch to hot only when requested.');
-  lines.push('3. Use fallback when core fields are missing even if HTTP is 2xx.');
+  lines.push(
+    '2. Douyin homepage default sort: latest (`sort_type=0`), switch to hot only when requested.'
+  );
+  lines.push(
+    '3. Use fallback when core fields are missing even if HTTP is 2xx.'
+  );
   lines.push('');
 
   return `${lines.join('\n')}\n`;
@@ -369,7 +443,9 @@ function buildPlatformMarkdown(platform, operations) {
   lines.push('');
   lines.push(`- operation_count: ${operations.length}`);
   lines.push('');
-  lines.push('| Method | Path | Summary | Required Params | Optional Params | Suggested Intent | Tags |');
+  lines.push(
+    '| Method | Path | Summary | Required Params | Optional Params | Suggested Intent | Tags |'
+  );
   lines.push('| --- | --- | --- | --- | --- | --- | --- |');
 
   for (const op of operations) {
@@ -411,7 +487,9 @@ async function main() {
     await writeFile(path.join(outputPath, `${platform}.md`), markdown, 'utf8');
   }
 
-  console.log(`[api-catalog] generated ${operations.length} operations into ${outputDir}`);
+  console.log(
+    `[api-catalog] generated ${operations.length} operations into ${outputDir}`
+  );
   console.log(`[api-catalog] generated ${platforms.length} platform files`);
 }
 

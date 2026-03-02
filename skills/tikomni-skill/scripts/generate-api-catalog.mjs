@@ -154,6 +154,23 @@ function mergeParameters(pathItem, operation) {
   return [...unique.values()];
 }
 
+function resolveRequiresAuth(spec, pathItem, operation) {
+  const security =
+    Array.isArray(operation.security) || operation.security === null
+      ? operation.security
+      : Array.isArray(pathItem.security) || pathItem.security === null
+        ? pathItem.security
+        : spec.security;
+
+  if (!Array.isArray(security) || security.length === 0) {
+    return false;
+  }
+
+  return security.some(
+    (entry) => isRecord(entry) && Object.keys(entry).length > 0
+  );
+}
+
 function collectRequestBodyParams(spec, requestBodyLike) {
   const required = [];
   const optional = [];
@@ -364,9 +381,14 @@ function buildOperations(spec) {
       requiredParams.push(...bodyParams.required);
       optionalParams.push(...bodyParams.optional);
 
-      const required = dedupeParams(requiredParams);
+      let required = dedupeParams(requiredParams);
+      if (resolveRequiresAuth(spec, pathItem, operation)) {
+        required = dedupeParams(['header:authorization', ...required]);
+      }
       const optional = dedupeParams(
-        optionalParams.filter((item) => !required.includes(item))
+        optionalParams.filter(
+          (item) => !required.includes(item) && item !== 'header:authorization'
+        )
       );
 
       operations.push({

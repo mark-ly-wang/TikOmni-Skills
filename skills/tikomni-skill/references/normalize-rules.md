@@ -8,7 +8,7 @@ Produce stable `raw + normalized` output to absorb upstream response drift.
 
 1. Support `payload.data` structure.
 2. Support Tikomni flattened non-2xx detail fields at top level.
-3. Support TikHub-like envelope: `code/message/request_id/router/data`.
+3. Support platform standard envelope: `code/message/request_id/router/data`.
 
 ## 3. Suggested Unified Schema
 

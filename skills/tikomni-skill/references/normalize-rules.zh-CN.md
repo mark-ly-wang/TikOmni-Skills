@@ -8,7 +8,7 @@
 
 1. 兼容 `payload.data` 结构。
 2. 兼容 Tikomni 在非 2xx 下将 detail 字段拉平到顶层的结构。
-3. 兼容 TikHub 风格包络：`code/message/request_id/router/data`。
+3. 兼容平台标准包络：`code/message/request_id/router/data`。
 
 ## 3. 统一字段建议
 

@@ -117,20 +117,22 @@ def resolve_effective_card_type(
     card_type: str,
     content_kind: Optional[str],
     storage_config: Optional[Dict[str, Any]],
+    force_card_type: bool = False,
 ) -> str:
     normalized_card_type = normalize_card_type(card_type)
-    normalized_content_kind = normalize_content_kind(content_kind)
+    if force_card_type:
+        return normalized_card_type
 
+    normalized_content_kind = normalize_content_kind(content_kind)
     if not normalized_content_kind:
         return normalized_card_type
 
     card_type_map = _configured_content_kind_map(storage_config)
-    mapped = normalize_card_type(card_type_map.get(normalized_content_kind, normalized_card_type))
+    mapped = card_type_map.get(normalized_content_kind)
+    if mapped is not None:
+        return normalize_card_type(str(mapped))
 
-    # Explicit non-default card_type remains highest priority.
-    if normalized_card_type != "work":
-        return normalized_card_type
-    return mapped
+    return normalized_card_type
 
 
 def render_route_parts(parts: List[str], *, context: Dict[str, str]) -> List[str]:

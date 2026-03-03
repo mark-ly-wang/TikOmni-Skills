@@ -2,6 +2,8 @@
 
 This folder contains executable runtime config templates used by local scripts.
 
+`defaults.yaml` is an internal/default template for script maintainers and advanced routing customization.
+
 ## Default Template
 
 - Path: `references/config-templates/defaults.yaml`

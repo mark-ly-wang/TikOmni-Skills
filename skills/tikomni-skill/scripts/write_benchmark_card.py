@@ -852,6 +852,7 @@ def write_benchmark_card(
     sample_author: Optional[str] = None,
     content_kind: Optional[str] = None,
     storage_config: Optional[Dict[str, Any]] = None,
+    force_card_type: bool = False,
 ) -> Dict[str, Any]:
     now = dt.datetime.now()
     generated_at = now.isoformat(timespec="seconds")
@@ -864,6 +865,7 @@ def write_benchmark_card(
         card_type=normalized_card_type,
         content_kind=resolved_content_kind,
         storage_config=storage_config,
+        force_card_type=force_card_type,
     )
     fields = _extract_required_fields(payload, platform=platform)
 
@@ -917,6 +919,7 @@ def write_benchmark_card(
         "platform": platform,
         "card_type": effective_card_type,
         "requested_card_type": normalized_card_type,
+        "force_card_type": bool(force_card_type),
         "content_kind": resolved_content_kind or None,
         "collect_material": collect_material,
         "primary_card_path": primary_path,
@@ -945,6 +948,7 @@ def main() -> None:
     parser.add_argument("--card-type", choices=CARD_TYPES, default="work", help="Primary card type")
     parser.add_argument("--sample-author", default=None, help="Optional author slug override for author_sample_work")
     parser.add_argument("--content-kind", default=None, help="Optional workflow kind, e.g. single_video/author_home/author_analysis")
+    parser.add_argument("--force-card-type", action="store_true", help="Force manual --card-type to override content_kind mapping")
     parser.add_argument("--wiki-root", default=DEFAULT_WIKI_ROOT, help="WIKI root path")
     parser.add_argument("--collect-material", action="store_true", help="Write extra CMAT card when explicitly requested")
     parser.add_argument(
@@ -963,6 +967,7 @@ def main() -> None:
         collect_material=args.collect_material,
         sample_author=args.sample_author,
         content_kind=args.content_kind,
+        force_card_type=args.force_card_type,
     )
     write_json_stdout(result)
 

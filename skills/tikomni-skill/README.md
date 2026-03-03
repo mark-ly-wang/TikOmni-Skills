@@ -47,8 +47,9 @@ TIKOMNI_API_KEY="<your_api_key>"
 1. Env template: [`./env.example`](./env.example)
 2. Local env file: workspace `.env` or `./.env.local`
 3. Runtime config: [`./references/runtime-config.md`](./references/runtime-config.md)
-4. Config guide: [`./references/configuration.md`](./references/configuration.md)
-5. In execution, the skill reads runtime config first, then applies output/metadata/policy settings.
+4. Script defaults template: [`./references/config-templates/defaults.yaml`](./references/config-templates/defaults.yaml)
+5. Config guide: [`./references/configuration.md`](./references/configuration.md)
+6. In execution, the skill reads runtime config first, then applies output/metadata/policy settings.
 
 ## 🤖 Natural-Language Customization
 

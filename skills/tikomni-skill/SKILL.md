@@ -51,3 +51,13 @@ Call Tikomni APIs via direct HTTP and output `raw + normalized` data with Markdo
 8. Configuration guide: `references/configuration.md` (中文: `references/configuration.zh-CN.md`)
 9. Runtime config template: `references/runtime-config.md` (中文: `references/runtime-config.zh-CN.md`)
 10. Full API catalog: `references/api-catalog/index.md`
+11. Card routing (中文): `references/card-routing.zh-CN.md`
+12. Benchmark card prompt contracts: `references/prompt-contracts/`
+13. Topic contract: `references/prompt-contracts/topic.md`
+14. Style contract: `references/prompt-contracts/style.md`
+15. Hook contract: `references/prompt-contracts/hook.md`
+16. Structure contract: `references/prompt-contracts/structure.md`
+17. CTA contract: `references/prompt-contracts/cta.md`
+18. Summary contract: `references/prompt-contracts/summary.md`
+19. ASR clean contract: `references/prompt-contracts/asr-clean.md`
+20. Insight contract: `references/prompt-contracts/insight.md`

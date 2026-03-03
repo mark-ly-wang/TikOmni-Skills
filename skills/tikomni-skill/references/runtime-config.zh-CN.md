@@ -90,7 +90,16 @@ copy_language: auto
 xhs_subtitle_first: true
 # 抖音文案是否固定走 U2
 douyin_copy_via_u2: true
+# 保守重试：仅在 U2 轮询超时时触发，重试次数可配置为 0~3
+u2_timeout_retry:
+  enabled: true
+  max_retries: 3
 ```
+
+说明：
+
+1. U2 submit 不再接受或透传 `idempotency-key` 请求头。
+2. 非 timeout 错误保持原行为，不会被 `u2_timeout_retry` 额外重试。
 
 ## 7. 路由策略（接口选择）
 

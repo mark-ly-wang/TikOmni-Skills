@@ -19,12 +19,7 @@ def submit_u2_asr(
     token: str,
     timeout_ms: int,
     video_url: str,
-    idempotency_key: Optional[str],
 ) -> Dict[str, Any]:
-    extra_headers = {}
-    if idempotency_key:
-        extra_headers["idempotency-key"] = idempotency_key
-
     return call_json_api(
         base_url=base_url,
         path="/api/u2/v1/services/audio/asr/transcription",
@@ -32,7 +27,6 @@ def submit_u2_asr(
         method="POST",
         timeout_ms=timeout_ms,
         body={"input": {"file_urls": [video_url]}},
-        extra_headers=extra_headers,
     )
 
 
@@ -53,7 +47,6 @@ def submit_u2_asr_with_retry(
     token: str,
     timeout_ms: int,
     video_url: str,
-    idempotency_key: Optional[str],
     max_retries: int,
     backoff_ms: int,
 ) -> Dict[str, Any]:
@@ -76,7 +69,6 @@ def submit_u2_asr_with_retry(
             token=token,
             timeout_ms=timeout_ms,
             video_url=video_url,
-            idempotency_key=idempotency_key,
         )
         task_id = extract_task_id(submit_response.get("data"))
         retriable = is_retriable_submit_failure(submit_response)
@@ -196,4 +188,118 @@ def poll_u2_task_core(
         "error_reason": "u2_poll_timeout",
         "raw_task": {},
         "trace": trace,
+    }
+
+
+def run_u2_asr_with_timeout_retry(
+    *,
+    base_url: str,
+    token: str,
+    timeout_ms: int,
+    video_url: str,
+    submit_max_retries: int,
+    submit_backoff_ms: int,
+    poll_interval_sec: float,
+    max_polls: int,
+    timeout_retry_enabled: bool = True,
+    timeout_retry_max_retries: int = 3,
+) -> Dict[str, Any]:
+    conservative_retries = max(0, min(3, int(timeout_retry_max_retries)))
+    retries = conservative_retries if timeout_retry_enabled else 0
+    max_rounds = 1 + retries
+
+    rounds: List[Dict[str, Any]] = []
+    final_submit_bundle: Dict[str, Any] = {}
+    final_poll_result: Dict[str, Any] = {
+        "ok": False,
+        "task_status": "UNKNOWN",
+        "error_reason": "u2_submit_failed_or_missing_task_id",
+    }
+    timeout_retry_triggered = False
+    timeout_retry_result = "not_triggered"
+
+    for round_index in range(1, max_rounds + 1):
+        submit_bundle = submit_u2_asr_with_retry(
+            base_url=base_url,
+            token=token,
+            timeout_ms=timeout_ms,
+            video_url=video_url,
+            max_retries=submit_max_retries,
+            backoff_ms=submit_backoff_ms,
+        )
+        submit_response = submit_bundle.get("submit_response", {})
+        task_id = submit_bundle.get("task_id")
+
+        poll_result: Dict[str, Any]
+        if submit_response.get("ok") and task_id:
+            poll_result = poll_u2_task_core(
+                base_url=base_url,
+                token=token,
+                timeout_ms=timeout_ms,
+                task_id=str(task_id),
+                poll_interval_sec=poll_interval_sec,
+                max_polls=max_polls,
+            )
+        else:
+            poll_result = {
+                "ok": False,
+                "task_id": task_id,
+                "task_status": "UNKNOWN",
+                "request_id": submit_response.get("request_id"),
+                "error_reason": submit_response.get("error_reason") or "u2_submit_failed_or_missing_task_id",
+                "trace": [],
+            }
+
+        rounds.append(
+            {
+                "round": round_index,
+                "submit": {
+                    "task_id": task_id,
+                    "final_submit_status": submit_bundle.get("final_submit_status"),
+                    "request_id": submit_response.get("request_id"),
+                    "status_code": submit_response.get("status_code"),
+                    "ok": submit_response.get("ok"),
+                    "error_reason": submit_response.get("error_reason"),
+                    "retry_chain": submit_bundle.get("retry_chain", []),
+                },
+                "poll": {
+                    "task_id": poll_result.get("task_id") or task_id,
+                    "task_status": poll_result.get("task_status"),
+                    "request_id": poll_result.get("request_id"),
+                    "ok": poll_result.get("ok"),
+                    "error_reason": poll_result.get("error_reason"),
+                    "attempts": len(poll_result.get("trace", [])),
+                },
+            }
+        )
+
+        final_submit_bundle = submit_bundle
+        final_poll_result = poll_result
+
+        if poll_result.get("error_reason") == "u2_poll_timeout" and round_index < max_rounds:
+            timeout_retry_triggered = True
+            timeout_retry_result = "retrying"
+            continue
+
+        break
+
+    if final_poll_result.get("ok"):
+        timeout_retry_result = "retry_succeeded" if timeout_retry_triggered else "not_needed"
+    elif final_poll_result.get("error_reason") == "u2_poll_timeout":
+        timeout_retry_result = "retry_timeout_exhausted" if timeout_retry_triggered else "timeout_no_retry"
+    elif timeout_retry_triggered:
+        timeout_retry_result = "retry_failed_non_timeout"
+    else:
+        timeout_retry_result = "not_triggered"
+
+    return {
+        "submit_bundle": final_submit_bundle,
+        "poll_result": final_poll_result,
+        "rounds": rounds,
+        "timeout_retry": {
+            "enabled": bool(timeout_retry_enabled),
+            "configured_max_retries": conservative_retries,
+            "triggered": timeout_retry_triggered,
+            "result": timeout_retry_result,
+        },
     }

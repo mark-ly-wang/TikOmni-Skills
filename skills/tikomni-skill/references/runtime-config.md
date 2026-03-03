@@ -83,7 +83,16 @@ copy_language: auto
 xhs_subtitle_first: true
 # Force U2 for Douyin copy extraction
 douyin_copy_via_u2: true
+# Conservative retry: only retry on U2 polling timeout; configurable 0~3 retries
+u2_timeout_retry:
+  enabled: true
+  max_retries: 3
 ```
+
+Notes:
+
+1. U2 submit no longer accepts or forwards `idempotency-key` headers.
+2. Non-timeout errors keep original behavior and are not retried by `u2_timeout_retry`.
 
 ## 7. Routing Policy
 

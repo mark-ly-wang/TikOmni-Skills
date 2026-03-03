@@ -7,14 +7,12 @@ import re
 import urllib.request
 from typing import Any, Dict, List, Optional
 
-from asr_pipeline import submit_u2_asr
+from asr_pipeline import run_u2_asr_with_timeout_retry
 from config_loader import config_get, load_tikomni_config
 from extract_pipeline import build_api_trace, request_with_optional_fallback
-from poll_u2_task import poll_u2_task
 from tikomni_common import (
     deep_find_all,
     deep_find_first,
-    extract_task_id,
     normalize_text,
     resolve_runtime,
     summarize_content,
@@ -251,7 +249,10 @@ def run_xiaohongshu_extract(
     timeout_ms: Optional[int],
     poll_interval_sec: float,
     max_polls: int,
-    idempotency_key: Optional[str],
+    u2_submit_max_retries: int,
+    u2_submit_backoff_ms: int,
+    u2_timeout_retry_enabled: bool,
+    u2_timeout_retry_max_retries: int,
     force_u2_fallback: bool,
     write_card: bool,
     card_type: str,
@@ -405,41 +406,59 @@ def run_xiaohongshu_extract(
             )
         return result
 
-    submit_response = submit_u2_asr(
+    u2_bundle = run_u2_asr_with_timeout_retry(
         base_url=runtime["base_url"],
         token=runtime["token"],
         timeout_ms=runtime["timeout_ms"],
         video_url=selected_video_url,
-        idempotency_key=idempotency_key,
+        submit_max_retries=u2_submit_max_retries,
+        submit_backoff_ms=u2_submit_backoff_ms,
+        poll_interval_sec=poll_interval_sec,
+        max_polls=max_polls,
+        timeout_retry_enabled=u2_timeout_retry_enabled,
+        timeout_retry_max_retries=u2_timeout_retry_max_retries,
     )
-    task_id = extract_task_id(submit_response["data"])
+    submit_bundle = u2_bundle.get("submit_bundle", {})
+    submit_response = submit_bundle.get("submit_response", {})
+    task_id = submit_bundle.get("task_id")
+    poll_result = u2_bundle.get("poll_result", {})
 
     trace.append(
-        build_api_trace(
-            step="u2_submit_transcription",
-            endpoint="/api/u2/v1/services/audio/asr/transcription",
-            response=submit_response,
-            extra={
-                "task_id": task_id,
-                "selected_video_url": selected_video_url,
-                "idempotency_key_sent": bool(idempotency_key),
+        {
+            "step": "u2_asr_timeout_retry",
+            "endpoint": "/api/u2/v1/services/audio/asr/transcription + /api/u2/v1/tasks/{task_id}",
+            "selected_video_url": selected_video_url,
+            "submit_retries_config": {
+                "u2_submit_max_retries": max(0, int(u2_submit_max_retries)),
+                "u2_submit_backoff_ms": max(0, int(u2_submit_backoff_ms)),
             },
-        )
+            "timeout_retry": u2_bundle.get("timeout_retry", {}),
+            "rounds": u2_bundle.get("rounds", []),
+            "final_task_id": poll_result.get("task_id") or task_id,
+            "final_task_status": poll_result.get("task_status"),
+            "final_error_reason": poll_result.get("error_reason"),
+        }
     )
 
-    if not submit_response["ok"] or not task_id:
+    if not poll_result.get("ok") and (
+        not submit_response.get("ok") or not (poll_result.get("task_id") or task_id)
+    ):
         result = _build_result(
             source_input=source_input,
             raw_content="",
             confidence="low",
-            error_reason=submit_response.get("error_reason") or "u2_submit_failed_or_missing_task_id",
+            error_reason=poll_result.get("error_reason") or submit_response.get("error_reason") or "u2_submit_failed_or_missing_task_id",
             extract_trace=trace,
-            request_id=submit_response.get("request_id") or note_response.get("request_id"),
+            request_id=(
+                poll_result.get("request_id")
+                or submit_response.get("request_id")
+                or note_response.get("request_id")
+            ),
             text_source="u2",
             note_id=str(resolved_note_id) if resolved_note_id else source_input.get("note_id"),
             subtitle_hit=False,
-            u2_task_id=task_id,
-            u2_task_status="UNKNOWN",
+            u2_task_id=poll_result.get("task_id") or task_id,
+            u2_task_status=poll_result.get("task_status") or "UNKNOWN",
         )
         if write_card:
             result["card_write"] = write_benchmark_card(
@@ -453,27 +472,6 @@ def run_xiaohongshu_extract(
             )
         return result
 
-    poll_result = poll_u2_task(
-        base_url=runtime["base_url"],
-        token=runtime["token"],
-        timeout_ms=runtime["timeout_ms"],
-        task_id=task_id,
-        poll_interval_sec=poll_interval_sec,
-        max_polls=max_polls,
-    )
-    trace.append(
-        {
-            "step": "u2_poll_task",
-            "endpoint": "/api/u2/v1/tasks/{task_id}",
-            "task_id": task_id,
-            "task_status": poll_result.get("task_status"),
-            "request_id": poll_result.get("request_id"),
-            "ok": poll_result.get("ok"),
-            "error_reason": poll_result.get("error_reason"),
-            "attempts": len(poll_result.get("trace", [])),
-        }
-    )
-
     raw_content = poll_result.get("transcript_text", "") if poll_result.get("ok") else ""
     result = _build_result(
         source_input=source_input,
@@ -485,7 +483,7 @@ def run_xiaohongshu_extract(
         text_source="u2",
         note_id=str(resolved_note_id) if resolved_note_id else source_input.get("note_id"),
         subtitle_hit=False,
-        u2_task_id=task_id,
+        u2_task_id=poll_result.get("task_id") or task_id,
         u2_task_status=poll_result.get("task_status"),
     )
 
@@ -515,7 +513,19 @@ def main() -> None:
     parser.add_argument("--timeout-ms", type=int, default=None, help="Request timeout ms")
     parser.add_argument("--poll-interval-sec", type=float, default=None, help="U2 polling interval seconds")
     parser.add_argument("--max-polls", type=int, default=None, help="Max U2 polls")
-    parser.add_argument("--idempotency-key", default=None, help="Optional idempotency key (not sent by default)")
+    parser.add_argument(
+        "--u2-timeout-retry-enabled",
+        type=str,
+        choices=["true", "false"],
+        default=None,
+        help="Enable conservative retry only when U2 polling times out",
+    )
+    parser.add_argument(
+        "--u2-timeout-retry-max-retries",
+        type=int,
+        default=None,
+        help="Conservative max retries for U2 timeout-only retry (0~3)",
+    )
     parser.add_argument("--force-u2-fallback", action="store_true", help="Skip subtitle usage and force U2 fallback (test)")
     parser.add_argument("--write-card", action="store_true", help="Write benchmark card to WIKI")
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
@@ -534,6 +544,18 @@ def main() -> None:
         else config_get(config, "asr_strategy.poll_interval_sec", 3.0)
     )
     max_polls = args.max_polls if args.max_polls is not None else config_get(config, "asr_strategy.max_polls", 30)
+    u2_submit_max_retries = config_get(config, "asr_strategy.submit_retry.xiaohongshu_note.max_retries", 0)
+    u2_submit_backoff_ms = config_get(config, "asr_strategy.submit_retry.xiaohongshu_note.backoff_ms", 0)
+    u2_timeout_retry_enabled = (
+        (str(args.u2_timeout_retry_enabled).lower() == "true")
+        if args.u2_timeout_retry_enabled is not None
+        else bool(config_get(config, "asr_strategy.u2_timeout_retry.enabled", True))
+    )
+    u2_timeout_retry_max_retries = (
+        args.u2_timeout_retry_max_retries
+        if args.u2_timeout_retry_max_retries is not None
+        else config_get(config, "asr_strategy.u2_timeout_retry.max_retries", 3)
+    )
 
     try:
         result = run_xiaohongshu_extract(
@@ -546,7 +568,10 @@ def main() -> None:
             timeout_ms=timeout_ms,
             poll_interval_sec=float(poll_interval_sec),
             max_polls=int(max_polls),
-            idempotency_key=args.idempotency_key,
+            u2_submit_max_retries=int(u2_submit_max_retries),
+            u2_submit_backoff_ms=int(u2_submit_backoff_ms),
+            u2_timeout_retry_enabled=bool(u2_timeout_retry_enabled),
+            u2_timeout_retry_max_retries=int(u2_timeout_retry_max_retries),
             force_u2_fallback=args.force_u2_fallback,
             write_card=args.write_card,
             card_type=args.card_type,

@@ -4,10 +4,9 @@
 import argparse
 from typing import Any, Dict, Optional
 
-from asr_pipeline import submit_u2_asr_with_retry
+from asr_pipeline import run_u2_asr_with_timeout_retry
 from config_loader import config_get, load_tikomni_config
 from extract_pipeline import build_api_trace, request_with_optional_fallback
-from poll_u2_task import poll_u2_task
 from tikomni_common import deep_find_first, resolve_runtime, summarize_content, write_json_stdout
 from write_benchmark_card import DEFAULT_WIKI_ROOT, write_benchmark_card
 
@@ -95,9 +94,10 @@ def run_douyin_extract(
     timeout_ms: Optional[int],
     poll_interval_sec: float,
     max_polls: int,
-    idempotency_key: Optional[str],
     u2_submit_max_retries: int,
     u2_submit_backoff_ms: int,
+    u2_timeout_retry_enabled: bool,
+    u2_timeout_retry_max_retries: int,
     write_card: bool,
     card_type: str,
     collect_material: bool,
@@ -215,54 +215,57 @@ def run_douyin_extract(
             )
         return result
 
-    submit_bundle = submit_u2_asr_with_retry(
+    u2_bundle = run_u2_asr_with_timeout_retry(
         base_url=runtime["base_url"],
         token=runtime["token"],
         timeout_ms=runtime["timeout_ms"],
         video_url=original_video_url,
-        idempotency_key=idempotency_key,
-        max_retries=u2_submit_max_retries,
-        backoff_ms=u2_submit_backoff_ms,
+        submit_max_retries=u2_submit_max_retries,
+        submit_backoff_ms=u2_submit_backoff_ms,
+        poll_interval_sec=poll_interval_sec,
+        max_polls=max_polls,
+        timeout_retry_enabled=u2_timeout_retry_enabled,
+        timeout_retry_max_retries=u2_timeout_retry_max_retries,
     )
-    submit_response = submit_bundle["submit_response"]
-    task_id = submit_bundle.get("task_id")
 
-    trace.append(
-        build_api_trace(
-            step="u2_submit_transcription",
-            endpoint="/api/u2/v1/services/audio/asr/transcription",
-            response=submit_response,
-            extra={
-                "task_id": task_id,
-                "idempotency_key_sent": bool(idempotency_key),
-                "final_submit_status": submit_bundle.get("final_submit_status"),
-            },
-        )
-    )
+    submit_bundle = u2_bundle.get("submit_bundle", {})
+    submit_response = submit_bundle.get("submit_response", {})
+    task_id = submit_bundle.get("task_id")
+    poll_result = u2_bundle.get("poll_result", {})
 
     trace.append(
         {
-            "step": "u2_submit_retry_chain",
-            "final_submit_status": submit_bundle.get("final_submit_status"),
-            "retries_config": {
+            "step": "u2_asr_timeout_retry",
+            "endpoint": "/api/u2/v1/services/audio/asr/transcription + /api/u2/v1/tasks/{task_id}",
+            "submit_retries_config": {
                 "u2_submit_max_retries": max(0, int(u2_submit_max_retries)),
                 "u2_submit_backoff_ms": max(0, int(u2_submit_backoff_ms)),
             },
-            "attempts": submit_bundle.get("retry_chain", []),
+            "timeout_retry": u2_bundle.get("timeout_retry", {}),
+            "rounds": u2_bundle.get("rounds", []),
+            "final_task_id": poll_result.get("task_id") or task_id,
+            "final_task_status": poll_result.get("task_status"),
+            "final_error_reason": poll_result.get("error_reason"),
         }
     )
 
-    if not submit_response["ok"] or not task_id:
+    if not poll_result.get("ok") and (
+        not submit_response.get("ok") or not (poll_result.get("task_id") or task_id)
+    ):
         result = _build_result(
             source_input=normalized_input,
             raw_content="",
             confidence="low",
-            error_reason=submit_response.get("error_reason") or "u2_submit_failed_or_missing_task_id",
+            error_reason=poll_result.get("error_reason") or submit_response.get("error_reason") or "u2_submit_failed_or_missing_task_id",
             extract_trace=trace,
-            request_id=submit_response.get("request_id") or play_url_response.get("request_id"),
+            request_id=(
+                poll_result.get("request_id")
+                or submit_response.get("request_id")
+                or play_url_response.get("request_id")
+            ),
             original_video_url=original_video_url,
-            u2_task_id=task_id,
-            u2_task_status="UNKNOWN",
+            u2_task_id=poll_result.get("task_id") or task_id,
+            u2_task_status=poll_result.get("task_status") or "UNKNOWN",
         )
         if write_card:
             result["card_write"] = write_benchmark_card(
@@ -276,27 +279,6 @@ def run_douyin_extract(
             )
         return result
 
-    poll_result = poll_u2_task(
-        base_url=runtime["base_url"],
-        token=runtime["token"],
-        timeout_ms=runtime["timeout_ms"],
-        task_id=task_id,
-        poll_interval_sec=poll_interval_sec,
-        max_polls=max_polls,
-    )
-    trace.append(
-        {
-            "step": "u2_poll_task",
-            "endpoint": "/api/u2/v1/tasks/{task_id}",
-            "task_id": task_id,
-            "task_status": poll_result.get("task_status"),
-            "request_id": poll_result.get("request_id"),
-            "ok": poll_result.get("ok"),
-            "error_reason": poll_result.get("error_reason"),
-            "attempts": len(poll_result.get("trace", [])),
-        }
-    )
-
     raw_content = poll_result.get("transcript_text", "") if poll_result.get("ok") else ""
     result = _build_result(
         source_input=normalized_input,
@@ -306,7 +288,7 @@ def run_douyin_extract(
         extract_trace=trace,
         request_id=poll_result.get("request_id") or submit_response.get("request_id") or play_url_response.get("request_id"),
         original_video_url=original_video_url,
-        u2_task_id=task_id,
+        u2_task_id=poll_result.get("task_id") or task_id,
         u2_task_status=poll_result.get("task_status"),
     )
 
@@ -349,9 +331,17 @@ def main() -> None:
         help="Base backoff ms for retriable U2 submit failures (exponential)",
     )
     parser.add_argument(
-        "--idempotency-key",
+        "--u2-timeout-retry-enabled",
+        type=str,
+        choices=["true", "false"],
         default=None,
-        help="Optional idempotency key (not sent by default)",
+        help="Enable conservative retry only when U2 polling times out",
+    )
+    parser.add_argument(
+        "--u2-timeout-retry-max-retries",
+        type=int,
+        default=None,
+        help="Conservative max retries for U2 timeout-only retry (0~3)",
     )
     parser.add_argument("--write-card", action="store_true", help="Write benchmark card to WIKI")
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
@@ -380,6 +370,16 @@ def main() -> None:
         if args.u2_submit_backoff_ms is not None
         else config_get(config, "asr_strategy.submit_retry.douyin_video.backoff_ms", 1500)
     )
+    u2_timeout_retry_enabled = (
+        (str(args.u2_timeout_retry_enabled).lower() == "true")
+        if args.u2_timeout_retry_enabled is not None
+        else bool(config_get(config, "asr_strategy.u2_timeout_retry.enabled", True))
+    )
+    u2_timeout_retry_max_retries = (
+        args.u2_timeout_retry_max_retries
+        if args.u2_timeout_retry_max_retries is not None
+        else config_get(config, "asr_strategy.u2_timeout_retry.max_retries", 3)
+    )
 
     try:
         result = run_douyin_extract(
@@ -392,9 +392,10 @@ def main() -> None:
             timeout_ms=timeout_ms,
             poll_interval_sec=float(poll_interval_sec),
             max_polls=int(max_polls),
-            idempotency_key=args.idempotency_key,
             u2_submit_max_retries=int(u2_submit_max_retries),
             u2_submit_backoff_ms=int(u2_submit_backoff_ms),
+            u2_timeout_retry_enabled=bool(u2_timeout_retry_enabled),
+            u2_timeout_retry_max_retries=int(u2_timeout_retry_max_retries),
             write_card=args.write_card,
             card_type=args.card_type,
             collect_material=args.collect_material,

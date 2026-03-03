@@ -62,6 +62,10 @@ BUILTIN_DEFAULT_CONFIG: Dict[str, Any] = {
             "douyin_video": {"max_retries": 2, "backoff_ms": 1500},
             "xiaohongshu_note": {"max_retries": 0, "backoff_ms": 0},
         },
+        "u2_timeout_retry": {
+            "enabled": True,
+            "max_retries": 3,
+        },
     },
 }
 

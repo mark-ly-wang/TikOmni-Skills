@@ -264,12 +264,7 @@ def _u2_submit(
     token: str,
     timeout_ms: int,
     original_video_url: str,
-    idempotency_key: Optional[str],
 ) -> Dict[str, Any]:
-    extra_headers = {}
-    if idempotency_key:
-        extra_headers["idempotency-key"] = idempotency_key
-
     return call_json_api(
         base_url=base_url,
         path=U2_SUBMIT_ENDPOINT,
@@ -277,7 +272,6 @@ def _u2_submit(
         method="POST",
         timeout_ms=timeout_ms,
         body={"input": {"file_urls": [original_video_url]}},
-        extra_headers=extra_headers,
     )
 
 
@@ -296,7 +290,6 @@ def _u2_submit_with_retry(
     token: str,
     timeout_ms: int,
     original_video_url: str,
-    idempotency_key: Optional[str],
     max_retries: int,
     backoff_ms: int,
 ) -> Dict[str, Any]:
@@ -319,7 +312,6 @@ def _u2_submit_with_retry(
             token=token,
             timeout_ms=timeout_ms,
             original_video_url=original_video_url,
-            idempotency_key=idempotency_key,
         )
         task_id = extract_task_id(submit_response.get("data"))
         retriable = _is_retriable_submit_failure(submit_response)
@@ -471,7 +463,6 @@ def run_douyin_single_video(
     web_timeout_ms: Optional[int],
     poll_interval_sec: float,
     max_polls: int,
-    idempotency_key: Optional[str],
     u2_submit_max_retries: int,
     u2_submit_backoff_ms: int,
     write_card: bool,
@@ -717,7 +708,6 @@ def run_douyin_single_video(
             token=runtime["token"],
             timeout_ms=runtime["timeout_ms"],
             original_video_url=video_down_url,
-            idempotency_key=idempotency_key,
             max_retries=u2_submit_max_retries,
             backoff_ms=u2_submit_backoff_ms,
         )
@@ -732,7 +722,6 @@ def run_douyin_single_video(
                 response=submit_response,
                 extra={
                     "task_id": u2_task_id,
-                    "idempotency_key_sent": bool(idempotency_key),
                     "video_down_url": video_down_url,
                     "final_submit_status": submit_bundle.get("final_submit_status"),
                 },
@@ -852,11 +841,6 @@ def main() -> None:
         default=1500,
         help="Base backoff ms for retriable U2 submit failures (exponential)",
     )
-    parser.add_argument(
-        "--idempotency-key",
-        default=None,
-        help="Optional idempotency key (default omitted)",
-    )
     parser.add_argument("--write-card", dest="write_card", action="store_true", help="Write benchmark card to WIKI (default on)")
     parser.add_argument("--no-write-card", dest="write_card", action="store_false", help="Disable benchmark card writing")
     parser.set_defaults(write_card=True)
@@ -883,7 +867,6 @@ def main() -> None:
             web_timeout_ms=args.web_timeout_ms,
             poll_interval_sec=args.poll_interval_sec,
             max_polls=args.max_polls,
-            idempotency_key=args.idempotency_key,
             u2_submit_max_retries=args.u2_submit_max_retries,
             u2_submit_backoff_ms=args.u2_submit_backoff_ms,
             write_card=args.write_card,

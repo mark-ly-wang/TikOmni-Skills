@@ -1,0 +1,45 @@
+name: skill-guard
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Skill validate (static)
+        run: python3 scripts/ci_skill_validate.py
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Secret scan (hard fail)
+        run: python3 scripts/ci_secret_scan.py
+
+  package-manifest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Package allowlist check
+        run: python3 scripts/ci_package_manifest.py
+      - name: Build skill package artifact (zip)
+        run: python3 scripts/ci_build_skill_zip.py
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tikomni-skill-package-preview
+          path: dist/tikomni-skill.skill

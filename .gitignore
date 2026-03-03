@@ -5,3 +5,6 @@
 
 # system
 .DS_Store
+
+# build artifacts
+dist/

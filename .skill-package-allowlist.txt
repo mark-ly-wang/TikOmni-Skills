@@ -1,0 +1,5 @@
+# Files allowed into distributable .skill package
+skills/tikomni-skill/SKILL.md
+skills/tikomni-skill/env.example
+skills/tikomni-skill/references
+skills/tikomni-skill/scripts

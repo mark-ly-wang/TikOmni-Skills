@@ -6,23 +6,15 @@ import datetime as dt
 import json
 import os
 import re
-import subprocess
 import unicodedata
 from typing import Any, Dict, List, Optional
 
+from analysis_pipeline import DEFAULT_MODULE_SECTIONS, build_analysis_sections
 from tikomni_common import normalize_text, read_json_file, write_json_stdout
 
 DEFAULT_WIKI_ROOT = "/mnt/openclaw/data/WIKI"
 CARD_TYPES = ["work", "author", "author_sample_work"]
 ASR_CLEAN_CONTRACT = "prompt-contracts/asr-clean.md@v1"
-INSIGHT_CONTRACT = "prompt-contracts/insight.md@v1"
-PROMPT_CONTRACT_FILES = {
-    "选题": "topic.md",
-    "文风": "style.md",
-    "Hook": "hook.md",
-    "结构": "structure.md",
-    "洞察分析": "insight.md",
-}
 
 
 def _normalize_lines(value: Any) -> List[str]:
@@ -427,76 +419,6 @@ def _score_from_hits(hits: int, full_score_hits: int = 4) -> int:
     return min(5, hits + 2)
 
 
-def _contracts_dir() -> str:
-    here = os.path.dirname(os.path.abspath(__file__))
-    return os.path.normpath(os.path.join(here, "..", "references", "prompt-contracts"))
-
-
-def _load_contract_prompt(filename: str) -> str:
-    path = os.path.join(_contracts_dir(), filename)
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            content = f.read()
-    except Exception:
-        return ""
-
-    m = re.search(r"##\s*User Prompt \(Verbatim\).*?```text\n(.*?)\n```", content, flags=re.S)
-    if m:
-        return m.group(1).strip()
-    return content.strip()
-
-
-def _call_prompt_llm(section: str, prompt_text: str, fields: Dict[str, Any]) -> str:
-    if not prompt_text:
-        return "数据不足"
-
-    payload = {
-        "title": fields.get("title"),
-        "asr_clean": fields.get("asr_clean"),
-        "asr_raw": fields.get("raw_content"),
-        "metrics": {
-            "digg_count": fields.get("digg_count"),
-            "comment_count": fields.get("comment_count"),
-            "collect_count": fields.get("collect_count"),
-            "share_count": fields.get("share_count"),
-            "play_count": fields.get("play_count"),
-        },
-    }
-
-    message = (
-        f"请严格根据下面提示词原文完成【{section}】段落输出。\n"
-        "要求：\n"
-        "1) 不要解释提示词，不要输出思考过程。\n"
-        "2) 不要套额外模板，不要输出打分。\n"
-        "3) 仅输出该段正文内容。\n\n"
-        "=== 提示词原文开始 ===\n"
-        f"{prompt_text}\n"
-        "=== 提示词原文结束 ===\n\n"
-        "=== 输入数据(JSON) ===\n"
-        f"{json.dumps(payload, ensure_ascii=False)}"
-    )
-
-    try:
-        run = subprocess.run(
-            ["openclaw", "agent", "--agent", "main", "--message", message, "--json"],
-            capture_output=True,
-            text=True,
-            timeout=240,
-            check=False,
-        )
-        data = json.loads(run.stdout or "{}")
-        texts = []
-        for p in data.get("result", {}).get("payloads", []):
-            t = p.get("text") if isinstance(p, dict) else None
-            if isinstance(t, str) and t.strip():
-                texts.append(t.strip())
-        if texts:
-            return "\n".join(texts).strip()
-    except Exception:
-        pass
-
-    return "数据不足"
-
 
 def _analyze_topic(fields: Dict[str, Any]) -> Dict[str, Any]:
     title = normalize_text(fields.get("title") or "")
@@ -770,21 +692,6 @@ def _insight_metric_snapshot(fields: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _build_insight_lines(fields: Dict[str, Any]) -> List[str]:
-    prompt_text = _load_contract_prompt(PROMPT_CONTRACT_FILES["洞察分析"])
-    content = _call_prompt_llm("洞察分析", prompt_text, fields)
-    return [content] if content else ["数据不足"]
-
-
-def _module_lines(fields: Dict[str, Any]) -> Dict[str, List[str]]:
-    sections = ["选题", "文风", "Hook", "结构"]
-    outputs: Dict[str, List[str]] = {}
-    for section in sections:
-        prompt_text = _load_contract_prompt(PROMPT_CONTRACT_FILES[section])
-        content = _call_prompt_llm(section, prompt_text, fields)
-        outputs[section] = [content if content else "数据不足"]
-    return outputs
-
 
 def _build_output_path(
     *,
@@ -838,7 +745,9 @@ def _render_markdown(
         f"赞 {fields['digg_count']} / 评 {fields['comment_count']} / "
         f"藏 {fields['collect_count']} / 转 {fields['share_count']}"
     )
-    creative_modules = _module_lines(fields)
+    analysis_sections = build_analysis_sections(fields)
+    creative_modules = analysis_sections.get("modules", {})
+    insight_lines = analysis_sections.get("insight", ["数据不足"])
     extract_trace_json = json.dumps(fields.get("extract_trace", []), ensure_ascii=False, indent=2)
 
     fm = {
@@ -885,13 +794,12 @@ def _render_markdown(
         f"- 链接：{fields.get('share_url') or '（未提供）'}",
     ]
 
-    for heading in ["选题", "文风", "Hook", "结构"]:
+    for heading in DEFAULT_MODULE_SECTIONS:
         lines.append("")
         lines.append(f"## {heading}")
-        for item in creative_modules[heading]:
+        for item in creative_modules.get(heading, ["数据不足"]):
             lines.append(item)
 
-    insight_lines = _build_insight_lines(fields)
     lines.append("")
     lines.append("## 洞察分析")
     for item in insight_lines:

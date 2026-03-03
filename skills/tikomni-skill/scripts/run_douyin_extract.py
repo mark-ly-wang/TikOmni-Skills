@@ -5,6 +5,7 @@ import argparse
 import time
 from typing import Any, Dict, List, Optional
 
+from config_loader import config_get, load_tikomni_config
 from poll_u2_task import poll_u2_task
 from tikomni_common import (
     call_json_api,
@@ -449,22 +450,23 @@ def main() -> None:
     parser.add_argument("input", nargs="?", default=None, help="Share URL or aweme_id")
     parser.add_argument("--share-url", default=None, help="Douyin share URL")
     parser.add_argument("--aweme-id", default=None, help="Douyin aweme_id")
+    parser.add_argument("--config", default=None, help="Runtime config YAML path")
     parser.add_argument("--env-file", default=None, help="Optional env file path")
-    parser.add_argument("--api-key-env", default="TIKOMNI_API_KEY", help="API key env variable name")
+    parser.add_argument("--api-key-env", default=None, help="API key env variable name")
     parser.add_argument("--base-url", default=None, help="Tikomni base URL")
     parser.add_argument("--timeout-ms", type=int, default=None, help="Request timeout ms")
-    parser.add_argument("--poll-interval-sec", type=float, default=3.0, help="U2 polling interval seconds")
-    parser.add_argument("--max-polls", type=int, default=30, help="Max U2 polls")
+    parser.add_argument("--poll-interval-sec", type=float, default=None, help="U2 polling interval seconds")
+    parser.add_argument("--max-polls", type=int, default=None, help="Max U2 polls")
     parser.add_argument(
         "--u2-submit-max-retries",
         type=int,
-        default=2,
+        default=None,
         help="Max retries for retriable U2 submit failures",
     )
     parser.add_argument(
         "--u2-submit-backoff-ms",
         type=int,
-        default=1500,
+        default=None,
         help="Base backoff ms for retriable U2 submit failures (exponential)",
     )
     parser.add_argument(
@@ -478,20 +480,42 @@ def main() -> None:
     parser.add_argument("--wiki-root", default=DEFAULT_WIKI_ROOT, help="WIKI root")
     args = parser.parse_args()
 
+    config, _ = load_tikomni_config(args.config)
+
+    api_key_env = args.api_key_env or config_get(config, "runtime.auth_env_key", "TIKOMNI_API_KEY")
+    base_url = args.base_url or config_get(config, "runtime.base_url", None)
+    timeout_ms = args.timeout_ms if args.timeout_ms is not None else config_get(config, "runtime.timeout_ms", None)
+    poll_interval_sec = (
+        args.poll_interval_sec
+        if args.poll_interval_sec is not None
+        else config_get(config, "asr_strategy.poll_interval_sec", 3.0)
+    )
+    max_polls = args.max_polls if args.max_polls is not None else config_get(config, "asr_strategy.max_polls", 30)
+    u2_submit_max_retries = (
+        args.u2_submit_max_retries
+        if args.u2_submit_max_retries is not None
+        else config_get(config, "asr_strategy.submit_retry.douyin_video.max_retries", 2)
+    )
+    u2_submit_backoff_ms = (
+        args.u2_submit_backoff_ms
+        if args.u2_submit_backoff_ms is not None
+        else config_get(config, "asr_strategy.submit_retry.douyin_video.backoff_ms", 1500)
+    )
+
     try:
         result = run_douyin_extract(
             input_value=args.input,
             share_url=args.share_url,
             aweme_id=args.aweme_id,
             env_file=args.env_file,
-            api_key_env=args.api_key_env,
-            base_url=args.base_url,
-            timeout_ms=args.timeout_ms,
-            poll_interval_sec=args.poll_interval_sec,
-            max_polls=args.max_polls,
+            api_key_env=api_key_env,
+            base_url=base_url,
+            timeout_ms=timeout_ms,
+            poll_interval_sec=float(poll_interval_sec),
+            max_polls=int(max_polls),
             idempotency_key=args.idempotency_key,
-            u2_submit_max_retries=args.u2_submit_max_retries,
-            u2_submit_backoff_ms=args.u2_submit_backoff_ms,
+            u2_submit_max_retries=int(u2_submit_max_retries),
+            u2_submit_backoff_ms=int(u2_submit_backoff_ms),
             write_card=args.write_card,
             card_type=args.card_type,
             collect_material=args.collect_material,

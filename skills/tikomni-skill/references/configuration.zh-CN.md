@@ -13,8 +13,9 @@
 
 1. 当前工作区 `.env`：用于密钥和运行环境配置（最常见）。
 2. `skills/tikomni-skill/references/runtime-config.zh-CN.md`：用于用户可见的执行策略配置。
-3. 可选：用户可在提示词里指定其他配置文档路径，Agent 应优先读取该路径。
-4. 环境变量模板：`skills/tikomni-skill/env.example`（示例文件，不含真实密钥）。
+3. 脚本运行默认模板：`skills/tikomni-skill/references/config-templates/defaults.yaml`。
+4. 可选：用户可在提示词里指定其他配置文档路径，Agent 应优先读取该路径。
+5. 环境变量模板：`skills/tikomni-skill/env.example`（示例文件，不含真实密钥）。
 
 ## 2. `.env` 必填项
 
@@ -61,7 +62,21 @@ set +a
 4. 功能开关与提取策略（批量行为、转写策略）。
 5. 路由与 fallback 策略覆盖项（用户需要自定义时）。
 
-## 6. Agent 执行约束
+## 6. 脚本配置加载器（P1 骨架）
+
+`scripts/config_loader.py` 的加载优先级固定为：
+
+1. `--config <path>`
+2. `TIKOMNI_CONFIG_FILE`
+3. `skills/tikomni-skill/references/config-templates/defaults.yaml`
+
+已接入脚本：
+
+1. `scripts/run_tikomni_extract.py`
+2. `scripts/run_douyin_extract.py`
+3. `scripts/run_xiaohongshu_extract.py`
+
+## 7. Agent 执行约束
 
 1. 调用任何接口前，先读取 `runtime-config.zh-CN.md`（或用户指定配置路径）。
 2. 将配置值作为路由、提取、输出的一级输入。

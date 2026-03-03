@@ -47,8 +47,9 @@ TIKOMNI_API_KEY="<your_api_key>"
 1. 环境变量模板：[./env.example](./env.example)
 2. 环境变量文件：工作区 `.env` 或 `./.env.local`
 3. 运行时配置：[./references/runtime-config.zh-CN.md](./references/runtime-config.zh-CN.md)
-4. 配置说明：[./references/configuration.zh-CN.md](./references/configuration.zh-CN.md)
-5. skill 执行时会先读取运行时配置，再应用输出目录、markdown 元信息与提取策略。
+4. 脚本默认模板：[./references/config-templates/defaults.yaml](./references/config-templates/defaults.yaml)
+5. 配置说明：[./references/configuration.zh-CN.md](./references/configuration.zh-CN.md)
+6. skill 执行时会先读取运行时配置，再应用输出目录、markdown 元信息与提取策略。
 
 ## 🤖 自然语言创建与定制
 

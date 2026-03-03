@@ -12,8 +12,9 @@ This document defines where users configure this skill.
 
 1. `.env` in the current workspace for secrets and runtime environment (most common).
 2. `skills/tikomni-skill/references/runtime-config.md` for user-facing execution policy.
-3. Optional: user can provide another config file path in prompt, and the agent should read that file first.
-4. Env template file: `skills/tikomni-skill/env.example` (no real secret inside).
+3. Script runtime template: `skills/tikomni-skill/references/config-templates/defaults.yaml`.
+4. Optional: user can provide another config file path in prompt, and the agent should read that file first.
+5. Env template file: `skills/tikomni-skill/env.example` (no real secret inside).
 
 ## 2. Required `.env` Variables
 
@@ -60,7 +61,21 @@ Notes:
 4. Feature toggles and extraction policy (batch behavior, transcript strategy).
 5. Routing/fallback policy overrides (when user wants custom behavior).
 
-## 6. Agent Execution Rule
+## 6. Script Config Loader (Phase 1 Skeleton)
+
+`skills/tikomni-skill/scripts/config_loader.py` path priority is fixed:
+
+1. `--config <path>`
+2. `TIKOMNI_CONFIG_FILE`
+3. `skills/tikomni-skill/references/config-templates/defaults.yaml`
+
+Supported CLI scripts:
+
+1. `scripts/run_tikomni_extract.py`
+2. `scripts/run_douyin_extract.py`
+3. `scripts/run_xiaohongshu_extract.py`
+
+## 7. Agent Execution Rule
 
 1. Before calling any endpoint, read `runtime-config.md` (or user-specified config path).
 2. Use runtime config values as first-class input to routing/extraction/output decisions.

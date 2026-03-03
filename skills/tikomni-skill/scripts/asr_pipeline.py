@@ -19,12 +19,7 @@ def submit_u2_asr(
     token: str,
     timeout_ms: int,
     video_url: str,
-    idempotency_key: Optional[str],
 ) -> Dict[str, Any]:
-    extra_headers = {}
-    if idempotency_key:
-        extra_headers["idempotency-key"] = idempotency_key
-
     return call_json_api(
         base_url=base_url,
         path="/api/u2/v1/services/audio/asr/transcription",
@@ -32,7 +27,6 @@ def submit_u2_asr(
         method="POST",
         timeout_ms=timeout_ms,
         body={"input": {"file_urls": [video_url]}},
-        extra_headers=extra_headers,
     )
 
 
@@ -53,7 +47,6 @@ def submit_u2_asr_with_retry(
     token: str,
     timeout_ms: int,
     video_url: str,
-    idempotency_key: Optional[str],
     max_retries: int,
     backoff_ms: int,
 ) -> Dict[str, Any]:
@@ -76,7 +69,6 @@ def submit_u2_asr_with_retry(
             token=token,
             timeout_ms=timeout_ms,
             video_url=video_url,
-            idempotency_key=idempotency_key,
         )
         task_id = extract_task_id(submit_response.get("data"))
         retriable = is_retriable_submit_failure(submit_response)
@@ -205,15 +197,14 @@ def run_u2_asr_with_timeout_retry(
     token: str,
     timeout_ms: int,
     video_url: str,
-    idempotency_key: Optional[str],
     submit_max_retries: int,
     submit_backoff_ms: int,
     poll_interval_sec: float,
     max_polls: int,
     timeout_retry_enabled: bool = True,
-    timeout_retry_max_retries: int = 1,
+    timeout_retry_max_retries: int = 3,
 ) -> Dict[str, Any]:
-    conservative_retries = 1 if int(timeout_retry_max_retries) > 0 else 0
+    conservative_retries = max(0, min(3, int(timeout_retry_max_retries)))
     retries = conservative_retries if timeout_retry_enabled else 0
     max_rounds = 1 + retries
 
@@ -233,7 +224,6 @@ def run_u2_asr_with_timeout_retry(
             token=token,
             timeout_ms=timeout_ms,
             video_url=video_url,
-            idempotency_key=idempotency_key,
             max_retries=submit_max_retries,
             backoff_ms=submit_backoff_ms,
         )

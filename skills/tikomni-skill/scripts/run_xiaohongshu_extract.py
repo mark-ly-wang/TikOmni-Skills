@@ -249,7 +249,6 @@ def run_xiaohongshu_extract(
     timeout_ms: Optional[int],
     poll_interval_sec: float,
     max_polls: int,
-    idempotency_key: Optional[str],
     u2_submit_max_retries: int,
     u2_submit_backoff_ms: int,
     u2_timeout_retry_enabled: bool,
@@ -412,7 +411,6 @@ def run_xiaohongshu_extract(
         token=runtime["token"],
         timeout_ms=runtime["timeout_ms"],
         video_url=selected_video_url,
-        idempotency_key=idempotency_key,
         submit_max_retries=u2_submit_max_retries,
         submit_backoff_ms=u2_submit_backoff_ms,
         poll_interval_sec=poll_interval_sec,
@@ -430,7 +428,6 @@ def run_xiaohongshu_extract(
             "step": "u2_asr_timeout_retry",
             "endpoint": "/api/u2/v1/services/audio/asr/transcription + /api/u2/v1/tasks/{task_id}",
             "selected_video_url": selected_video_url,
-            "idempotency_key_sent": bool(idempotency_key),
             "submit_retries_config": {
                 "u2_submit_max_retries": max(0, int(u2_submit_max_retries)),
                 "u2_submit_backoff_ms": max(0, int(u2_submit_backoff_ms)),
@@ -516,7 +513,6 @@ def main() -> None:
     parser.add_argument("--timeout-ms", type=int, default=None, help="Request timeout ms")
     parser.add_argument("--poll-interval-sec", type=float, default=None, help="U2 polling interval seconds")
     parser.add_argument("--max-polls", type=int, default=None, help="Max U2 polls")
-    parser.add_argument("--idempotency-key", default=None, help="Optional idempotency key (not sent by default)")
     parser.add_argument(
         "--u2-timeout-retry-enabled",
         type=str,
@@ -528,7 +524,7 @@ def main() -> None:
         "--u2-timeout-retry-max-retries",
         type=int,
         default=None,
-        help="Conservative max retries for U2 timeout-only retry (0 or 1)",
+        help="Conservative max retries for U2 timeout-only retry (0~3)",
     )
     parser.add_argument("--force-u2-fallback", action="store_true", help="Skip subtitle usage and force U2 fallback (test)")
     parser.add_argument("--write-card", action="store_true", help="Write benchmark card to WIKI")
@@ -558,7 +554,7 @@ def main() -> None:
     u2_timeout_retry_max_retries = (
         args.u2_timeout_retry_max_retries
         if args.u2_timeout_retry_max_retries is not None
-        else config_get(config, "asr_strategy.u2_timeout_retry.max_retries", 1)
+        else config_get(config, "asr_strategy.u2_timeout_retry.max_retries", 3)
     )
 
     try:
@@ -572,7 +568,6 @@ def main() -> None:
             timeout_ms=timeout_ms,
             poll_interval_sec=float(poll_interval_sec),
             max_polls=int(max_polls),
-            idempotency_key=args.idempotency_key,
             u2_submit_max_retries=int(u2_submit_max_retries),
             u2_submit_backoff_ms=int(u2_submit_backoff_ms),
             u2_timeout_retry_enabled=bool(u2_timeout_retry_enabled),

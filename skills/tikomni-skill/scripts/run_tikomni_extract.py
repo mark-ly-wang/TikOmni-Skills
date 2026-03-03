@@ -24,7 +24,6 @@ def main() -> None:
     parser.add_argument("--max-polls", type=int, default=None, help="Max U2 poll attempts")
     parser.add_argument("--u2-submit-max-retries", type=int, default=None, help="Douyin U2 submit max retries")
     parser.add_argument("--u2-submit-backoff-ms", type=int, default=None, help="Douyin U2 submit base backoff ms")
-    parser.add_argument("--idempotency-key", default=None, help="Optional idempotency key (default omitted)")
     parser.add_argument("--force-u2-fallback", action="store_true", help="XHS only: force subtitle miss for fallback test")
     parser.add_argument("--write-card", action="store_true", help="Write markdown card")
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
@@ -68,7 +67,6 @@ def main() -> None:
             timeout_ms=timeout_ms,
             poll_interval_sec=float(poll_interval_sec),
             max_polls=int(max_polls),
-            idempotency_key=args.idempotency_key,
             u2_submit_max_retries=int(u2_submit_max_retries),
             u2_submit_backoff_ms=int(u2_submit_backoff_ms),
             write_card=args.write_card,
@@ -87,7 +85,6 @@ def main() -> None:
             timeout_ms=timeout_ms,
             poll_interval_sec=float(poll_interval_sec),
             max_polls=int(max_polls),
-            idempotency_key=args.idempotency_key,
             force_u2_fallback=args.force_u2_fallback,
             write_card=args.write_card,
             card_type=args.card_type,

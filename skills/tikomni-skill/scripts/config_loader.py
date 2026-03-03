@@ -64,7 +64,7 @@ BUILTIN_DEFAULT_CONFIG: Dict[str, Any] = {
         },
         "u2_timeout_retry": {
             "enabled": True,
-            "max_retries": 1,
+            "max_retries": 3,
         },
     },
 }

@@ -59,8 +59,9 @@ set +a
 1. API 运行参数（base URL、鉴权环境变量、超时）。
 2. 输出目录策略（根目录与子目录命名）。
 3. Markdown 元信息默认值（标签、标题前缀、语言）。
-4. 功能开关与提取策略（批量行为、转写策略、`asr_strategy.u2_timeout_retry` 超时专用重试开关）。
+4. 功能开关与提取策略（批量行为、转写策略、`asr_strategy.u2_timeout_retry` 超时专用重试开关，`max_retries` 取值范围 `0~3`）。
 5. 路由与 fallback 策略覆盖项（用户需要自定义时）。
+6. U2 submit 已不再使用 `idempotency-key` 请求头。
 
 ## 6. 脚本配置加载器（P1 骨架）
 

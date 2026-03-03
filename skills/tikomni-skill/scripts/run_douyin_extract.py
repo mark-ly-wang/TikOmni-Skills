@@ -94,7 +94,6 @@ def run_douyin_extract(
     timeout_ms: Optional[int],
     poll_interval_sec: float,
     max_polls: int,
-    idempotency_key: Optional[str],
     u2_submit_max_retries: int,
     u2_submit_backoff_ms: int,
     u2_timeout_retry_enabled: bool,
@@ -221,7 +220,6 @@ def run_douyin_extract(
         token=runtime["token"],
         timeout_ms=runtime["timeout_ms"],
         video_url=original_video_url,
-        idempotency_key=idempotency_key,
         submit_max_retries=u2_submit_max_retries,
         submit_backoff_ms=u2_submit_backoff_ms,
         poll_interval_sec=poll_interval_sec,
@@ -239,7 +237,6 @@ def run_douyin_extract(
         {
             "step": "u2_asr_timeout_retry",
             "endpoint": "/api/u2/v1/services/audio/asr/transcription + /api/u2/v1/tasks/{task_id}",
-            "idempotency_key_sent": bool(idempotency_key),
             "submit_retries_config": {
                 "u2_submit_max_retries": max(0, int(u2_submit_max_retries)),
                 "u2_submit_backoff_ms": max(0, int(u2_submit_backoff_ms)),
@@ -334,11 +331,6 @@ def main() -> None:
         help="Base backoff ms for retriable U2 submit failures (exponential)",
     )
     parser.add_argument(
-        "--idempotency-key",
-        default=None,
-        help="Optional idempotency key (not sent by default)",
-    )
-    parser.add_argument(
         "--u2-timeout-retry-enabled",
         type=str,
         choices=["true", "false"],
@@ -349,7 +341,7 @@ def main() -> None:
         "--u2-timeout-retry-max-retries",
         type=int,
         default=None,
-        help="Conservative max retries for U2 timeout-only retry (0 or 1)",
+        help="Conservative max retries for U2 timeout-only retry (0~3)",
     )
     parser.add_argument("--write-card", action="store_true", help="Write benchmark card to WIKI")
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
@@ -386,7 +378,7 @@ def main() -> None:
     u2_timeout_retry_max_retries = (
         args.u2_timeout_retry_max_retries
         if args.u2_timeout_retry_max_retries is not None
-        else config_get(config, "asr_strategy.u2_timeout_retry.max_retries", 1)
+        else config_get(config, "asr_strategy.u2_timeout_retry.max_retries", 3)
     )
 
     try:
@@ -400,7 +392,6 @@ def main() -> None:
             timeout_ms=timeout_ms,
             poll_interval_sec=float(poll_interval_sec),
             max_polls=int(max_polls),
-            idempotency_key=args.idempotency_key,
             u2_submit_max_retries=int(u2_submit_max_retries),
             u2_submit_backoff_ms=int(u2_submit_backoff_ms),
             u2_timeout_retry_enabled=bool(u2_timeout_retry_enabled),

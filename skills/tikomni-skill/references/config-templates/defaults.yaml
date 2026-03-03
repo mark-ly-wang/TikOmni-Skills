@@ -79,7 +79,7 @@ asr_strategy:
       backoff_ms: 0
   u2_timeout_retry:
     enabled: true
-    max_retries: 1
+    max_retries: 3
 
 prompt_contracts:
   asr_clean: prompt-contracts/asr-clean.md@v1

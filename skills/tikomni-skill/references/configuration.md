@@ -58,8 +58,9 @@ Notes:
 1. API runtime settings (base URL, auth env key, timeout).
 2. Output folder strategy (root directory and sub-directory names).
 3. Markdown metadata defaults (tags, title prefix, language).
-4. Feature toggles and extraction policy (batch behavior, transcript strategy, and `asr_strategy.u2_timeout_retry` timeout-only retry switch).
+4. Feature toggles and extraction policy (batch behavior, transcript strategy, and `asr_strategy.u2_timeout_retry` timeout-only retry switch with `max_retries` range `0~3`).
 5. Routing/fallback policy overrides (when user wants custom behavior).
+6. U2 submit does not use `idempotency-key` headers anymore.
 
 ## 6. Script Config Loader (Phase 1 Skeleton)
 

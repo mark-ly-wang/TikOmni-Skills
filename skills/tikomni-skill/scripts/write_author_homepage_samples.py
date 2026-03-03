@@ -6,6 +6,7 @@ import json
 import os
 from typing import Any, Dict, List
 
+from config_loader import load_tikomni_config
 from tikomni_common import normalize_text, read_json_file, write_json_stdout
 from write_benchmark_card import DEFAULT_WIKI_ROOT, write_benchmark_card
 
@@ -42,24 +43,31 @@ def _items(data: Any) -> List[Dict[str, Any]]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Write homepage sampled works to author sample directory")
     parser.add_argument("--platform", required=True, help="Platform name, e.g. douyin/xiaohongshu")
+    parser.add_argument("--config", default=None, help="Runtime config YAML path")
     parser.add_argument("--input-json", default="-", help="JSON list/dict path or '-' for stdin")
     parser.add_argument("--wiki-root", default=DEFAULT_WIKI_ROOT, help="WIKI root")
     parser.add_argument("--sample-author", default="", help="Override author folder name")
     parser.add_argument("--collect-material", action="store_true", help="Also write CMAT cards")
     args = parser.parse_args()
 
+    config, _ = load_tikomni_config(args.config)
+
     data = _read_input(args.input_json)
     payloads = _items(data)
 
     results: List[Dict[str, Any]] = []
     for payload in payloads:
+        payload_with_kind = dict(payload)
+        payload_with_kind.setdefault("content_kind", "author_home")
         result = write_benchmark_card(
-            payload=payload,
+            payload=payload_with_kind,
             platform=args.platform,
             card_type="author_sample_work",
             wiki_root=args.wiki_root,
             collect_material=args.collect_material,
             sample_author=_author_hint(payload, args.sample_author),
+            content_kind="author_home",
+            storage_config=config,
         )
         results.append(result)
 

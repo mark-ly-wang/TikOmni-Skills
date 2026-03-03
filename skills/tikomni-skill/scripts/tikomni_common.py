@@ -43,11 +43,28 @@ def _parse_env_file(env_file: Optional[str]) -> Dict[str, str]:
     return parsed
 
 
+def get_repo_root() -> Path:
+    """Return canonical repository root regardless of current working directory."""
+    script_path = Path(__file__).resolve()
+    return script_path.parents[3]
+
+
+def _resolve_env_file_path(env_file: Optional[str]) -> Path:
+    repo_root = get_repo_root()
+    if not env_file:
+        return (repo_root / ".env").resolve()
+
+    candidate = Path(env_file).expanduser()
+    if not candidate.is_absolute():
+        candidate = repo_root / candidate
+    return candidate.resolve()
+
+
 def _infer_default_env_paths(primary_env_file: Optional[str]) -> Tuple[Path, Path]:
     script_path = Path(__file__).resolve()
     skill_root = script_path.parents[1]
 
-    workspace_env = Path(primary_env_file).expanduser().resolve() if primary_env_file else (Path.cwd() / ".env").resolve()
+    workspace_env = _resolve_env_file_path(primary_env_file)
     local_env = (skill_root / ".env.local").resolve()
     return workspace_env, local_env
 
@@ -78,7 +95,17 @@ def bootstrap_runtime_env(primary_env_file: Optional[str] = None) -> Dict[str, A
         loaded_files.append(str(local_env_path))
 
     key_source: Dict[str, str] = {}
+    source_chain: Dict[str, List[str]] = {}
     for key in set(base_values.keys()) | set(local_values.keys()) | set(process_env.keys()):
+        chain: List[str] = []
+        if key in base_values:
+            chain.append(".env")
+        if key in local_values:
+            chain.append(".env.local")
+        if key in process_env:
+            chain.append("process_env")
+        source_chain[key] = chain
+
         if key in process_env:
             key_source[key] = "process_env"
         elif key in local_values:
@@ -87,10 +114,12 @@ def bootstrap_runtime_env(primary_env_file: Optional[str] = None) -> Dict[str, A
             key_source[key] = ".env"
 
     return {
+        "repo_root": str(get_repo_root()),
         "workspace_env": str(workspace_env_path),
         "local_env": str(local_env_path),
         "loaded_files": loaded_files,
         "key_source": key_source,
+        "source_chain": source_chain,
         "priority": ["process_env", ".env.local", ".env"],
     }
 

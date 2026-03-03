@@ -851,6 +851,7 @@ def main() -> None:
     args = parser.parse_args()
 
     config, _ = load_tikomni_config(args.config)
+    resolved_env_file = args.env_file or config_get(config, "runtime.env_file", None)
     api_key_env = args.api_key_env or config_get(config, "runtime.auth_env_key", "TIKOMNI_API_KEY")
     base_url = args.base_url or config_get(config, "runtime.base_url", None)
     timeout_ms = args.timeout_ms if args.timeout_ms is not None else config_get(config, "runtime.timeout_ms", None)
@@ -859,7 +860,7 @@ def main() -> None:
         result = run_douyin_single_video(
             input_value=args.input,
             share_url=args.share_url,
-            env_file=args.env_file,
+            env_file=resolved_env_file,
             api_key_env=api_key_env,
             base_url=base_url,
             timeout_ms=timeout_ms,

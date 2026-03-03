@@ -42,7 +42,9 @@ env_file: .env
 Notes:
 
 1. `env_file` is a declared path and should never be printed with secret values.
-2. Real API key must come from environment variables, never from markdown content.
+2. If `env_file` is relative, it is resolved from repository root (not CWD).
+3. If `env_file` is omitted, default is `<repo_root>/.env`.
+4. Real API key must come from environment variables, never from markdown content.
 
 ## 4. Output Layout
 
@@ -113,6 +115,9 @@ max_fallback_attempts: 2
 1. Where should I configure local env?
    - In local CLI/CUI runs: workspace `.env`.
    - In CI runs: CI secrets or private env file loaded at runtime.
-2. How to prevent key leakage?
+2. How to verify which source provided the key?
+   - Run `python3 skills/tikomni-skill/scripts/check_tikomni_readiness.py`.
+   - It prints `key_source` and `source_chain` only (no secret value).
+3. How to prevent key leakage?
    - Never commit real `.env` files.
    - Never print `TIKOMNI_API_KEY` in logs.

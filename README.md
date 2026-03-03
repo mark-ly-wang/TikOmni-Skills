@@ -36,9 +36,13 @@ Then replace example values with real values.
 
 1. process env (highest)
 2. `skills/tikomni-skill/.env.local`
-3. `<workspace_root>/.env` (or current working directory `.env`)
+3. `<repo_root>/.env`
 
 Priority rule: `process env > .env.local > .env`.
+
+Path semantics:
+- Default `.env` is always resolved as `<repo_root>/.env` (not CWD-dependent).
+- If `--env-file` or `runtime.env_file` is relative, it is resolved from `<repo_root>`.
 
 ### 3) Path configuration
 
@@ -81,10 +85,13 @@ cp -R "<repo-root>/skills/tikomni-skill" "~/.claude/skills/tikomni-skill"
 # 1) set key via one of the supported sources
 export TIKOMNI_API_KEY="tk_example_123"
 
-# 2) generate API catalog
+# 2) check readiness (prints source only, never prints secret)
+python3 "./skills/tikomni-skill/scripts/check_tikomni_readiness.py"
+
+# 3) generate API catalog
 node "./skills/tikomni-skill/scripts/generate-api-catalog.mjs"
 
-# 3) run extractor
+# 4) run extractor
 python3 "./skills/tikomni-skill/scripts/run_tikomni_extract.py" "<url_or_id>"
 ```
 

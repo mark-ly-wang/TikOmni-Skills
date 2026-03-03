@@ -36,9 +36,13 @@ cp ./skills/tikomni-skill/env.example ./skills/tikomni-skill/.env.local
 
 1. 进程环境变量（最高）
 2. `skills/tikomni-skill/.env.local`
-3. `<workspace_root>/.env`（或当前工作目录 `.env`）
+3. `<repo_root>/.env`
 
 优先级规则：`process env > .env.local > .env`。
+
+路径语义：
+- 默认 `.env` 固定解析为 `<repo_root>/.env`，不依赖当前工作目录。
+- `--env-file` 或 `runtime.env_file` 若为相对路径，按 `<repo_root>` 解析。
 
 ### 3）路径配置
 
@@ -81,10 +85,13 @@ cp -R "<repo-root>/skills/tikomni-skill" "~/.claude/skills/tikomni-skill"
 # 1) 通过任一支持来源设置 key
 export TIKOMNI_API_KEY="tk_example_123"
 
-# 2) 生成 API 目录
+# 2) 做 readiness 检查（只输出来源，不输出密钥）
+python3 "./skills/tikomni-skill/scripts/check_tikomni_readiness.py"
+
+# 3) 生成 API 目录
 node "./skills/tikomni-skill/scripts/generate-api-catalog.mjs"
 
-# 3) 运行提取脚本
+# 4) 运行提取脚本
 python3 "./skills/tikomni-skill/scripts/run_tikomni_extract.py" "<url_or_id>"
 ```
 

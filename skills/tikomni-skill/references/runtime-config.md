@@ -83,6 +83,10 @@ copy_language: auto
 xhs_subtitle_first: true
 # Force U2 for Douyin copy extraction
 douyin_copy_via_u2: true
+# Conservative retry: only retry once when U2 polling returns u2_poll_timeout
+u2_timeout_retry:
+  enabled: true
+  max_retries: 1
 ```
 
 ## 7. Routing Policy

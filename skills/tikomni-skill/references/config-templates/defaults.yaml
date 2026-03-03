@@ -77,6 +77,9 @@ asr_strategy:
     xiaohongshu_note:
       max_retries: 0
       backoff_ms: 0
+  u2_timeout_retry:
+    enabled: true
+    max_retries: 1
 
 prompt_contracts:
   asr_clean: prompt-contracts/asr-clean.md@v1

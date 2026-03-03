@@ -90,6 +90,10 @@ copy_language: auto
 xhs_subtitle_first: true
 # 抖音文案是否固定走 U2
 douyin_copy_via_u2: true
+# 保守重试：仅当 U2 轮询返回 u2_poll_timeout 时最多重试一次
+u2_timeout_retry:
+  enabled: true
+  max_retries: 1
 ```
 
 ## 7. 路由策略（接口选择）

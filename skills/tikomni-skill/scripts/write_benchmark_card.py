@@ -10,6 +10,7 @@ import unicodedata
 from typing import Any, Dict, List, Optional
 
 from analysis_pipeline import DEFAULT_MODULE_SECTIONS, build_analysis_sections
+from storage_router import build_card_output_path, normalize_card_type, resolve_effective_card_type
 from tikomni_common import normalize_text, read_json_file, write_json_stdout
 
 DEFAULT_WIKI_ROOT = "/mnt/openclaw/data/WIKI"
@@ -702,34 +703,30 @@ def _build_output_path(
     payload: Dict[str, Any],
     now: dt.datetime,
     sample_author: Optional[str],
-) -> str:
-    if material:
-        year = now.strftime("%Y")
-        year_month = now.strftime("%Y-%m")
-        ts = now.strftime("%Y%m%d-%H%M%S")
-        parts = ["10-内容系统", "12-素材库", "素材卡", year, year_month]
-        filename = f"CMAT-{ts}-{platform}.md"
-        directory = os.path.join(wiki_root, *parts)
-        os.makedirs(directory, exist_ok=True)
-        return os.path.join(directory, filename)
-
+    storage_config: Optional[Dict[str, Any]],
+) -> Dict[str, str]:
     author_slug = _pick_author_slug(payload, author_hint=sample_author)
     title_slug = _pick_title_slug(payload)
+    target_type = "material" if material else card_type
 
-    if card_type == "work":
-        prefix = "CBV"
-        parts = ["10-内容系统", "15-对标研究", "01-作品对标卡"]
-    elif card_type == "author":
-        prefix = "CBA"
-        parts = ["10-内容系统", "15-对标研究", "03-作者对标卡"]
-    else:
-        prefix = "CBV"
-        parts = ["10-内容系统", "15-对标研究", "02-作者样本集", f"{platform}-{author_slug}"]
-
-    directory = os.path.join(wiki_root, *parts)
-    os.makedirs(directory, exist_ok=True)
-    filename = f"{prefix}-{author_slug}-{title_slug}.md"
-    return os.path.join(directory, filename)
+    path, route_parts = build_card_output_path(
+        wiki_root=wiki_root,
+        platform=platform,
+        card_type=target_type,
+        author_slug=author_slug,
+        title_slug=title_slug,
+        year=now.strftime("%Y"),
+        year_month=now.strftime("%Y-%m"),
+        timestamp=now.strftime("%Y%m%d-%H%M%S"),
+        storage_config=storage_config,
+    )
+    return {
+        "path": path,
+        "route_parts": route_parts,
+        "author_slug": author_slug,
+        "title_slug": title_slug,
+        "target_type": target_type,
+    }
 
 
 def _render_markdown(
@@ -845,21 +842,6 @@ def _write_file(path: str, content: str) -> None:
         handle.write(content)
 
 
-def _normalize_card_type(card_type: str) -> str:
-    normalized = normalize_text(card_type).lower().replace("-", "_")
-    aliases = {
-        "sample": "author_sample_work",
-        "sample_work": "author_sample_work",
-        "homepage_sample": "author_sample_work",
-        "author_homepage_sample": "author_sample_work",
-    }
-    if normalized in aliases:
-        return aliases[normalized]
-    if normalized in CARD_TYPES:
-        return normalized
-    return "work"
-
-
 def write_benchmark_card(
     *,
     payload: Dict[str, Any],
@@ -868,42 +850,61 @@ def write_benchmark_card(
     wiki_root: str,
     collect_material: bool,
     sample_author: Optional[str] = None,
+    content_kind: Optional[str] = None,
+    storage_config: Optional[Dict[str, Any]] = None,
+    force_card_type: bool = False,
 ) -> Dict[str, Any]:
     now = dt.datetime.now()
     generated_at = now.isoformat(timespec="seconds")
-    normalized_card_type = _normalize_card_type(card_type)
+
+    payload_content_kind = normalize_text(payload.get("content_kind"))
+    resolved_content_kind = normalize_text(content_kind) or payload_content_kind
+
+    normalized_card_type = normalize_card_type(card_type)
+    effective_card_type = resolve_effective_card_type(
+        card_type=normalized_card_type,
+        content_kind=resolved_content_kind,
+        storage_config=storage_config,
+        force_card_type=force_card_type,
+    )
     fields = _extract_required_fields(payload, platform=platform)
 
-    primary_path = _build_output_path(
+    primary_target = _build_output_path(
         wiki_root=wiki_root,
         platform=platform,
-        card_type=normalized_card_type,
+        card_type=effective_card_type,
         material=False,
         payload=payload,
         now=now,
         sample_author=sample_author,
+        storage_config=storage_config,
     )
+    primary_path = primary_target["path"]
 
     primary_card_id = os.path.basename(primary_path).replace(".md", "")
     primary_markdown = _render_markdown(
         card_id=primary_card_id,
-        card_type=normalized_card_type,
+        card_type=effective_card_type,
         fields=fields,
         generated_at=generated_at,
     )
     _write_file(primary_path, primary_markdown)
 
     material_path: Optional[str] = None
+    material_route_parts: Optional[str] = None
     if collect_material:
-        material_path = _build_output_path(
+        material_target = _build_output_path(
             wiki_root=wiki_root,
             platform=platform,
-            card_type=normalized_card_type,
+            card_type=effective_card_type,
             material=True,
             payload=payload,
             now=now,
             sample_author=sample_author,
+            storage_config=storage_config,
         )
+        material_path = material_target["path"]
+        material_route_parts = material_target["route_parts"]
         material_card_id = os.path.basename(material_path).replace(".md", "")
         material_markdown = _render_markdown(
             card_id=material_card_id,
@@ -916,10 +917,18 @@ def write_benchmark_card(
     return {
         "ok": True,
         "platform": platform,
-        "card_type": normalized_card_type,
+        "card_type": effective_card_type,
+        "requested_card_type": normalized_card_type,
+        "force_card_type": bool(force_card_type),
+        "content_kind": resolved_content_kind or None,
         "collect_material": collect_material,
         "primary_card_path": primary_path,
         "material_card_path": material_path,
+        "routing": {
+            "primary_route_parts": primary_target["route_parts"],
+            "material_route_parts": material_route_parts,
+            "storage_routes_configured": bool(isinstance(storage_config, dict) and isinstance(storage_config.get("storage_routes"), dict)),
+        },
         "required_fields": fields,
     }
 
@@ -938,6 +947,8 @@ def main() -> None:
     parser.add_argument("--platform", required=True, help="Platform name, e.g. douyin or xiaohongshu")
     parser.add_argument("--card-type", choices=CARD_TYPES, default="work", help="Primary card type")
     parser.add_argument("--sample-author", default=None, help="Optional author slug override for author_sample_work")
+    parser.add_argument("--content-kind", default=None, help="Optional workflow kind, e.g. single_video/author_home/author_analysis")
+    parser.add_argument("--force-card-type", action="store_true", help="Force manual --card-type to override content_kind mapping")
     parser.add_argument("--wiki-root", default=DEFAULT_WIKI_ROOT, help="WIKI root path")
     parser.add_argument("--collect-material", action="store_true", help="Write extra CMAT card when explicitly requested")
     parser.add_argument(
@@ -955,6 +966,8 @@ def main() -> None:
         wiki_root=args.wiki_root,
         collect_material=args.collect_material,
         sample_author=args.sample_author,
+        content_kind=args.content_kind,
+        force_card_type=args.force_card_type,
     )
     write_json_stdout(result)
 

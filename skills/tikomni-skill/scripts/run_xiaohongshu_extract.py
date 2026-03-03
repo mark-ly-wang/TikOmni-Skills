@@ -57,6 +57,7 @@ def _build_result(
     summary_block = summarize_content(raw_content, source=f"xiaohongshu:{text_source}")
     return {
         "platform": "xiaohongshu",
+        "content_kind": "single_video",
         "source": source_input,
         "note_id": note_id,
         "subtitle_hit": subtitle_hit,
@@ -256,6 +257,7 @@ def run_xiaohongshu_extract(
     card_type: str,
     collect_material: bool,
     wiki_root: str,
+    storage_config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     source_input = _normalize_input(input_value, share_text, note_id)
     if not source_input["share_text"] and not source_input["note_id"]:
@@ -327,6 +329,8 @@ def run_xiaohongshu_extract(
                 card_type=card_type,
                 wiki_root=wiki_root,
                 collect_material=collect_material,
+                content_kind="single_video",
+                storage_config=storage_config,
             )
         return result
 
@@ -367,6 +371,8 @@ def run_xiaohongshu_extract(
                 card_type=card_type,
                 wiki_root=wiki_root,
                 collect_material=collect_material,
+                content_kind="single_video",
+                storage_config=storage_config,
             )
         return result
 
@@ -394,6 +400,8 @@ def run_xiaohongshu_extract(
                 card_type=card_type,
                 wiki_root=wiki_root,
                 collect_material=collect_material,
+                content_kind="single_video",
+                storage_config=storage_config,
             )
         return result
 
@@ -440,6 +448,8 @@ def run_xiaohongshu_extract(
                 card_type=card_type,
                 wiki_root=wiki_root,
                 collect_material=collect_material,
+                content_kind="single_video",
+                storage_config=storage_config,
             )
         return result
 
@@ -486,6 +496,8 @@ def run_xiaohongshu_extract(
             card_type=card_type,
             wiki_root=wiki_root,
             collect_material=collect_material,
+            content_kind="single_video",
+            storage_config=storage_config,
         )
 
     return result
@@ -540,6 +552,7 @@ def main() -> None:
             card_type=args.card_type,
             collect_material=args.collect_material,
             wiki_root=args.wiki_root,
+            storage_config=config,
         )
     except ValueError as error:
         result = {

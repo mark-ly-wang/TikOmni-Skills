@@ -7,6 +7,7 @@ import argparse
 import time
 from typing import Any, Dict, List, Optional
 
+from config_loader import config_get, load_tikomni_config
 from douyin_video_type_matrix import normalize_douyin_video_type
 from poll_u2_task import poll_u2_task
 from select_low_quality_video_url import select_low_quality_video_url
@@ -427,6 +428,7 @@ def _build_result(
 
     payload: Dict[str, Any] = {
         "platform": "douyin",
+        "content_kind": "single_video",
         "source": source_input,
         "platform_work_id": platform_work_id,
         "title": title,
@@ -476,6 +478,8 @@ def run_douyin_single_video(
     card_type: str,
     collect_material: bool,
     wiki_root: str,
+    content_kind: str = "single_video",
+    storage_config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     source_input = _normalize_input(input_value, share_url)
     if not source_input.get("share_url"):
@@ -512,6 +516,8 @@ def run_douyin_single_video(
                 card_type=card_type,
                 wiki_root=wiki_root,
                 collect_material=collect_material,
+                content_kind=content_kind,
+                storage_config=storage_config,
             )
         return result
 
@@ -593,6 +599,8 @@ def run_douyin_single_video(
                 card_type=card_type,
                 wiki_root=wiki_root,
                 collect_material=collect_material,
+                content_kind=content_kind,
+                storage_config=storage_config,
             )
         return result
 
@@ -631,6 +639,8 @@ def run_douyin_single_video(
                 card_type=card_type,
                 wiki_root=wiki_root,
                 collect_material=collect_material,
+                content_kind=content_kind,
+                storage_config=storage_config,
             )
         return result
 
@@ -810,6 +820,8 @@ def run_douyin_single_video(
             card_type=card_type,
             wiki_root=wiki_root,
             collect_material=collect_material,
+            content_kind=content_kind,
+            storage_config=storage_config,
         )
 
     return result
@@ -819,8 +831,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run Douyin single-video low-quality extraction")
     parser.add_argument("input", nargs="?", default=None, help="Douyin share URL")
     parser.add_argument("--share-url", default=None, help="Douyin share URL")
+    parser.add_argument("--config", default=None, help="Runtime config YAML path")
     parser.add_argument("--env-file", default=None, help="Optional env file path")
-    parser.add_argument("--api-key-env", default="TIKOMNI_API_KEY", help="API key env variable name")
+    parser.add_argument("--api-key-env", default=None, help="API key env variable name")
     parser.add_argument("--base-url", default=None, help="Tikomni base URL")
     parser.add_argument("--timeout-ms", type=int, default=None, help="Global timeout ms")
     parser.add_argument("--app-timeout-ms", type=int, default=None, help="APP endpoint timeout ms (optional)")
@@ -848,18 +861,24 @@ def main() -> None:
     parser.add_argument("--no-write-card", dest="write_card", action="store_false", help="Disable benchmark card writing")
     parser.set_defaults(write_card=True)
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
+    parser.add_argument("--content-kind", default="single_video", help="Routing kind, e.g. single_video/author_home/author_analysis")
     parser.add_argument("--collect-material", action="store_true", help="Write extra CMAT card")
     parser.add_argument("--wiki-root", default=DEFAULT_WIKI_ROOT, help="WIKI root")
     args = parser.parse_args()
+
+    config, _ = load_tikomni_config(args.config)
+    api_key_env = args.api_key_env or config_get(config, "runtime.auth_env_key", "TIKOMNI_API_KEY")
+    base_url = args.base_url or config_get(config, "runtime.base_url", None)
+    timeout_ms = args.timeout_ms if args.timeout_ms is not None else config_get(config, "runtime.timeout_ms", None)
 
     try:
         result = run_douyin_single_video(
             input_value=args.input,
             share_url=args.share_url,
             env_file=args.env_file,
-            api_key_env=args.api_key_env,
-            base_url=args.base_url,
-            timeout_ms=args.timeout_ms,
+            api_key_env=api_key_env,
+            base_url=base_url,
+            timeout_ms=timeout_ms,
             app_timeout_ms=args.app_timeout_ms,
             web_timeout_ms=args.web_timeout_ms,
             poll_interval_sec=args.poll_interval_sec,
@@ -871,6 +890,8 @@ def main() -> None:
             card_type=args.card_type,
             collect_material=args.collect_material,
             wiki_root=args.wiki_root,
+            content_kind=args.content_kind,
+            storage_config=config,
         )
     except ValueError as error:
         result = {

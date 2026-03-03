@@ -12,9 +12,9 @@ This document defines where users configure this skill.
 
 1. `.env` in the current workspace for secrets and runtime environment (most common).
 2. `skills/tikomni-skill/references/runtime-config.md` for user-facing execution policy.
-3. Script runtime template: `skills/tikomni-skill/references/config-templates/defaults.yaml`.
-4. Optional: user can provide another config file path in prompt, and the agent should read that file first.
-5. Env template file: `skills/tikomni-skill/env.example` (no real secret inside).
+3. Env template file: `skills/tikomni-skill/env.example` (no real secret inside).
+4. Script runtime template: `skills/tikomni-skill/references/config-templates/defaults.yaml` (internal default, maintainers/advanced users only).
+5. Optional: user can provide another config file path in prompt, and the agent should read that file first.
 
 ## 2. Required `.env` Variables
 
@@ -68,6 +68,12 @@ Notes:
 1. `--config <path>`
 2. `TIKOMNI_CONFIG_FILE`
 3. `skills/tikomni-skill/references/config-templates/defaults.yaml`
+
+Risk-closure behavior:
+
+1. PyYAML missing does **not** hard-fail script execution.
+2. Built-in Python defaults are always available as fallback.
+3. If config file read/parse fails, loader gracefully falls back to built-in defaults.
 
 Supported CLI scripts:
 

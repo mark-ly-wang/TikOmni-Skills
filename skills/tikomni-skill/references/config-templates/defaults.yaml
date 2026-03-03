@@ -28,6 +28,40 @@ storage_routes:
     runs_dir: _runs
     results_dir: results
     errors_dir: _errors
+  content_kind_card_type:
+    single_video: work
+    work: work
+    author_home: author_sample_work
+    author_sample_work: author_sample_work
+    author_analysis: author
+  card_type_routes:
+    work:
+      prefix: CBV
+      parts:
+        - 10-内容系统
+        - 15-对标研究
+        - 01-作品对标卡
+    author:
+      prefix: CBA
+      parts:
+        - 10-内容系统
+        - 15-对标研究
+        - 03-作者对标卡
+    author_sample_work:
+      prefix: CBV
+      parts:
+        - 10-内容系统
+        - 15-对标研究
+        - 02-作者样本集
+        - "{platform}-{author_slug}"
+    material:
+      prefix: CMAT
+      parts:
+        - 10-内容系统
+        - 12-素材库
+        - 素材卡
+        - "{year}"
+        - "{year_month}"
 
 naming_rules:
   filename_pattern: "{type}-{timestamp}-{job_id}.md"

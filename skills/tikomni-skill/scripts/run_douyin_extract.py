@@ -69,6 +69,7 @@ def _build_result(
     summary_block = summarize_content(raw_content, source="douyin:u1->u2")
     return {
         "platform": "douyin",
+        "content_kind": "single_video",
         "source": source_input,
         "original_video_url": original_video_url,
         "u2_task_id": u2_task_id,
@@ -101,6 +102,7 @@ def run_douyin_extract(
     card_type: str,
     collect_material: bool,
     wiki_root: str,
+    storage_config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     normalized_input = _normalize_input(input_value, share_url, aweme_id)
     if not normalized_input["share_url"] and not normalized_input["aweme_id"]:
@@ -122,6 +124,8 @@ def run_douyin_extract(
                 card_type=card_type,
                 wiki_root=wiki_root,
                 collect_material=collect_material,
+                content_kind="single_video",
+                storage_config=storage_config,
             )
         return result
 
@@ -179,6 +183,8 @@ def run_douyin_extract(
                 card_type=card_type,
                 wiki_root=wiki_root,
                 collect_material=collect_material,
+                content_kind="single_video",
+                storage_config=storage_config,
             )
         return result
 
@@ -204,6 +210,8 @@ def run_douyin_extract(
                 card_type=card_type,
                 wiki_root=wiki_root,
                 collect_material=collect_material,
+                content_kind="single_video",
+                storage_config=storage_config,
             )
         return result
 
@@ -263,6 +271,8 @@ def run_douyin_extract(
                 card_type=card_type,
                 wiki_root=wiki_root,
                 collect_material=collect_material,
+                content_kind="single_video",
+                storage_config=storage_config,
             )
         return result
 
@@ -307,6 +317,8 @@ def run_douyin_extract(
             card_type=card_type,
             wiki_root=wiki_root,
             collect_material=collect_material,
+            content_kind="single_video",
+            storage_config=storage_config,
         )
 
     return result
@@ -387,6 +399,7 @@ def main() -> None:
             card_type=args.card_type,
             collect_material=args.collect_material,
             wiki_root=args.wiki_root,
+            storage_config=config,
         )
     except ValueError as error:
         result = {

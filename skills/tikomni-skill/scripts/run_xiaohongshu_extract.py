@@ -7,10 +7,11 @@ import re
 import urllib.request
 from typing import Any, Dict, List, Optional
 
+from asr_pipeline import submit_u2_asr
 from config_loader import config_get, load_tikomni_config
+from extract_pipeline import build_api_trace, request_with_optional_fallback
 from poll_u2_task import poll_u2_task
 from tikomni_common import (
-    call_json_api,
     deep_find_all,
     deep_find_first,
     extract_task_id,
@@ -80,29 +81,15 @@ def _fetch_note_info(*, base_url: str, token: str, timeout_ms: int, source_input
         params["note_id"] = source_input["note_id"]
 
     # Prefer v7 (best coverage in current catalog), fallback to app V1.
-    primary = call_json_api(
+    return request_with_optional_fallback(
         base_url=base_url,
-        path="/api/u1/v1/xiaohongshu/web/get_note_info_v7",
         token=token,
-        method="GET",
         timeout_ms=timeout_ms,
-        params=params,
-    )
-    if primary["ok"]:
-        primary["_endpoint"] = "/api/u1/v1/xiaohongshu/web/get_note_info_v7"
-        return primary
-
-    fallback = call_json_api(
-        base_url=base_url,
-        path="/api/u1/v1/xiaohongshu/app/get_note_info",
-        token=token,
         method="GET",
-        timeout_ms=timeout_ms,
         params=params,
+        primary_path="/api/u1/v1/xiaohongshu/web/get_note_info_v7",
+        fallback_path="/api/u1/v1/xiaohongshu/app/get_note_info",
     )
-    fallback["_endpoint"] = "/api/u1/v1/xiaohongshu/app/get_note_info"
-    fallback["_primary_failed"] = primary
-    return fallback
 
 
 def _extract_subtitle_urls(payload: Any) -> List[str]:
@@ -252,22 +239,6 @@ def _extract_video_candidates(payload: Any) -> List[str]:
     return unique
 
 
-def _u2_submit(*, base_url: str, token: str, timeout_ms: int, video_url: str, idempotency_key: Optional[str]) -> Dict[str, Any]:
-    extra_headers = {}
-    if idempotency_key:
-        extra_headers["idempotency-key"] = idempotency_key
-
-    return call_json_api(
-        base_url=base_url,
-        path="/api/u2/v1/services/audio/asr/transcription",
-        token=token,
-        method="POST",
-        timeout_ms=timeout_ms,
-        body={"input": {"file_urls": [video_url]}},
-        extra_headers=extra_headers,
-    )
-
-
 def run_xiaohongshu_extract(
     *,
     input_value: Optional[str],
@@ -320,25 +291,19 @@ def run_xiaohongshu_extract(
     primary_failed = note_response.get("_primary_failed")
     if primary_failed:
         trace.append(
-            {
-                "step": "u1_get_note_info_primary",
-                "endpoint": "/api/u1/v1/xiaohongshu/web/get_note_info_v7",
-                "status_code": primary_failed.get("status_code"),
-                "request_id": primary_failed.get("request_id"),
-                "ok": primary_failed.get("ok"),
-                "error_reason": primary_failed.get("error_reason"),
-            }
+            build_api_trace(
+                step="u1_get_note_info_primary",
+                endpoint="/api/u1/v1/xiaohongshu/web/get_note_info_v7",
+                response=primary_failed,
+            )
         )
 
     trace.append(
-        {
-            "step": "u1_get_note_info_effective",
-            "endpoint": note_response.get("_endpoint"),
-            "status_code": note_response.get("status_code"),
-            "request_id": note_response.get("request_id"),
-            "ok": note_response.get("ok"),
-            "error_reason": note_response.get("error_reason"),
-        }
+        build_api_trace(
+            step="u1_get_note_info_effective",
+            endpoint=note_response.get("_endpoint"),
+            response=note_response,
+        )
     )
 
     if not note_response["ok"]:
@@ -432,7 +397,7 @@ def run_xiaohongshu_extract(
             )
         return result
 
-    submit_response = _u2_submit(
+    submit_response = submit_u2_asr(
         base_url=runtime["base_url"],
         token=runtime["token"],
         timeout_ms=runtime["timeout_ms"],
@@ -442,17 +407,16 @@ def run_xiaohongshu_extract(
     task_id = extract_task_id(submit_response["data"])
 
     trace.append(
-        {
-            "step": "u2_submit_transcription",
-            "endpoint": "/api/u2/v1/services/audio/asr/transcription",
-            "status_code": submit_response.get("status_code"),
-            "request_id": submit_response.get("request_id"),
-            "ok": submit_response.get("ok"),
-            "error_reason": submit_response.get("error_reason"),
-            "task_id": task_id,
-            "selected_video_url": selected_video_url,
-            "idempotency_key_sent": bool(idempotency_key),
-        }
+        build_api_trace(
+            step="u2_submit_transcription",
+            endpoint="/api/u2/v1/services/audio/asr/transcription",
+            response=submit_response,
+            extra={
+                "task_id": task_id,
+                "selected_video_url": selected_video_url,
+                "idempotency_key_sent": bool(idempotency_key),
+            },
+        )
     )
 
     if not submit_response["ok"] or not task_id:

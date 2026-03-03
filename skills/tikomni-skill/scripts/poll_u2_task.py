@@ -2,18 +2,10 @@
 """Poll Tikomni U2 task until terminal state."""
 
 import argparse
-import time
 from typing import Any, Dict
 
-from tikomni_common import (
-    call_json_api,
-    extract_error_reason,
-    extract_task_status,
-    extract_transcript_text,
-    is_terminal_status,
-    resolve_runtime,
-    write_json_stdout,
-)
+from asr_pipeline import poll_u2_task_core
+from tikomni_common import extract_error_reason, resolve_runtime, write_json_stdout
 
 
 def poll_u2_task(
@@ -25,69 +17,14 @@ def poll_u2_task(
     poll_interval_sec: float,
     max_polls: int,
 ) -> Dict[str, Any]:
-    trace = []
-    last_request_id = None
-
-    for attempt in range(1, max_polls + 1):
-        response = call_json_api(
-            base_url=base_url,
-            path=f"/api/u2/v1/tasks/{task_id}",
-            token=token,
-            method="POST",
-            timeout_ms=timeout_ms,
-        )
-
-        status = extract_task_status(response["data"])
-        last_request_id = response.get("request_id") or last_request_id
-
-        trace.append(
-            {
-                "attempt": attempt,
-                "status_code": response.get("status_code"),
-                "task_status": status,
-                "request_id": response.get("request_id"),
-                "error_reason": response.get("error_reason"),
-            }
-        )
-
-        if not response["ok"]:
-            if attempt < max_polls:
-                time.sleep(max(poll_interval_sec, 0.2))
-                continue
-            return {
-                "ok": False,
-                "task_id": task_id,
-                "task_status": status or "UNKNOWN",
-                "request_id": last_request_id,
-                "error_reason": response.get("error_reason") or "u2_poll_http_error",
-                "raw_task": response["data"],
-                "trace": trace,
-            }
-
-        if is_terminal_status(status):
-            transcript = extract_transcript_text(response["data"]) if status == "SUCCEEDED" else ""
-            return {
-                "ok": status == "SUCCEEDED",
-                "task_id": task_id,
-                "task_status": status,
-                "request_id": last_request_id,
-                "error_reason": None if status == "SUCCEEDED" else "u2_task_failed",
-                "transcript_text": transcript,
-                "raw_task": response["data"],
-                "trace": trace,
-            }
-
-        time.sleep(max(poll_interval_sec, 0.2))
-
-    return {
-        "ok": False,
-        "task_id": task_id,
-        "task_status": "TIMEOUT",
-        "request_id": last_request_id,
-        "error_reason": "u2_poll_timeout",
-        "raw_task": {},
-        "trace": trace,
-    }
+    return poll_u2_task_core(
+        base_url=base_url,
+        token=token,
+        timeout_ms=timeout_ms,
+        task_id=task_id,
+        poll_interval_sec=poll_interval_sec,
+        max_polls=max_polls,
+    )
 
 
 def main() -> None:

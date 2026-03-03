@@ -2,19 +2,13 @@
 """Douyin single-video extraction chain: u1 -> u2 submit -> poll."""
 
 import argparse
-import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
+from asr_pipeline import submit_u2_asr_with_retry
 from config_loader import config_get, load_tikomni_config
+from extract_pipeline import build_api_trace, request_with_optional_fallback
 from poll_u2_task import poll_u2_task
-from tikomni_common import (
-    call_json_api,
-    deep_find_first,
-    extract_task_id,
-    resolve_runtime,
-    summarize_content,
-    write_json_stdout,
-)
+from tikomni_common import deep_find_first, resolve_runtime, summarize_content, write_json_stdout
 from write_benchmark_card import DEFAULT_WIKI_ROOT, write_benchmark_card
 
 
@@ -49,135 +43,15 @@ def _u1_fetch_play_url(
     if aweme_id:
         params["aweme_id"] = aweme_id
 
-    primary = call_json_api(
+    return request_with_optional_fallback(
         base_url=base_url,
-        path="/api/u1/v1/douyin/app/v3/fetch_video_high_quality_play_url",
         token=token,
+        timeout_ms=timeout_ms,
         method="GET",
-        timeout_ms=timeout_ms,
         params=params,
+        primary_path="/api/u1/v1/douyin/app/v3/fetch_video_high_quality_play_url",
+        fallback_path="/api/u1/v1/douyin/web/fetch_video_high_quality_play_url",
     )
-    primary["_endpoint"] = "/api/u1/v1/douyin/app/v3/fetch_video_high_quality_play_url"
-    if primary["ok"]:
-        return primary
-
-    fallback = call_json_api(
-        base_url=base_url,
-        path="/api/u1/v1/douyin/web/fetch_video_high_quality_play_url",
-        token=token,
-        method="GET",
-        timeout_ms=timeout_ms,
-        params=params,
-    )
-    fallback["_endpoint"] = "/api/u1/v1/douyin/web/fetch_video_high_quality_play_url"
-    fallback["_primary_failed"] = primary
-    return fallback
-
-
-def _u2_submit(
-    *,
-    base_url: str,
-    token: str,
-    timeout_ms: int,
-    original_video_url: str,
-    idempotency_key: Optional[str],
-) -> Dict[str, Any]:
-    extra_headers = {}
-    if idempotency_key:
-        extra_headers["idempotency-key"] = idempotency_key
-
-    return call_json_api(
-        base_url=base_url,
-        path="/api/u2/v1/services/audio/asr/transcription",
-        token=token,
-        method="POST",
-        timeout_ms=timeout_ms,
-        body={"input": {"file_urls": [original_video_url]}},
-        extra_headers=extra_headers,
-    )
-
-
-def _is_retriable_submit_failure(response: Dict[str, Any]) -> bool:
-    status_code = response.get("status_code")
-    if isinstance(status_code, str) and status_code.isdigit():
-        status_code = int(status_code)
-    if isinstance(status_code, (int, float)) and int(status_code) in {502, 503, 504}:
-        return True
-
-    error_reason = str(response.get("error_reason") or "").upper()
-    return "UPSTREAM_TIMEOUT" in error_reason or "TIMEOUT" in error_reason
-
-
-def _u2_submit_with_retry(
-    *,
-    base_url: str,
-    token: str,
-    timeout_ms: int,
-    original_video_url: str,
-    idempotency_key: Optional[str],
-    max_retries: int,
-    backoff_ms: int,
-) -> Dict[str, Any]:
-    retries = max(0, int(max_retries))
-    base_backoff = max(0, int(backoff_ms))
-    max_attempts = 1 + retries
-
-    retry_chain: List[Dict[str, Any]] = []
-    final_response: Dict[str, Any] = {}
-    final_task_id: Optional[str] = None
-    final_submit_status = "failed_unknown"
-
-    for attempt in range(1, max_attempts + 1):
-        wait_ms = 0 if attempt == 1 else base_backoff * (2 ** (attempt - 2))
-        if wait_ms > 0:
-            time.sleep(wait_ms / 1000.0)
-
-        submit_response = _u2_submit(
-            base_url=base_url,
-            token=token,
-            timeout_ms=timeout_ms,
-            original_video_url=original_video_url,
-            idempotency_key=idempotency_key,
-        )
-        task_id = extract_task_id(submit_response.get("data"))
-        retriable = _is_retriable_submit_failure(submit_response)
-
-        retry_chain.append(
-            {
-                "attempt": attempt,
-                "wait_ms": wait_ms,
-                "status_code": submit_response.get("status_code"),
-                "error_reason": submit_response.get("error_reason"),
-                "ok": submit_response.get("ok"),
-                "task_id": task_id,
-                "retriable": retriable,
-            }
-        )
-
-        final_response = submit_response
-        final_task_id = task_id
-
-        if submit_response.get("ok") and task_id:
-            final_submit_status = "success"
-            break
-
-        if submit_response.get("ok") and not task_id:
-            final_submit_status = "failed_missing_task_id"
-            break
-
-        if retriable and attempt < max_attempts:
-            final_submit_status = "retrying"
-            continue
-
-        final_submit_status = "failed_retries_exhausted" if retriable else "failed_non_retriable"
-        break
-
-    return {
-        "submit_response": final_response,
-        "task_id": final_task_id,
-        "retry_chain": retry_chain,
-        "final_submit_status": final_submit_status,
-    }
 
 
 def _build_result(
@@ -271,25 +145,19 @@ def run_douyin_extract(
     primary_failed = play_url_response.get("_primary_failed")
     if primary_failed:
         trace.append(
-            {
-                "step": "u1_fetch_video_high_quality_play_url_primary",
-                "endpoint": "/api/u1/v1/douyin/app/v3/fetch_video_high_quality_play_url",
-                "status_code": primary_failed.get("status_code"),
-                "request_id": primary_failed.get("request_id"),
-                "ok": primary_failed.get("ok"),
-                "error_reason": primary_failed.get("error_reason"),
-            }
+            build_api_trace(
+                step="u1_fetch_video_high_quality_play_url_primary",
+                endpoint="/api/u1/v1/douyin/app/v3/fetch_video_high_quality_play_url",
+                response=primary_failed,
+            )
         )
 
     trace.append(
-        {
-            "step": "u1_fetch_video_high_quality_play_url_effective",
-            "endpoint": play_url_response.get("_endpoint"),
-            "status_code": play_url_response.get("status_code"),
-            "request_id": play_url_response.get("request_id"),
-            "ok": play_url_response.get("ok"),
-            "error_reason": play_url_response.get("error_reason"),
-        }
+        build_api_trace(
+            step="u1_fetch_video_high_quality_play_url_effective",
+            endpoint=play_url_response.get("_endpoint"),
+            response=play_url_response,
+        )
     )
 
     if not play_url_response["ok"]:
@@ -339,11 +207,11 @@ def run_douyin_extract(
             )
         return result
 
-    submit_bundle = _u2_submit_with_retry(
+    submit_bundle = submit_u2_asr_with_retry(
         base_url=runtime["base_url"],
         token=runtime["token"],
         timeout_ms=runtime["timeout_ms"],
-        original_video_url=original_video_url,
+        video_url=original_video_url,
         idempotency_key=idempotency_key,
         max_retries=u2_submit_max_retries,
         backoff_ms=u2_submit_backoff_ms,
@@ -352,17 +220,16 @@ def run_douyin_extract(
     task_id = submit_bundle.get("task_id")
 
     trace.append(
-        {
-            "step": "u2_submit_transcription",
-            "endpoint": "/api/u2/v1/services/audio/asr/transcription",
-            "status_code": submit_response.get("status_code"),
-            "request_id": submit_response.get("request_id"),
-            "ok": submit_response.get("ok"),
-            "error_reason": submit_response.get("error_reason"),
-            "task_id": task_id,
-            "idempotency_key_sent": bool(idempotency_key),
-            "final_submit_status": submit_bundle.get("final_submit_status"),
-        }
+        build_api_trace(
+            step="u2_submit_transcription",
+            endpoint="/api/u2/v1/services/audio/asr/transcription",
+            response=submit_response,
+            extra={
+                "task_id": task_id,
+                "idempotency_key_sent": bool(idempotency_key),
+                "final_submit_status": submit_bundle.get("final_submit_status"),
+            },
+        )
     )
 
     trace.append(

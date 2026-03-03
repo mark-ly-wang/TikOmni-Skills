@@ -2,32 +2,13 @@
 """Unified URL runner for douyin/xiaohongshu local adaptation."""
 
 import argparse
-from urllib.parse import urlparse
 
 from config_loader import config_get, load_tikomni_config
+from extract_pipeline import detect_platform_from_input
 from run_douyin_extract import run_douyin_extract
 from run_xiaohongshu_extract import run_xiaohongshu_extract
 from tikomni_common import write_json_stdout
 from write_benchmark_card import DEFAULT_WIKI_ROOT
-
-
-def detect_platform(input_value: str) -> str:
-    candidate = (input_value or "").strip().lower()
-    if not candidate:
-        return "unknown"
-
-    if candidate.startswith("http://") or candidate.startswith("https://"):
-        host = urlparse(candidate).netloc.lower()
-        if "douyin.com" in host or "iesdouyin.com" in host:
-            return "douyin"
-        if "xiaohongshu.com" in host or "xhslink.com" in host:
-            return "xiaohongshu"
-
-    if "douyin" in candidate:
-        return "douyin"
-    if "xiaohongshu" in candidate or "xhs" in candidate:
-        return "xiaohongshu"
-    return "unknown"
 
 
 def main() -> None:
@@ -74,7 +55,7 @@ def main() -> None:
 
     platform = args.platform
     if platform == "auto":
-        platform = detect_platform(args.input)
+        platform = detect_platform_from_input(args.input)
 
     if platform == "douyin":
         result = run_douyin_extract(

@@ -8,7 +8,7 @@ from extract_pipeline import detect_platform_from_input
 from run_douyin_extract import run_douyin_extract
 from run_xiaohongshu_extract import run_xiaohongshu_extract
 from tikomni_common import write_json_stdout
-from write_benchmark_card import DEFAULT_WIKI_ROOT
+from write_benchmark_card import DEFAULT_CARD_ROOT
 
 
 def main() -> None:
@@ -28,7 +28,7 @@ def main() -> None:
     parser.add_argument("--write-card", action="store_true", help="Write markdown card")
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
     parser.add_argument("--collect-material", action="store_true", help="Write CMAT only when explicit")
-    parser.add_argument("--wiki-root", default=DEFAULT_WIKI_ROOT, help="WIKI root")
+    parser.add_argument("--card-root", default=DEFAULT_CARD_ROOT, help="Card root")
     args = parser.parse_args()
 
     config, _ = load_tikomni_config(args.config)
@@ -73,7 +73,7 @@ def main() -> None:
             write_card=args.write_card,
             card_type=args.card_type,
             collect_material=args.collect_material,
-            wiki_root=args.wiki_root,
+            card_root=args.card_root,
         )
     elif platform == "xiaohongshu":
         result = run_xiaohongshu_extract(
@@ -90,7 +90,7 @@ def main() -> None:
             write_card=args.write_card,
             card_type=args.card_type,
             collect_material=args.collect_material,
-            wiki_root=args.wiki_root,
+            card_root=args.card_root,
         )
     else:
         result = {

@@ -4,8 +4,8 @@
 
 Use runtime config as source of truth:
 
-1. `references/runtime-config.md` (EN)
-2. `references/runtime-config.zh-CN.md` (ZH)
+1. `./runtime-config.md`
+2. User-provided config path (if explicitly provided)
 
 If runtime config is missing, use the fallback template below.
 

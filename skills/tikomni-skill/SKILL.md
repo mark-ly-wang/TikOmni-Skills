@@ -14,9 +14,7 @@ Call Tikomni APIs via direct HTTP and output `raw + normalized` data with Markdo
 1. Set `TIKOMNI_API_KEY` (template file: `skills/tikomni-skill/env.example`).
 2. Use `https://api.tikomni.com` as base URL.
 3. Never print API keys in logs or markdown.
-4. Read runtime config first:
-   - English: `references/runtime-config.md`
-   - Chinese: `references/runtime-config.zh-CN.md`
+4. Read runtime config first: `references/runtime-config.md`.
 5. If user provides a custom config path, use that path as highest priority.
 6. If runtime config defines `env_file`, load it silently (no secret echo), then resolve `auth_env_key`.
 
@@ -41,24 +39,21 @@ Call Tikomni APIs via direct HTTP and output `raw + normalized` data with Markdo
 
 ## References
 
-1. Routing rules: `references/routing-rules.md` (Chinese: `references/routing-rules.zh-CN.md`)
-2. Normalize rules: `references/normalize-rules.md` (Chinese: `references/normalize-rules.zh-CN.md`)
-3. Douyin homepage playbook: `references/playbooks/douyin-home-extract.md` (Chinese: `references/playbooks/douyin-home-extract.zh-CN.md`)
-4. Xiaohongshu homepage playbook: `references/playbooks/xiaohongshu-home-extract.md` (Chinese: `references/playbooks/xiaohongshu-home-extract.zh-CN.md`)
-5. Copy extraction rules: `references/playbooks/copy-extract-rules.md` (Chinese: `references/playbooks/copy-extract-rules.zh-CN.md`)
-6. Markdown output rules: `references/output-markdown.md` (Chinese: `references/output-markdown.zh-CN.md`)
-7. Customization guide: `references/customization-guide.md` (Chinese: `references/customization-guide.zh-CN.md`)
-8. Configuration guide: `references/configuration.md` (Chinese: `references/configuration.zh-CN.md`)
-9. Runtime config template (policy docs): `references/runtime-config.md` (Chinese: `references/runtime-config.zh-CN.md`)
-10. Script defaults template (YAML): `references/config-templates/defaults.yaml`
-11. Full API catalog: `references/api-catalog/index.md`
-12. Card routing (Chinese): `references/card-routing.zh-CN.md`
-13. Benchmark card prompt contracts: `references/prompt-contracts/`
-14. Topic contract: `references/prompt-contracts/topic.md`
-15. Style contract: `references/prompt-contracts/style.md`
-16. Hook contract: `references/prompt-contracts/hook.md`
-17. Structure contract: `references/prompt-contracts/structure.md`
-18. CTA contract: `references/prompt-contracts/cta.md`
-19. Summary contract: `references/prompt-contracts/summary.md`
-20. ASR clean contract: `references/prompt-contracts/asr-clean.md`
-21. Insight contract: `references/prompt-contracts/insight.md`
+1. Routing rules: `references/routing-rules.md`
+2. Normalize rules: `references/normalize-rules.md`
+3. Douyin homepage playbook: `references/playbooks/douyin-home-extract.md`
+4. Xiaohongshu homepage playbook: `references/playbooks/xiaohongshu-home-extract.md`
+5. Copy extraction rules: `references/playbooks/copy-extract-rules.md`
+6. Markdown output rules: `references/output-markdown.md`
+7. Runtime config reference: `references/runtime-config.md`
+8. Script defaults template (YAML): `references/config-templates/defaults.yaml`
+9. Full API catalog: `references/api-catalog/index.md`
+10. Benchmark card prompt contracts: `references/prompt-contracts/`
+11. Topic contract: `references/prompt-contracts/topic.md`
+12. Style contract: `references/prompt-contracts/style.md`
+13. Hook contract: `references/prompt-contracts/hook.md`
+14. Structure contract: `references/prompt-contracts/structure.md`
+15. CTA contract: `references/prompt-contracts/cta.md`
+16. Summary contract: `references/prompt-contracts/summary.md`
+17. ASR clean contract: `references/prompt-contracts/asr-clean.md`
+18. Insight contract: `references/prompt-contracts/insight.md`

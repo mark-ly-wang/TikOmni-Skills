@@ -8,7 +8,7 @@ from asr_pipeline import run_u2_asr_with_timeout_retry
 from config_loader import config_get, load_tikomni_config
 from extract_pipeline import build_api_trace, request_with_optional_fallback
 from tikomni_common import deep_find_first, resolve_runtime, summarize_content, write_json_stdout
-from write_benchmark_card import DEFAULT_WIKI_ROOT, write_benchmark_card
+from write_benchmark_card import DEFAULT_CARD_ROOT, write_benchmark_card
 
 
 def _normalize_input(input_value: Optional[str], share_url: Optional[str], aweme_id: Optional[str]) -> Dict[str, Optional[str]]:
@@ -101,7 +101,7 @@ def run_douyin_extract(
     write_card: bool,
     card_type: str,
     collect_material: bool,
-    wiki_root: str,
+    card_root: str,
     storage_config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     normalized_input = _normalize_input(input_value, share_url, aweme_id)
@@ -122,7 +122,7 @@ def run_douyin_extract(
                 payload=result,
                 platform="douyin",
                 card_type=card_type,
-                wiki_root=wiki_root,
+                card_root=card_root,
                 collect_material=collect_material,
                 content_kind="single_video",
                 storage_config=storage_config,
@@ -181,7 +181,7 @@ def run_douyin_extract(
                 payload=result,
                 platform="douyin",
                 card_type=card_type,
-                wiki_root=wiki_root,
+                card_root=card_root,
                 collect_material=collect_material,
                 content_kind="single_video",
                 storage_config=storage_config,
@@ -208,7 +208,7 @@ def run_douyin_extract(
                 payload=result,
                 platform="douyin",
                 card_type=card_type,
-                wiki_root=wiki_root,
+                card_root=card_root,
                 collect_material=collect_material,
                 content_kind="single_video",
                 storage_config=storage_config,
@@ -272,7 +272,7 @@ def run_douyin_extract(
                 payload=result,
                 platform="douyin",
                 card_type=card_type,
-                wiki_root=wiki_root,
+                card_root=card_root,
                 collect_material=collect_material,
                 content_kind="single_video",
                 storage_config=storage_config,
@@ -297,7 +297,7 @@ def run_douyin_extract(
             payload=result,
             platform="douyin",
             card_type=card_type,
-            wiki_root=wiki_root,
+            card_root=card_root,
             collect_material=collect_material,
             content_kind="single_video",
             storage_config=storage_config,
@@ -343,10 +343,10 @@ def main() -> None:
         default=None,
         help="Conservative max retries for U2 timeout-only retry (0~3)",
     )
-    parser.add_argument("--write-card", action="store_true", help="Write benchmark card to WIKI")
+    parser.add_argument("--write-card", action="store_true", help="Write benchmark card to card root")
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
     parser.add_argument("--collect-material", action="store_true", help="Write extra CMAT card")
-    parser.add_argument("--wiki-root", default=DEFAULT_WIKI_ROOT, help="WIKI root")
+    parser.add_argument("--card-root", default=DEFAULT_CARD_ROOT, help="Card root")
     args = parser.parse_args()
 
     config, _ = load_tikomni_config(args.config)
@@ -400,7 +400,7 @@ def main() -> None:
             write_card=args.write_card,
             card_type=args.card_type,
             collect_material=args.collect_material,
-            wiki_root=args.wiki_root,
+            card_root=args.card_root,
             storage_config=config,
         )
     except ValueError as error:

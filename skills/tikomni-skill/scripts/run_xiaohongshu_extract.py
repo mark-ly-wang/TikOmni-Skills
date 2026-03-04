@@ -18,7 +18,7 @@ from tikomni_common import (
     summarize_content,
     write_json_stdout,
 )
-from write_benchmark_card import DEFAULT_WIKI_ROOT, write_benchmark_card
+from write_benchmark_card import DEFAULT_CARD_ROOT, write_benchmark_card
 
 
 def _normalize_input(input_value: Optional[str], share_text: Optional[str], note_id: Optional[str]) -> Dict[str, Optional[str]]:
@@ -257,7 +257,7 @@ def run_xiaohongshu_extract(
     write_card: bool,
     card_type: str,
     collect_material: bool,
-    wiki_root: str,
+    card_root: str,
     storage_config: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     source_input = _normalize_input(input_value, share_text, note_id)
@@ -328,7 +328,7 @@ def run_xiaohongshu_extract(
                 payload=result,
                 platform="xiaohongshu",
                 card_type=card_type,
-                wiki_root=wiki_root,
+                card_root=card_root,
                 collect_material=collect_material,
                 content_kind="single_video",
                 storage_config=storage_config,
@@ -370,7 +370,7 @@ def run_xiaohongshu_extract(
                 payload=result,
                 platform="xiaohongshu",
                 card_type=card_type,
-                wiki_root=wiki_root,
+                card_root=card_root,
                 collect_material=collect_material,
                 content_kind="single_video",
                 storage_config=storage_config,
@@ -399,7 +399,7 @@ def run_xiaohongshu_extract(
                 payload=result,
                 platform="xiaohongshu",
                 card_type=card_type,
-                wiki_root=wiki_root,
+                card_root=card_root,
                 collect_material=collect_material,
                 content_kind="single_video",
                 storage_config=storage_config,
@@ -465,7 +465,7 @@ def run_xiaohongshu_extract(
                 payload=result,
                 platform="xiaohongshu",
                 card_type=card_type,
-                wiki_root=wiki_root,
+                card_root=card_root,
                 collect_material=collect_material,
                 content_kind="single_video",
                 storage_config=storage_config,
@@ -492,7 +492,7 @@ def run_xiaohongshu_extract(
             payload=result,
             platform="xiaohongshu",
             card_type=card_type,
-            wiki_root=wiki_root,
+            card_root=card_root,
             collect_material=collect_material,
             content_kind="single_video",
             storage_config=storage_config,
@@ -527,10 +527,10 @@ def main() -> None:
         help="Conservative max retries for U2 timeout-only retry (0~3)",
     )
     parser.add_argument("--force-u2-fallback", action="store_true", help="Skip subtitle usage and force U2 fallback (test)")
-    parser.add_argument("--write-card", action="store_true", help="Write benchmark card to WIKI")
+    parser.add_argument("--write-card", action="store_true", help="Write benchmark card to card root")
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
     parser.add_argument("--collect-material", action="store_true", help="Write extra CMAT card")
-    parser.add_argument("--wiki-root", default=DEFAULT_WIKI_ROOT, help="WIKI root")
+    parser.add_argument("--card-root", default=DEFAULT_CARD_ROOT, help="Card root")
     args = parser.parse_args()
 
     config, _ = load_tikomni_config(args.config)
@@ -577,7 +577,7 @@ def main() -> None:
             write_card=args.write_card,
             card_type=args.card_type,
             collect_material=args.collect_material,
-            wiki_root=args.wiki_root,
+            card_root=args.card_root,
             storage_config=config,
         )
     except ValueError as error:

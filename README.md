@@ -1,105 +1,113 @@
-# tikomni-skill
+# TikOmni Skills ✨
 
-`tikomni-skill` is a direct API skill for AI agents.
-It calls Tikomni public APIs (`u1` + `u2`) and writes run/result/error artifacts as Markdown.
+English | [中文说明 (README.zh-CN.md)](./README.zh-CN.md)
 
-🌐 中文版: [README.zh-CN.md](./README.zh-CN.md)
+A production-ready skill package for AI agents to fetch structured data from major social platforms through TikOmni APIs.
 
-## Platform
+## 🚀 What this repository is
 
-1. Homepage: [tikomni.com](https://tikomni.com)
-2. Dashboard / Signup: [app.tikomni.com](https://app.tikomni.com)
-3. API Base URL: [api.tikomni.com](https://api.tikomni.com)
-4. API Docs: [docs.tikomni.com](https://docs.tikomni.com)
+This repository provides the `tikomni-skill` used by AI agents.
 
-## Coverage
+With this skill, agents can:
+- collect cross-platform public content data
+- normalize fields into consistent structured output
+- generate markdown-ready extraction artifacts (for workflows and downstream analysis)
 
-- 20+ platform domains are catalog-covered.
-- Fixed playbooks are currently GA for Douyin homepage and Xiaohongshu homepage extraction.
-- Other domains are routed by catalog intent matching.
+## 🌐 Official links
 
-## Configuration
+- Website: https://tikomni.com
+- Sign up / Dashboard (get API key): https://app.tikomni.com
+- API endpoint: https://api.tikomni.com
+- API docs: https://docs.tikomni.com
 
-### 1) Copy env template first
+## 📦 Supported platforms
 
-```bash
-cp ./skills/tikomni-skill/env.example ./.env
-# or
-cp ./skills/tikomni-skill/env.example ./skills/tikomni-skill/.env.local
-```
+Current catalog includes mainstream platforms such as:
+- Douyin, Xiaohongshu, Kuaishou, Bilibili, Weibo
+- TikTok, YouTube, Instagram, Threads, Twitter/X, Reddit, LinkedIn
+- WeChat Channels, WeChat Official Accounts, Toutiao, Xigua, Zhihu, Lemon8, Pipixia
 
-Then replace example values with real values.
+(See full list in `skills/tikomni-skill/references/api-catalog/index.md`.)
 
-### 2) Three key sources and priority
+## 🧩 What structured data you can get
 
-`TIKOMNI_API_KEY` is loaded from three sources with deterministic precedence:
+Depending on platform and endpoint, the skill can return:
+- author/account metadata
+- post/video basic info
+- engagement metrics (likes/comments/shares, etc. when available)
+- subtitles/transcripts/copy text (when supported)
+- routing and request trace metadata for reproducibility
 
-1. process env (highest)
-2. `skills/tikomni-skill/.env.local`
-3. `<repo_root>/.env`
+## 🔧 Install this skill
 
-Priority rule: `process env > .env.local > .env`.
+Use the integration method matching your agent runtime.
 
-Path semantics:
-- Default `.env` is always resolved as `<repo_root>/.env` (not CWD-dependent).
-- If `--env-file` or `runtime.env_file` is relative, it is resolved from `<repo_root>`.
+### OpenClaw
+Place this repo (or `skills/tikomni-skill`) in your OpenClaw workspace skills path, then let OpenClaw load the skill.
 
-### 3) Path configuration
-
-- Skill root: `<workspace_root>/skills/tikomni-skill`
-- Runtime config template: `skills/tikomni-skill/references/config-templates/defaults.yaml`
-- Runtime config docs:
-  - EN: `skills/tikomni-skill/references/runtime-config.md`
-  - ZH: `skills/tikomni-skill/references/runtime-config.zh-CN.md`
-
-### 4) Important env variables
-
-- `TIKOMNI_API_KEY` (required)
-- `TIKOMNI_BASE_URL` (optional, default `https://api.tikomni.com`)
-- `TIKOMNI_TIMEOUT_MS` (optional, default `60000`)
-- `TIKOMNI_CONFIG_FILE` (optional runtime config YAML path)
-
-## Installation
-
-### Agent-first from GitHub (recommended)
-
-1. Ask your agent to install from `skills/tikomni-skill`.
-2. Run one smoke extraction.
-
-### Codex / CodeX
-
-```bash
-python3 "~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py" --repo "<owner>/<repo>" --path "skills/tikomni-skill"
-```
+### Codex
+Install/copy `skills/tikomni-skill` into your Codex skills directory.
 
 ### Claude Code
+Install/copy `skills/tikomni-skill` into your Claude skills directory.
 
+## ⚙️ Configure after installation (env-only)
+
+TikOmni user configuration is **env-only**. You do not need to edit YAML.
+
+Required:
 ```bash
-mkdir -p "~/.claude/skills"
-cp -R "<repo-root>/skills/tikomni-skill" "~/.claude/skills/tikomni-skill"
+TIKOMNI_API_KEY="your_real_key"
 ```
 
-## Quick Start
-
+Optional advanced env vars (all have defaults):
 ```bash
-# 1) set key via one of the supported sources
-export TIKOMNI_API_KEY="tk_example_123"
+# Runtime
+TIKOMNI_TIMEOUT_MS="60000"
 
-# 2) check readiness (prints source only, never prints secret)
-python3 "./skills/tikomni-skill/scripts/check_tikomni_readiness.py"
+# Output directories
+TIKOMNI_OUTPUT_ROOT="docs/skill-output"
+TIKOMNI_OUTPUT_RUNS_DIR="_runs"
+TIKOMNI_OUTPUT_RESULTS_DIR="results"
+TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
 
-# 3) generate API catalog
-node "./skills/tikomni-skill/scripts/generate-api-catalog.mjs"
+# Naming
+TIKOMNI_FILENAME_PATTERN="{type}-{timestamp}-{job_id}.md"
 
-# 4) run extractor
-python3 "./skills/tikomni-skill/scripts/run_tikomni_extract.py" "<url_or_id>"
+# Card root (default: /mnt/openclaw/data/WIKI)
+TIKOMNI_CARD_ROOT="/mnt/openclaw/data/WIKI"
+
+# Card route locale preset (default zh)
+TIKOMNI_PATH_LOCALE="zh"   # zh | en
+
+# Explicit routes (highest priority, separator: |)
+TIKOMNI_CARD_ROUTE_WORK="10-内容系统|15-对标研究|01-作品对标卡"
+TIKOMNI_CARD_ROUTE_AUTHOR="10-内容系统|15-对标研究|03-作者对标卡"
+TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="10-内容系统|15-对标研究|02-作者样本集|{platform}-{author_slug}"
 ```
 
-## Core References
+Route precedence:
+1) `TIKOMNI_CARD_ROUTE_*` explicit env
+2) `TIKOMNI_PATH_LOCALE` preset (`zh`/`en`, default `zh`)
+3) built-in/default config
 
-1. [skills/tikomni-skill/SKILL.md](./skills/tikomni-skill/SKILL.md)
-2. [configuration.md](./skills/tikomni-skill/references/configuration.md)
-3. [runtime-config.md](./skills/tikomni-skill/references/runtime-config.md)
-4. [routing-rules.md](./skills/tikomni-skill/references/routing-rules.md)
-5. [normalize-rules.md](./skills/tikomni-skill/references/normalize-rules.md)
-6. [card-routing.zh-CN.md](./skills/tikomni-skill/references/card-routing.zh-CN.md)
+Recommended placement:
+- `<repo_root>/.env` (project-level)
+- `skills/tikomni-skill/.env.local` (local override)
+
+## ▶️ How to use
+
+Use the skill through natural-language requests in your AI agent, for example:
+- “Extract Douyin homepage data for this URL.”
+- “Get Xiaohongshu author posts and summarize key topics.”
+- “Fetch video copy/subtitles and output structured markdown.”
+
+## 🔐 Security
+
+- Never commit real secrets (`.env`, `.env.local`, CI secrets)
+- Never expose API keys in logs or output
+
+## 📚 Core references
+
+- Skill entry: [`skills/tikomni-skill/SKILL.md`](./skills/tikomni-skill/SKILL.md)
+- API catalog: [`skills/tikomni-skill/references/api-catalog/index.md`](./skills/tikomni-skill/references/api-catalog/index.md)

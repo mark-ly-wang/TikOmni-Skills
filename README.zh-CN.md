@@ -1,105 +1,113 @@
-# tikomni-skill
+# TikOmni Skills ✨
 
-`tikomni-skill` 是面向 AI Agent 的 direct API skill。
-它调用 Tikomni 公共 API（`u1` + `u2`），并输出 run/result/error 三类 Markdown 产物。
+中文 | [English (README.md)](./README.md)
 
-🌐 English: [README.md](./README.md)
+这是一个给 AI Agent 使用的 TikOmni Skill 仓库，用于从主流自媒体平台获取结构化数据。
 
-## 平台入口
+## 🚀 这是什么仓库
 
-1. 官网：[tikomni.com](https://tikomni.com)
-2. 控制台 / 注册：[app.tikomni.com](https://app.tikomni.com)
-3. API 地址：[api.tikomni.com](https://api.tikomni.com)
-4. API 文档：[docs.tikomni.com](https://docs.tikomni.com)
+本仓库提供 `tikomni-skill`。
 
-## 覆盖范围
+它可以让 Agent：
+- 跨平台抓取公开内容数据
+- 统一字段结构，输出标准化结果
+- 生成可用于后续流程的 Markdown 结构化产物
 
-- 已覆盖 20+ 平台目录路由能力。
-- 固定 playbook 当前 GA：抖音主页提取、小红书主页提取。
-- 其他平台按目录意图路由调用。
+## 🌐 官方入口
 
-## 配置说明
+- 官网：https://tikomni.com
+- 注册/控制台（获取 API Key）：https://app.tikomni.com
+- API 地址：https://api.tikomni.com
+- API 文档：https://docs.tikomni.com
 
-### 1）先复制 env 模板
+## 📦 支持平台
 
-```bash
-cp ./skills/tikomni-skill/env.example ./.env
-# 或
-cp ./skills/tikomni-skill/env.example ./skills/tikomni-skill/.env.local
-```
+当前目录覆盖主流平台（示例）：
+- 抖音、小红书、快手、B站、微博
+- TikTok、YouTube、Instagram、Threads、Twitter/X、Reddit、LinkedIn
+- 视频号、公众号、头条、西瓜、知乎、Lemon8、皮皮虾
 
-复制后再替换为真实值。
+完整列表见：`skills/tikomni-skill/references/api-catalog/index.md`
 
-### 2）三路 key 来源与优先级
+## 🧩 可获取哪些结构化数据
 
-`TIKOMNI_API_KEY` 会按固定顺序读取三路来源：
+按不同平台/接口可返回：
+- 作者/账号信息
+- 作品/视频基础信息
+- 互动指标（点赞、评论、分享等，视接口可用性）
+- 字幕/转写/文案文本（接口支持时）
+- 路由与请求追踪信息（方便复现）
 
-1. 进程环境变量（最高）
-2. `skills/tikomni-skill/.env.local`
-3. `<repo_root>/.env`
+## 🔧 如何安装本 Skill
 
-优先级规则：`process env > .env.local > .env`。
+按你的 Agent 运行环境安装即可。
 
-路径语义：
-- 默认 `.env` 固定解析为 `<repo_root>/.env`，不依赖当前工作目录。
-- `--env-file` 或 `runtime.env_file` 若为相对路径，按 `<repo_root>` 解析。
+### OpenClaw
+把本仓库（或 `skills/tikomni-skill`）放到 OpenClaw 的 skills 目录，让系统加载。
 
-### 3）路径配置
-
-- Skill 根目录：`<workspace_root>/skills/tikomni-skill`
-- 运行默认配置模板：`skills/tikomni-skill/references/config-templates/defaults.yaml`
-- 运行配置文档：
-  - EN：`skills/tikomni-skill/references/runtime-config.md`
-  - ZH：`skills/tikomni-skill/references/runtime-config.zh-CN.md`
-
-### 4）关键环境变量
-
-- `TIKOMNI_API_KEY`（必填）
-- `TIKOMNI_BASE_URL`（可选，默认 `https://api.tikomni.com`）
-- `TIKOMNI_TIMEOUT_MS`（可选，默认 `60000`）
-- `TIKOMNI_CONFIG_FILE`（可选，运行配置 YAML 路径）
-
-## 安装
-
-### 推荐：Agent-first（GitHub）
-
-1. 让 Agent 从 `skills/tikomni-skill` 安装。
-2. 安装后执行一次冒烟提取。
-
-### Codex / CodeX
-
-```bash
-python3 "~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py" --repo "<owner>/<repo>" --path "skills/tikomni-skill"
-```
+### Codex
+把 `skills/tikomni-skill` 复制到 Codex 的 skills 目录。
 
 ### Claude Code
+把 `skills/tikomni-skill` 复制到 Claude Code 的 skills 目录。
 
+## ⚙️ 安装后怎么配置（仅 env）
+
+TikOmni 用户配置统一走 **环境变量**，不需要编辑 YAML。
+
+必填：
 ```bash
-mkdir -p "~/.claude/skills"
-cp -R "<repo-root>/skills/tikomni-skill" "~/.claude/skills/tikomni-skill"
+TIKOMNI_API_KEY="你的真实 key"
 ```
 
-## 快速开始
-
+高级可选（都有默认值）：
 ```bash
-# 1) 通过任一支持来源设置 key
-export TIKOMNI_API_KEY="tk_example_123"
+# 运行时
+TIKOMNI_TIMEOUT_MS="60000"
 
-# 2) 做 readiness 检查（只输出来源，不输出密钥）
-python3 "./skills/tikomni-skill/scripts/check_tikomni_readiness.py"
+# 输出目录
+TIKOMNI_OUTPUT_ROOT="docs/skill-output"
+TIKOMNI_OUTPUT_RUNS_DIR="_runs"
+TIKOMNI_OUTPUT_RESULTS_DIR="results"
+TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
 
-# 3) 生成 API 目录
-node "./skills/tikomni-skill/scripts/generate-api-catalog.mjs"
+# 命名规则
+TIKOMNI_FILENAME_PATTERN="{type}-{timestamp}-{job_id}.md"
 
-# 4) 运行提取脚本
-python3 "./skills/tikomni-skill/scripts/run_tikomni_extract.py" "<url_or_id>"
+# 卡片根目录（默认：/mnt/openclaw/data/WIKI）
+TIKOMNI_CARD_ROOT="/mnt/openclaw/data/WIKI"
+
+# 卡片目录语言预设（默认 zh）
+TIKOMNI_PATH_LOCALE="zh"   # zh | en
+
+# 显式路由（最高优先级，分隔符：|）
+TIKOMNI_CARD_ROUTE_WORK="10-内容系统|15-对标研究|01-作品对标卡"
+TIKOMNI_CARD_ROUTE_AUTHOR="10-内容系统|15-对标研究|03-作者对标卡"
+TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="10-内容系统|15-对标研究|02-作者样本集|{platform}-{author_slug}"
 ```
 
-## 核心参考
+路由优先级：
+1) 显式 `TIKOMNI_CARD_ROUTE_*`
+2) `TIKOMNI_PATH_LOCALE` 预设（`zh`/`en`，默认 `zh`）
+3) 内置/默认配置
 
-1. [skills/tikomni-skill/SKILL.md](./skills/tikomni-skill/SKILL.md)
-2. [configuration.md](./skills/tikomni-skill/references/configuration.md)
-3. [runtime-config.md](./skills/tikomni-skill/references/runtime-config.md)
-4. [routing-rules.md](./skills/tikomni-skill/references/routing-rules.md)
-5. [normalize-rules.md](./skills/tikomni-skill/references/normalize-rules.md)
-6. [card-routing.zh-CN.md](./skills/tikomni-skill/references/card-routing.zh-CN.md)
+推荐配置位置：
+- `<repo_root>/.env`
+- `skills/tikomni-skill/.env.local`（本地覆盖）
+
+## ▶️ 怎么使用
+
+在你的 AI Agent 里直接用自然语言下指令，例如：
+- “提取这个抖音主页数据”
+- “抓取这个小红书账号近 20 条并总结选题方向”
+- “提取视频字幕/文案并输出结构化 markdown”
+
+## 🔐 安全说明
+
+- 不要把真实密钥提交到 Git（`.env`、`.env.local`、CI secrets）
+- 不要在日志或输出中泄露 API Key
+
+## 📚 核心参考
+
+- Skill 入口：[`skills/tikomni-skill/SKILL.md`](./skills/tikomni-skill/SKILL.md)
+- API 目录：[`skills/tikomni-skill/references/api-catalog/index.md`](./skills/tikomni-skill/references/api-catalog/index.md)

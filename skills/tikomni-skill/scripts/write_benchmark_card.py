@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write benchmark markdown cards into WIKI zones."""
+"""Write benchmark markdown cards into card root zones."""
 
 import argparse
 import datetime as dt
@@ -13,7 +13,7 @@ from analysis_pipeline import DEFAULT_MODULE_SECTIONS, build_analysis_sections
 from storage_router import build_card_output_path, normalize_card_type, resolve_effective_card_type
 from tikomni_common import normalize_text, read_json_file, write_json_stdout
 
-DEFAULT_WIKI_ROOT = "/mnt/openclaw/data/WIKI"
+DEFAULT_CARD_ROOT = (os.getenv("TIKOMNI_CARD_ROOT", "/mnt/openclaw/data/WIKI").strip() or "/mnt/openclaw/data/WIKI")
 CARD_TYPES = ["work", "author", "author_sample_work"]
 ASR_CLEAN_CONTRACT = "prompt-contracts/asr-clean.md@v1"
 
@@ -696,7 +696,7 @@ def _insight_metric_snapshot(fields: Dict[str, Any]) -> Dict[str, Any]:
 
 def _build_output_path(
     *,
-    wiki_root: str,
+    card_root: str,
     platform: str,
     card_type: str,
     material: bool,
@@ -710,7 +710,7 @@ def _build_output_path(
     target_type = "material" if material else card_type
 
     path, route_parts = build_card_output_path(
-        wiki_root=wiki_root,
+        card_root=card_root,
         platform=platform,
         card_type=target_type,
         author_slug=author_slug,
@@ -847,7 +847,7 @@ def write_benchmark_card(
     payload: Dict[str, Any],
     platform: str,
     card_type: str,
-    wiki_root: str,
+    card_root: str,
     collect_material: bool,
     sample_author: Optional[str] = None,
     content_kind: Optional[str] = None,
@@ -870,7 +870,7 @@ def write_benchmark_card(
     fields = _extract_required_fields(payload, platform=platform)
 
     primary_target = _build_output_path(
-        wiki_root=wiki_root,
+        card_root=card_root,
         platform=platform,
         card_type=effective_card_type,
         material=False,
@@ -894,7 +894,7 @@ def write_benchmark_card(
     material_route_parts: Optional[str] = None
     if collect_material:
         material_target = _build_output_path(
-            wiki_root=wiki_root,
+            card_root=card_root,
             platform=platform,
             card_type=effective_card_type,
             material=True,
@@ -943,13 +943,13 @@ def _read_payload_from_input(input_json: str) -> Dict[str, Any]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Write benchmark card markdown to WIKI")
+    parser = argparse.ArgumentParser(description="Write benchmark card markdown to card root")
     parser.add_argument("--platform", required=True, help="Platform name, e.g. douyin or xiaohongshu")
     parser.add_argument("--card-type", choices=CARD_TYPES, default="work", help="Primary card type")
     parser.add_argument("--sample-author", default=None, help="Optional author slug override for author_sample_work")
     parser.add_argument("--content-kind", default=None, help="Optional workflow kind, e.g. single_video/author_home/author_analysis")
     parser.add_argument("--force-card-type", action="store_true", help="Force manual --card-type to override content_kind mapping")
-    parser.add_argument("--wiki-root", default=DEFAULT_WIKI_ROOT, help="WIKI root path")
+    parser.add_argument("--card-root", default=DEFAULT_CARD_ROOT, help="Card root path")
     parser.add_argument("--collect-material", action="store_true", help="Write extra CMAT card when explicitly requested")
     parser.add_argument(
         "--input-json",
@@ -963,7 +963,7 @@ def main() -> None:
         payload=payload,
         platform=args.platform,
         card_type=args.card_type,
-        wiki_root=args.wiki_root,
+        card_root=args.card_root,
         collect_material=args.collect_material,
         sample_author=args.sample_author,
         content_kind=args.content_kind,

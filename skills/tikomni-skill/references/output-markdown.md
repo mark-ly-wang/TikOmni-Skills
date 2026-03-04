@@ -4,8 +4,8 @@
 
 Use runtime config as source of truth:
 
-1. `../../docs/en/tikomni/runtime-config.md` (EN)
-2. `../../docs/zh/tikomni/runtime-config.md` (ZH)
+1. `../../docs/en/runtime-config.md` (EN)
+2. `../../docs/zh/运行时配置模板.md` (ZH)
 
 If runtime config is missing, use the fallback template below.
 

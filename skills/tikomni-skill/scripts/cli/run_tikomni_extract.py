@@ -1,13 +1,24 @@
 #!/usr/bin/env python3
+
+if __package__ in {None, ""}:
+    import sys
+    from pathlib import Path
+
+    _self = Path(__file__).resolve()
+    for _parent in _self.parents:
+        if (_parent / "scripts").is_dir():
+            sys.path.insert(0, str(_parent))
+            break
+
 """Unified URL runner for douyin/xiaohongshu local adaptation."""
 
 import argparse
 
-from config_loader import config_get, load_tikomni_config
-from extract_pipeline import detect_platform_from_input
-from run_douyin_single_video import run_douyin_single_video
-from run_xiaohongshu_extract import run_xiaohongshu_extract
-from tikomni_common import write_json_stdout
+from scripts.core.config_loader import config_get, load_tikomni_config
+from scripts.core.extract_pipeline import detect_platform_from_input
+from scripts.platform.douyin.run_douyin_single_video import run_douyin_single_video
+from scripts.platform.xiaohongshu.run_xiaohongshu_extract import run_xiaohongshu_extract
+from scripts.core.tikomni_common import write_json_stdout
 
 
 def main() -> None:
@@ -29,10 +40,15 @@ def main() -> None:
     parser.add_argument("--xhs-u2-submit-max-retries", type=int, default=None, help="Xiaohongshu U2 submit max retries")
     parser.add_argument("--xhs-u2-submit-backoff-ms", type=int, default=None, help="Xiaohongshu U2 submit base backoff ms")
     parser.add_argument("--force-u2-fallback", action="store_true", help="XHS only: force subtitle miss for fallback test")
-    parser.add_argument("--write-card", action="store_true", help="Write markdown card")
+    parser.add_argument("--write-card", dest="write_card", action="store_true", help="Write markdown card (default on)")
+    parser.add_argument("--no-write-card", dest="write_card", action="store_false", help="Disable markdown card writing")
+    parser.set_defaults(write_card=True)
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
     parser.add_argument("--collect-material", action="store_true", help="Write CMAT only when explicit")
     parser.add_argument("--card-root", default=None, help="Card root (absolute); falls back to TIKOMNI_CARD_ROOT when writing cards")
+    parser.add_argument("--persist-output", dest="persist_output", action="store_true", help="Persist douyin JSON artifact to TIKOMNI_OUTPUT_ROOT (default on)")
+    parser.add_argument("--no-persist-output", dest="persist_output", action="store_false", help="Disable douyin artifact persistence")
+    parser.set_defaults(persist_output=True)
     args = parser.parse_args()
 
     config, _ = load_tikomni_config(
@@ -109,6 +125,7 @@ def main() -> None:
                 content_kind="single_video",
                 storage_config=config,
                 allow_process_env=args.allow_process_env,
+                persist_output=args.persist_output,
             )
         elif platform == "xiaohongshu":
             result = run_xiaohongshu_extract(

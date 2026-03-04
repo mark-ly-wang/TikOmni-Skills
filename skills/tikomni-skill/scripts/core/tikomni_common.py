@@ -46,7 +46,7 @@ def _parse_env_file(env_file: Optional[str]) -> Dict[str, str]:
 def get_repo_root() -> Path:
     """Return canonical repository root regardless of current working directory."""
     script_path = Path(__file__).resolve()
-    return script_path.parents[3]
+    return script_path.parents[4]
 
 
 def _resolve_env_file_path(env_file: Optional[str]) -> Path:
@@ -62,7 +62,7 @@ def _resolve_env_file_path(env_file: Optional[str]) -> Path:
 
 def _infer_default_env_paths(primary_env_file: Optional[str]) -> Tuple[Path, Path]:
     script_path = Path(__file__).resolve()
-    skill_root = script_path.parents[1]
+    skill_root = script_path.parents[2]
 
     workspace_env = _resolve_env_file_path(primary_env_file)
     local_env = (skill_root / ".env.local").resolve()

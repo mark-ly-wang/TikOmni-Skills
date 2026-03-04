@@ -4,7 +4,7 @@
 import time
 from typing import Any, Dict, List, Optional
 
-from tikomni_common import (
+from scripts.core.tikomni_common import (
     call_json_api,
     extract_task_id,
     extract_task_status,

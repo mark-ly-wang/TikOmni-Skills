@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+
+if __package__ in {None, ""}:
+    import sys
+    from pathlib import Path
+
+    _self = Path(__file__).resolve()
+    for _parent in _self.parents:
+        if (_parent / "scripts").is_dir():
+            sys.path.insert(0, str(_parent))
+            break
+
 """Batch writer for author-homepage sampled work cards."""
 
 import argparse
@@ -6,9 +17,9 @@ import json
 import os
 from typing import Any, Dict, List
 
-from config_loader import load_tikomni_config
-from tikomni_common import normalize_text, read_json_file, write_json_stdout
-from write_benchmark_card import write_benchmark_card
+from scripts.core.config_loader import load_tikomni_config
+from scripts.core.tikomni_common import normalize_text, read_json_file, write_json_stdout
+from scripts.writers.write_benchmark_card import write_benchmark_card
 
 
 def _read_input(path: str) -> Any:

@@ -7,14 +7,14 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from tikomni_common import bootstrap_runtime_env
+from scripts.core.tikomni_common import bootstrap_runtime_env
 
 try:
     import yaml
 except Exception:  # pragma: no cover - defensive fallback
     yaml = None
 
-SKILL_ROOT = Path(__file__).resolve().parents[1]
+SKILL_ROOT = Path(__file__).resolve().parents[2]
 REPO_ROOT = SKILL_ROOT.parents[1]
 DEFAULT_CONFIG_PATH = SKILL_ROOT / "references" / "config-templates" / "defaults.yaml"
 

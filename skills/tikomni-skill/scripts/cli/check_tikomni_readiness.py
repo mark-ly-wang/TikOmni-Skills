@@ -3,10 +3,21 @@
 
 from __future__ import annotations
 
+if __package__ in {None, ""}:
+    import sys
+    from pathlib import Path
+
+    _self = Path(__file__).resolve()
+    for _parent in _self.parents:
+        if (_parent / "scripts").is_dir():
+            sys.path.insert(0, str(_parent))
+            break
+
+
 import argparse
 
-from config_loader import REPO_ROOT, SKILL_ROOT, config_get, load_tikomni_config, resolve_storage_paths
-from tikomni_common import bootstrap_runtime_env, write_json_stdout
+from scripts.core.config_loader import REPO_ROOT, SKILL_ROOT, config_get, load_tikomni_config, resolve_storage_paths
+from scripts.core.tikomni_common import bootstrap_runtime_env, write_json_stdout
 
 
 def main() -> None:

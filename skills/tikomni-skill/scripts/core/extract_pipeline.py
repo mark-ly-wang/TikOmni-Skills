@@ -4,7 +4,7 @@
 from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
-from tikomni_common import call_json_api
+from scripts.core.tikomni_common import call_json_api
 
 
 def build_api_trace(

@@ -49,7 +49,14 @@ Notes:
 ## 4. Output Layout
 
 `TIKOMNI_OUTPUT_ROOT` controls runner outputs (`_runs/results/_errors`) only.
+Default behavior: `scripts/platform/douyin/run_douyin_single_video.py` persists JSON artifacts automatically.
+- success -> `<runs_dir>/<results_dir>/<YYYYMMDD>/<timestamp>-douyin-<id>.json`
+- error -> `<errors_dir>/<YYYYMMDD>/<timestamp>-douyin-<id>.json`
+Use `--no-persist-output` to disable artifact persistence for a run.
+
 Card markdown written by `--write-card` is routed by `TIKOMNI_CARD_ROOT` + card routes.
+Default behavior: `scripts/cli/run_tikomni_extract.py` / `scripts/platform/douyin/run_douyin_single_video.py` enable write-card by default.
+Use `--no-write-card` to disable card writing for a run.
 Do not assume card files follow output root.
 
 ```yaml
@@ -120,10 +127,10 @@ max_fallback_attempts: 2
    - In local CLI/CUI runs: workspace `.env`.
    - In CI runs: CI secrets or private env file loaded at runtime.
 2. Which root controls what?
-   - `TIKOMNI_OUTPUT_ROOT`: runner output files (`_runs/results/_errors`).
-   - `TIKOMNI_CARD_ROOT`: markdown cards produced only when `--write-card` is enabled.
+   - `TIKOMNI_OUTPUT_ROOT`: runner output files (`_runs/results/_errors`, default on for Douyin; disable with `--no-persist-output`).
+   - `TIKOMNI_CARD_ROOT`: markdown cards (default on in `scripts/cli/run_tikomni_extract.py` / `scripts/platform/douyin/run_douyin_single_video.py`; disable with `--no-write-card`).
 3. How to verify which source provided the key?
-   - Run `python3 skills/tikomni-skill/scripts/check_tikomni_readiness.py`.
+   - Run `python3 skills/tikomni-skill/scripts/cli/check_tikomni_readiness.py`.
    - It prints `key_source` and `source_chain` only (no secret value).
 4. How to prevent key leakage?
    - Never commit real `.env` files.

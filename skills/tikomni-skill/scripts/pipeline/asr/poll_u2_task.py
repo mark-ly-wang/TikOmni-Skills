@@ -1,11 +1,22 @@
 #!/usr/bin/env python3
+
+if __package__ in {None, ""}:
+    import sys
+    from pathlib import Path
+
+    _self = Path(__file__).resolve()
+    for _parent in _self.parents:
+        if (_parent / "scripts").is_dir():
+            sys.path.insert(0, str(_parent))
+            break
+
 """Poll Tikomni U2 task until terminal state."""
 
 import argparse
 from typing import Any, Dict
 
-from asr_pipeline import poll_u2_task_core
-from tikomni_common import extract_error_reason, resolve_runtime, write_json_stdout
+from scripts.pipeline.asr.asr_pipeline import poll_u2_task_core
+from scripts.core.tikomni_common import extract_error_reason, resolve_runtime, write_json_stdout
 
 
 def poll_u2_task(

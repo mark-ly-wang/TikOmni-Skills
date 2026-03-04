@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+
+if __package__ in {None, ""}:
+    import sys
+    from pathlib import Path
+
+    _self = Path(__file__).resolve()
+    for _parent in _self.parents:
+        if (_parent / "scripts").is_dir():
+            sys.path.insert(0, str(_parent))
+            break
+
 """Xiaohongshu extraction: subtitle-first, fallback to U2."""
 
 import argparse
@@ -7,10 +18,10 @@ import re
 import urllib.request
 from typing import Any, Dict, List, Optional
 
-from asr_pipeline import run_u2_asr_with_timeout_retry
-from config_loader import config_get, load_tikomni_config
-from extract_pipeline import build_api_trace, request_with_optional_fallback
-from tikomni_common import (
+from scripts.pipeline.asr.asr_pipeline import run_u2_asr_with_timeout_retry
+from scripts.core.config_loader import config_get, load_tikomni_config
+from scripts.core.extract_pipeline import build_api_trace, request_with_optional_fallback
+from scripts.core.tikomni_common import (
     deep_find_all,
     deep_find_first,
     normalize_text,
@@ -18,7 +29,7 @@ from tikomni_common import (
     summarize_content,
     write_json_stdout,
 )
-from write_benchmark_card import write_benchmark_card
+from scripts.writers.write_benchmark_card import write_benchmark_card
 
 
 def _normalize_input(input_value: Optional[str], share_text: Optional[str], note_id: Optional[str]) -> Dict[str, Optional[str]]:

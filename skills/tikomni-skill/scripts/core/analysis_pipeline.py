@@ -23,7 +23,7 @@ DEFAULT_INSIGHT_SECTION = "洞察分析"
 
 def contracts_dir() -> str:
     here = os.path.dirname(os.path.abspath(__file__))
-    return os.path.normpath(os.path.join(here, "..", "references", "prompt-contracts"))
+    return os.path.normpath(os.path.join(here, "..", "..", "references", "prompt-contracts"))
 
 
 def load_contract_prompt(filename: str) -> str:

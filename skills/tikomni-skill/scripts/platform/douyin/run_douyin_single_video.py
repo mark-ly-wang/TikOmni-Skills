@@ -3,15 +3,31 @@
 
 from __future__ import annotations
 
+if __package__ in {None, ""}:
+    import sys
+    from pathlib import Path
+
+    _self = Path(__file__).resolve()
+    for _parent in _self.parents:
+        if (_parent / "scripts").is_dir():
+            sys.path.insert(0, str(_parent))
+            break
+
+
 import argparse
+import hashlib
+import json
+import re
 import time
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from config_loader import config_get, load_tikomni_config
-from douyin_video_type_matrix import normalize_douyin_video_type
-from poll_u2_task import poll_u2_task
-from select_low_quality_video_url import select_low_quality_video_url
-from tikomni_common import (
+from scripts.core.config_loader import config_get, load_tikomni_config, resolve_storage_paths
+from scripts.platform.douyin.douyin_video_type_matrix import normalize_douyin_video_type
+from scripts.pipeline.asr.poll_u2_task import poll_u2_task
+from scripts.platform.douyin.select_low_quality_video_url import select_low_quality_video_url
+from scripts.core.tikomni_common import (
     call_json_api,
     extract_task_id,
     normalize_text,
@@ -19,12 +35,139 @@ from tikomni_common import (
     summarize_content,
     write_json_stdout,
 )
-from write_benchmark_card import write_benchmark_card
+from scripts.writers.write_benchmark_card import write_benchmark_card
 
 APP_ENDPOINT = "/api/u1/v1/douyin/app/v3/fetch_one_video_by_share_url"
 WEB_ENDPOINT = "/api/u1/v1/douyin/web/fetch_one_video_by_share_url"
 U2_SUBMIT_ENDPOINT = "/api/u2/v1/services/audio/asr/transcription"
 
+
+
+
+def _safe_slug(value: Optional[str], fallback: str = "unknown") -> str:
+    text = normalize_text(value)
+    if not text:
+        return fallback
+    lowered = text.lower()
+    slug = re.sub(r"[^a-z0-9_-]+", "-", lowered).strip("-")
+    return slug[:64] or fallback
+
+
+def _traceable_identifier(source_input: Dict[str, Optional[str]], platform_work_id: Optional[str]) -> str:
+    if platform_work_id:
+        return _safe_slug(platform_work_id)
+
+    share_url = normalize_text(source_input.get("share_url"))
+    if not share_url:
+        return "missing_input"
+
+    digest = hashlib.sha1(share_url.encode("utf-8")).hexdigest()[:10]
+    return f"url-{digest}"
+
+
+def _build_persist_payload(
+    *,
+    result: Dict[str, Any],
+    source_input: Dict[str, Optional[str]],
+    platform_work_id: Optional[str],
+    status: str,
+    written_at: datetime,
+) -> Dict[str, Any]:
+    summary = {
+        "summary": result.get("summary", ""),
+        "insights": result.get("insights", []),
+        "confidence": result.get("confidence"),
+        "error_reason": result.get("error_reason"),
+    }
+    normalized = {
+        "platform": result.get("platform", "douyin"),
+        "content_kind": result.get("content_kind", "single_video"),
+        "platform_work_id": result.get("platform_work_id"),
+        "title": result.get("title"),
+        "duration_ms": result.get("duration_ms"),
+        "is_video": result.get("is_video"),
+        "u2_task_id": result.get("u2_task_id"),
+        "u2_task_status": result.get("u2_task_status"),
+        "request_id": result.get("request_id"),
+        "source": source_input,
+    }
+    return {
+        "meta": {
+            "written_at": written_at.isoformat(timespec="seconds"),
+            "status": status,
+            "platform": "douyin",
+            "identifier": _traceable_identifier(source_input, platform_work_id),
+        },
+        "summary": summary,
+        "normalized": normalized,
+        "raw": result,
+    }
+
+
+def _persist_output_artifact(
+    *,
+    result: Dict[str, Any],
+    source_input: Dict[str, Optional[str]],
+    platform_work_id: Optional[str],
+    storage_config: Optional[Dict[str, Any]],
+    persist_output: bool,
+) -> Dict[str, Any]:
+    if not persist_output:
+        return {"enabled": False, "skipped": True, "reason": "disabled_by_flag"}
+
+    try:
+        paths = resolve_storage_paths(storage_config or {})
+    except Exception as error:
+        return {"enabled": True, "ok": False, "error": f"resolve_storage_paths_failed:{error}"}
+
+    now = datetime.now()
+    date_key = now.strftime("%Y%m%d")
+    timestamp = now.strftime("%Y%m%dT%H%M%S")
+    identifier = _traceable_identifier(source_input, platform_work_id)
+    has_error = bool(result.get("error_reason"))
+    status = "error" if has_error else "success"
+
+    if has_error:
+        target_dir = Path(paths.get("errors_dir", "")) / date_key
+    else:
+        target_dir = Path(paths.get("runs_dir", "")) / str(paths.get("results_dir", "results")) / date_key
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+    file_path = target_dir / f"{timestamp}-douyin-{identifier}.json"
+
+    payload = _build_persist_payload(
+        result=result,
+        source_input=source_input,
+        platform_work_id=platform_work_id,
+        status=status,
+        written_at=now,
+    )
+    file_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    return {
+        "enabled": True,
+        "ok": True,
+        "status": status,
+        "path": str(file_path),
+    }
+
+
+def _finalize_result(
+    *,
+    result: Dict[str, Any],
+    source_input: Dict[str, Optional[str]],
+    platform_work_id: Optional[str],
+    storage_config: Optional[Dict[str, Any]],
+    persist_output: bool,
+) -> Dict[str, Any]:
+    result["output_persist"] = _persist_output_artifact(
+        result=result,
+        source_input=source_input,
+        platform_work_id=platform_work_id,
+        storage_config=storage_config,
+        persist_output=persist_output,
+    )
+    return result
 
 def _normalize_input(
     input_value: Optional[str],
@@ -472,6 +615,7 @@ def run_douyin_single_video(
     content_kind: str = "single_video",
     storage_config: Optional[Dict[str, Any]] = None,
     allow_process_env: bool = False,
+    persist_output: bool = True,
 ) -> Dict[str, Any]:
     source_input = _normalize_input(input_value, share_url)
     if not source_input.get("share_url"):
@@ -511,7 +655,13 @@ def run_douyin_single_video(
                 content_kind=content_kind,
                 storage_config=storage_config,
             )
-        return result
+        return _finalize_result(
+            result=result,
+            source_input=source_input,
+            platform_work_id=None,
+            storage_config=storage_config,
+            persist_output=persist_output,
+        )
 
     runtime = resolve_runtime(
         env_file=env_file,
@@ -595,7 +745,13 @@ def run_douyin_single_video(
                 content_kind=content_kind,
                 storage_config=storage_config,
             )
-        return result
+        return _finalize_result(
+            result=result,
+            source_input=source_input,
+            platform_work_id=None,
+            storage_config=storage_config,
+            persist_output=persist_output,
+        )
 
     aweme_detail = _extract_aweme_detail(one_video_response.get("data"))
     if not aweme_detail:
@@ -635,7 +791,13 @@ def run_douyin_single_video(
                 content_kind=content_kind,
                 storage_config=storage_config,
             )
-        return result
+        return _finalize_result(
+            result=result,
+            source_input=source_input,
+            platform_work_id=None,
+            storage_config=storage_config,
+            persist_output=persist_output,
+        )
 
     video_type_info = normalize_douyin_video_type(aweme_detail)
     duration_ms = _normalize_duration_ms(aweme_detail)
@@ -815,7 +977,13 @@ def run_douyin_single_video(
             storage_config=storage_config,
         )
 
-    return result
+    return _finalize_result(
+        result=result,
+        source_input=source_input,
+        platform_work_id=platform_work_id,
+        storage_config=storage_config,
+        persist_output=persist_output,
+    )
 
 
 def main() -> None:
@@ -851,6 +1019,9 @@ def main() -> None:
     parser.add_argument("--content-kind", default="single_video", help="Routing kind, e.g. single_video/author_home/author_analysis")
     parser.add_argument("--collect-material", action="store_true", help="Write extra CMAT card")
     parser.add_argument("--card-root", default=None, help="Card root (absolute); falls back to TIKOMNI_CARD_ROOT when writing cards")
+    parser.add_argument("--persist-output", dest="persist_output", action="store_true", help="Persist JSON artifact to TIKOMNI_OUTPUT_ROOT (default on)")
+    parser.add_argument("--no-persist-output", dest="persist_output", action="store_false", help="Disable output artifact persistence")
+    parser.set_defaults(persist_output=True)
     args = parser.parse_args()
 
     config, _ = load_tikomni_config(
@@ -884,6 +1055,7 @@ def main() -> None:
             content_kind=args.content_kind,
             storage_config=config,
             allow_process_env=args.allow_process_env,
+            persist_output=args.persist_output,
         )
     except ValueError as error:
         result = {

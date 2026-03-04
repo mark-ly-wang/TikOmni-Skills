@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+
+if __package__ in {None, ""}:
+    import sys
+    from pathlib import Path
+
+    _self = Path(__file__).resolve()
+    for _parent in _self.parents:
+        if (_parent / "scripts").is_dir():
+            sys.path.insert(0, str(_parent))
+            break
+
 """Write benchmark markdown cards into card root zones."""
 
 import argparse
@@ -10,9 +21,9 @@ import unicodedata
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from analysis_pipeline import DEFAULT_MODULE_SECTIONS, build_analysis_sections
-from storage_router import build_card_output_path, normalize_card_type, resolve_effective_card_type
-from tikomni_common import normalize_text, read_json_file, write_json_stdout
+from scripts.core.analysis_pipeline import DEFAULT_MODULE_SECTIONS, build_analysis_sections
+from scripts.core.storage_router import build_card_output_path, normalize_card_type, resolve_effective_card_type
+from scripts.core.tikomni_common import normalize_text, read_json_file, write_json_stdout
 
 def resolve_default_card_root() -> str:
     raw = os.getenv("TIKOMNI_CARD_ROOT", "").strip()

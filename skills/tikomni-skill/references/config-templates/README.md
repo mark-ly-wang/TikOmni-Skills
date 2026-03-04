@@ -11,7 +11,7 @@ This folder contains executable runtime config templates used by local scripts.
 
 ## Loader Priority
 
-`scripts/config_loader.py` resolves config in this order:
+`scripts/core/config_loader.py` resolves config in this order:
 
 1. CLI `--config <path>`
 2. Environment variable `TIKOMNI_CONFIG_FILE`
@@ -19,14 +19,14 @@ This folder contains executable runtime config templates used by local scripts.
 
 ## Current Script Support
 
-- `scripts/run_tikomni_extract.py`
-- `scripts/run_douyin_single_video.py`
-- `scripts/run_xiaohongshu_extract.py`
+- `scripts/cli/run_tikomni_extract.py`
+- `scripts/platform/douyin/run_douyin_single_video.py`
+- `scripts/platform/xiaohongshu/run_xiaohongshu_extract.py`
 
 Example:
 
 ```bash
-python3 skills/tikomni-skill/scripts/run_tikomni_extract.py "<url>" \
+python3 skills/tikomni-skill/scripts/cli/run_tikomni_extract.py "<url>" \
   --config skills/tikomni-skill/references/config-templates/defaults.yaml
 ```
 

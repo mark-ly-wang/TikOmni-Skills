@@ -1,5 +1,11 @@
 # Routing Rules
 
+## 0. Entry Scripts (v2 layout)
+
+1. Unified entry is `scripts/cli/run_tikomni_extract.py`.
+2. Platform runners live under `scripts/platform/*/`.
+3. Shared logic lives under `scripts/core/` and `scripts/pipeline/`.
+
 ## 1. Global Endpoint Priority
 
 1. For the same platform and intent, prefer `app > web_v2 > web`.

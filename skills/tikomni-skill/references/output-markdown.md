@@ -4,8 +4,8 @@
 
 Use runtime config as source of truth:
 
-1. `../../docs/en/runtime-config.md` (EN)
-2. `../../docs/zh/运行时配置模板.md` (ZH)
+1. `./runtime-config.md`
+2. User-provided config path (if explicitly provided)
 
 If runtime config is missing, use the fallback template below.
 

@@ -1,111 +1,210 @@
-# tikomni-skill
+# TikOmni Skills
 
-`tikomni-skill` is a direct API skill for AI agents.
-It calls Tikomni public APIs (`u1` + `u2`) and writes run/result/error artifacts as Markdown.
+> 中文在前，English below. This README is the main human-facing entry for this repository.
 
-🌐 中文版: [README.zh-CN.md](./README.zh-CN.md)
+## 中文（ZH）
 
-## Platform
+### 1) 这个仓库是什么
 
-1. Homepage: [tikomni.com](https://tikomni.com)
-2. Dashboard / Signup: [app.tikomni.com](https://app.tikomni.com)
-3. API Base URL: [api.tikomni.com](https://api.tikomni.com)
-4. API Docs: [docs.tikomni.com](https://docs.tikomni.com)
+这是 TikOmni 的 Agent Skill 仓库，核心是 `skills/tikomni-skill`：
+- 通过直连 HTTP 调用 TikOmni 公共 API（u1/u2）
+- 产出结构化 Markdown（run / result / error）
+- 提供抖音、小红书主页提取等固定 playbook，以及通用目录路由能力
 
-## Coverage
+平台入口：
+- 官网：https://tikomni.com
+- 控制台：https://app.tikomni.com
+- API：https://api.tikomni.com
+- 文档：https://docs.tikomni.com
 
-- 20+ platform domains are catalog-covered.
-- Fixed playbooks are currently GA for Douyin homepage and Xiaohongshu homepage extraction.
-- Other domains are routed by catalog intent matching.
-
-## Docs Navigation
-
-- Chinese reference docs: [`docs/zh/references/`](./docs/zh/references/)
-- Stage notes: [`docs/notes/`](./docs/notes/)
-
-## Configuration
-
-### 1) Copy env template first
+### 2) 快速开始
 
 ```bash
+# 1) 准备配置（任选其一）
+cp ./skills/tikomni-skill/env.example ./.env
+# 或
+cp ./skills/tikomni-skill/env.example ./skills/tikomni-skill/.env.local
+
+# 2) 填入真实 TIKOMNI_API_KEY 后，检查就绪状态（只显示来源，不显示密钥）
+python3 ./skills/tikomni-skill/scripts/check_tikomni_readiness.py
+
+# 3) 生成 API 目录（可选）
+node ./skills/tikomni-skill/scripts/generate-api-catalog.mjs
+
+# 4) 运行提取
+python3 ./skills/tikomni-skill/scripts/run_tikomni_extract.py "<url_or_id>"
+```
+
+### 3) 配置说明（重点）
+
+对用户来说，**只有这两个配置源**：
+1. `<repo_root>/.env`
+2. `skills/tikomni-skill/.env.local`
+
+加载优先级：`process env > .env.local > .env`
+
+说明：
+- 不要再依赖 `docs/en` / `docs/zh` 里的旧配置文档。当前以本 README + `skills/tikomni-skill/references/runtime-config.md` 为准。
+- 若使用相对路径（如 `--env-file` / `runtime.env_file`），按 `<repo_root>` 解析。
+
+### 4) 必填/可选环境变量（含示例）
+
+必填：
+```bash
+TIKOMNI_API_KEY="tk_xxx"
+```
+
+可选：
+```bash
+TIKOMNI_BASE_URL="https://api.tikomni.com"
+TIKOMNI_TIMEOUT_MS="60000"
+TIKOMNI_CONFIG_FILE="skills/tikomni-skill/references/config-templates/defaults.yaml"
+```
+
+最小 `.env` 示例：
+```bash
+TIKOMNI_API_KEY="tk_xxx"
+TIKOMNI_BASE_URL="https://api.tikomni.com"
+TIKOMNI_TIMEOUT_MS="60000"
+```
+
+### 5) 常用脚本怎么跑
+
+```bash
+# 就绪检查
+python3 ./skills/tikomni-skill/scripts/check_tikomni_readiness.py
+
+# 通用提取入口
+python3 ./skills/tikomni-skill/scripts/run_tikomni_extract.py "<url_or_id>"
+
+# 抖音主页提取
+python3 ./skills/tikomni-skill/scripts/run_douyin_extract.py "<douyin_url_or_id>"
+
+# 小红书主页提取
+python3 ./skills/tikomni-skill/scripts/run_xiaohongshu_extract.py "<xhs_url_or_id>"
+```
+
+### 6) 扩展 / 自定义
+
+扩展能力建议放在 `skills/tikomni-skill/references/`：
+- `routing-rules.md`：路由策略
+- `normalize-rules.md`：字段归一化
+- `playbooks/`：固定流程
+- `config-templates/defaults.yaml`：脚本默认配置模板（高级用户/维护者）
+
+新增能力至少明确：输入 schema、主备接口链路、fallback 条件、输出模板。
+
+### 7) 安全说明
+
+- **永远不要提交真实密钥**（`.env`、`.env.local`、CI secrets）
+- 日志和 Markdown 产物中禁止输出 `TIKOMNI_API_KEY`
+- 建议在 CI 中关闭命令回显（`set +x`）后再加载 env 文件
+
+---
+
+## English (EN)
+
+### 1) What this repo is
+
+This repository hosts TikOmni agent skills, mainly `skills/tikomni-skill`:
+- Direct HTTP calls to TikOmni public APIs (u1/u2)
+- Structured Markdown artifacts (run / result / error)
+- Fixed playbooks for Douyin/Xiaohongshu homepage extraction plus catalog-based routing
+
+Platform entry points:
+- Website: https://tikomni.com
+- Dashboard: https://app.tikomni.com
+- API: https://api.tikomni.com
+- API Docs: https://docs.tikomni.com
+
+### 2) Quick start
+
+```bash
+# 1) Prepare config (pick one)
 cp ./skills/tikomni-skill/env.example ./.env
 # or
 cp ./skills/tikomni-skill/env.example ./skills/tikomni-skill/.env.local
+
+# 2) Fill real TIKOMNI_API_KEY, then verify readiness (source only, no secret)
+python3 ./skills/tikomni-skill/scripts/check_tikomni_readiness.py
+
+# 3) Generate API catalog (optional)
+node ./skills/tikomni-skill/scripts/generate-api-catalog.mjs
+
+# 4) Run extraction
+python3 ./skills/tikomni-skill/scripts/run_tikomni_extract.py "<url_or_id>"
 ```
 
-Then replace example values with real values.
+### 3) Configuration (important)
 
-### 2) Three key sources and priority
-
-`TIKOMNI_API_KEY` is loaded from three sources with deterministic precedence:
-
-1. process env (highest)
+For users, there are **ONLY two config sources**:
+1. `<repo_root>/.env`
 2. `skills/tikomni-skill/.env.local`
-3. `<repo_root>/.env`
 
-Priority rule: `process env > .env.local > .env`.
+Load priority: `process env > .env.local > .env`
 
-Path semantics:
-- Default `.env` is always resolved as `<repo_root>/.env` (not CWD-dependent).
-- If `--env-file` or `runtime.env_file` is relative, it is resolved from `<repo_root>`.
+Notes:
+- Do not rely on legacy docs under `docs/en` or `docs/zh`.
+- Use this README + `skills/tikomni-skill/references/runtime-config.md` as source of truth.
+- Relative paths (for example `--env-file` / `runtime.env_file`) are resolved from `<repo_root>`.
 
-### 3) Path configuration
+### 4) Required and optional env vars (with examples)
 
-- Skill root: `<workspace_root>/skills/tikomni-skill`
-- Runtime config template: `skills/tikomni-skill/references/config-templates/defaults.yaml`
-- Runtime config docs:
-  - EN: `skills/tikomni-skill/references/runtime-config.md`
-  - ZH: `docs/zh/references/runtime-config.zh-CN.md`
-
-### 4) Important env variables
-
-- `TIKOMNI_API_KEY` (required)
-- `TIKOMNI_BASE_URL` (optional, default `https://api.tikomni.com`)
-- `TIKOMNI_TIMEOUT_MS` (optional, default `60000`)
-- `TIKOMNI_CONFIG_FILE` (optional runtime config YAML path)
-
-## Installation
-
-### Agent-first from GitHub (recommended)
-
-1. Ask your agent to install from `skills/tikomni-skill`.
-2. Run one smoke extraction.
-
-### Codex / CodeX
-
+Required:
 ```bash
-python3 "~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py" --repo "<owner>/<repo>" --path "skills/tikomni-skill"
+TIKOMNI_API_KEY="tk_xxx"
 ```
 
-### Claude Code
-
+Optional:
 ```bash
-mkdir -p "~/.claude/skills"
-cp -R "<repo-root>/skills/tikomni-skill" "~/.claude/skills/tikomni-skill"
+TIKOMNI_BASE_URL="https://api.tikomni.com"
+TIKOMNI_TIMEOUT_MS="60000"
+TIKOMNI_CONFIG_FILE="skills/tikomni-skill/references/config-templates/defaults.yaml"
 ```
 
-## Quick Start
-
+Minimal `.env` example:
 ```bash
-# 1) set key via one of the supported sources
-export TIKOMNI_API_KEY="tk_example_123"
-
-# 2) check readiness (prints source only, never prints secret)
-python3 "./skills/tikomni-skill/scripts/check_tikomni_readiness.py"
-
-# 3) generate API catalog
-node "./skills/tikomni-skill/scripts/generate-api-catalog.mjs"
-
-# 4) run extractor
-python3 "./skills/tikomni-skill/scripts/run_tikomni_extract.py" "<url_or_id>"
+TIKOMNI_API_KEY="tk_xxx"
+TIKOMNI_BASE_URL="https://api.tikomni.com"
+TIKOMNI_TIMEOUT_MS="60000"
 ```
 
-## Core References
+### 5) How to run key scripts
 
-1. [skills/tikomni-skill/SKILL.md](./skills/tikomni-skill/SKILL.md)
-2. [configuration.md](./docs/en/references/configuration.md)
-3. [customization-guide.md](./docs/en/references/customization-guide.md)
-4. [runtime-config.md](./skills/tikomni-skill/references/runtime-config.md)
-5. [routing-rules.md](./skills/tikomni-skill/references/routing-rules.md)
-6. [normalize-rules.md](./skills/tikomni-skill/references/normalize-rules.md)
-7. [API catalog index](./skills/tikomni-skill/references/api-catalog/index.md)
+```bash
+# Readiness check
+python3 ./skills/tikomni-skill/scripts/check_tikomni_readiness.py
+
+# Generic extraction entry
+python3 ./skills/tikomni-skill/scripts/run_tikomni_extract.py "<url_or_id>"
+
+# Douyin homepage extraction
+python3 ./skills/tikomni-skill/scripts/run_douyin_extract.py "<douyin_url_or_id>"
+
+# Xiaohongshu homepage extraction
+python3 ./skills/tikomni-skill/scripts/run_xiaohongshu_extract.py "<xhs_url_or_id>"
+```
+
+### 6) Extension / customization notes
+
+Extension points are under `skills/tikomni-skill/references/`:
+- `routing-rules.md`
+- `normalize-rules.md`
+- `playbooks/`
+- `config-templates/defaults.yaml` (maintainer/advanced use)
+
+For new capabilities, define at least: input schema, primary/fallback endpoint chain, fallback limits, and output template.
+
+### 7) Security note
+
+- **Never commit real secrets** (`.env`, `.env.local`, CI secrets)
+- Never print `TIKOMNI_API_KEY` in logs or Markdown artifacts
+- In CI, disable command echo (`set +x`) before sourcing env files
+
+## Core references
+
+- Skill spec: [`skills/tikomni-skill/SKILL.md`](./skills/tikomni-skill/SKILL.md)
+- Runtime config reference: [`skills/tikomni-skill/references/runtime-config.md`](./skills/tikomni-skill/references/runtime-config.md)
+- Routing rules: [`skills/tikomni-skill/references/routing-rules.md`](./skills/tikomni-skill/references/routing-rules.md)
+- Normalize rules: [`skills/tikomni-skill/references/normalize-rules.md`](./skills/tikomni-skill/references/normalize-rules.md)
+- API catalog index: [`skills/tikomni-skill/references/api-catalog/index.md`](./skills/tikomni-skill/references/api-catalog/index.md)

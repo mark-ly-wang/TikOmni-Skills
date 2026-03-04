@@ -14,7 +14,7 @@ Call Tikomni APIs via direct HTTP and output `raw + normalized` data with Markdo
 1. Set `TIKOMNI_API_KEY` (template file: `skills/tikomni-skill/env.example`).
 2. Use `https://api.tikomni.com` as base URL.
 3. Never print API keys in logs or markdown.
-4. Read runtime config first: `../../docs/en/runtime-config.md`.
+4. Read runtime config first: `references/runtime-config.md`.
 5. If user provides a custom config path, use that path as highest priority.
 6. If runtime config defines `env_file`, load it silently (no secret echo), then resolve `auth_env_key`.
 
@@ -45,7 +45,7 @@ Call Tikomni APIs via direct HTTP and output `raw + normalized` data with Markdo
 4. Xiaohongshu homepage playbook: `references/playbooks/xiaohongshu-home-extract.md`
 5. Copy extraction rules: `references/playbooks/copy-extract-rules.md`
 6. Markdown output rules: `references/output-markdown.md`
-7. Runtime config (human docs, EN): `../../docs/en/runtime-config.md`
+7. Runtime config reference: `references/runtime-config.md`
 8. Script defaults template (YAML): `references/config-templates/defaults.yaml`
 9. Full API catalog: `references/api-catalog/index.md`
 10. Benchmark card prompt contracts: `references/prompt-contracts/`

@@ -44,7 +44,9 @@ env_file: .env
 说明：
 
 1. `env_file` 只是声明路径，不应在日志打印其内容。
-2. 真实密钥始终从环境变量读取，不写进 markdown 输出。
+2. `env_file` 若为相对路径，会按仓库根目录解析（不依赖当前工作目录）。
+3. 未声明 `env_file` 时，默认使用 `<repo_root>/.env`。
+4. 真实密钥始终从环境变量读取，不写进 markdown 输出。
 
 ## 4. 输出目录结构（产物落在哪里）
 
@@ -120,6 +122,9 @@ max_fallback_attempts: 2
 1. 我不懂“本地配置”在哪？
    - 如果你在本机 CLI/CUI 里跑，就在当前仓库 `.env` 配置。
    - 如果你在 CI 跑，就在 CI 的环境变量或私有 env 文件配置。
-2. 怎么避免泄露 key？
+2. 怎么确认 key 实际来自哪一路？
+   - 运行 `python3 skills/tikomni-skill/scripts/check_tikomni_readiness.py`。
+   - 只会输出 `key_source` 与 `source_chain`，不会输出密钥值。
+3. 怎么避免泄露 key？
    - 不要提交真实 `.env` 文件。
    - 日志里不要打印 `TIKOMNI_API_KEY`。

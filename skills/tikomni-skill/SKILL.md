@@ -1,6 +1,6 @@
 ---
 name: tikomni-skill
-description: Direct HTTP Tikomni skill for u1/u2 public APIs. Use when users ask to fetch Douyin/Xiaohongshu homepage data, extract copy/subtitles/transcripts, call Tikomni APIs by intent, or save extraction outputs as Markdown. Also trigger on Chinese requests like “抓抖音主页”“抓小红书主页”“提取文案/字幕/逐字稿”. Homepage extraction for Douyin/Xiaohongshu must run fixed playbooks.
+description: Direct HTTP Tikomni skill for u1/u2 public APIs. Use when users ask to fetch Douyin/Xiaohongshu homepage data, extract copy/subtitles/transcripts, call Tikomni APIs by intent, or save extraction outputs as Markdown. Homepage extraction for Douyin/Xiaohongshu must run fixed playbooks.
 ---
 
 # Tikomni Skill
@@ -16,7 +16,7 @@ Call Tikomni APIs via direct HTTP and output `raw + normalized` data with Markdo
 3. Never print API keys in logs or markdown.
 4. Read runtime config first:
    - English: `references/runtime-config.md`
-   - 中文: `references/runtime-config.zh-CN.md`
+   - Chinese: `references/runtime-config.zh-CN.md`
 5. If user provides a custom config path, use that path as highest priority.
 6. If runtime config defines `env_file`, load it silently (no secret echo), then resolve `auth_env_key`.
 
@@ -41,18 +41,18 @@ Call Tikomni APIs via direct HTTP and output `raw + normalized` data with Markdo
 
 ## References
 
-1. Routing rules: `references/routing-rules.md` (中文: `references/routing-rules.zh-CN.md`)
-2. Normalize rules: `references/normalize-rules.md` (中文: `references/normalize-rules.zh-CN.md`)
-3. Douyin homepage playbook: `references/playbooks/douyin-home-extract.md` (中文: `references/playbooks/douyin-home-extract.zh-CN.md`)
-4. Xiaohongshu homepage playbook: `references/playbooks/xiaohongshu-home-extract.md` (中文: `references/playbooks/xiaohongshu-home-extract.zh-CN.md`)
-5. Copy extraction rules: `references/playbooks/copy-extract-rules.md` (中文: `references/playbooks/copy-extract-rules.zh-CN.md`)
-6. Markdown output rules: `references/output-markdown.md` (中文: `references/output-markdown.zh-CN.md`)
-7. Customization guide: `references/customization-guide.md` (中文: `references/customization-guide.zh-CN.md`)
-8. Configuration guide: `references/configuration.md` (中文: `references/configuration.zh-CN.md`)
-9. Runtime config template (policy docs): `references/runtime-config.md` (中文: `references/runtime-config.zh-CN.md`)
+1. Routing rules: `references/routing-rules.md` (Chinese: `references/routing-rules.zh-CN.md`)
+2. Normalize rules: `references/normalize-rules.md` (Chinese: `references/normalize-rules.zh-CN.md`)
+3. Douyin homepage playbook: `references/playbooks/douyin-home-extract.md` (Chinese: `references/playbooks/douyin-home-extract.zh-CN.md`)
+4. Xiaohongshu homepage playbook: `references/playbooks/xiaohongshu-home-extract.md` (Chinese: `references/playbooks/xiaohongshu-home-extract.zh-CN.md`)
+5. Copy extraction rules: `references/playbooks/copy-extract-rules.md` (Chinese: `references/playbooks/copy-extract-rules.zh-CN.md`)
+6. Markdown output rules: `references/output-markdown.md` (Chinese: `references/output-markdown.zh-CN.md`)
+7. Customization guide: `references/customization-guide.md` (Chinese: `references/customization-guide.zh-CN.md`)
+8. Configuration guide: `references/configuration.md` (Chinese: `references/configuration.zh-CN.md`)
+9. Runtime config template (policy docs): `references/runtime-config.md` (Chinese: `references/runtime-config.zh-CN.md`)
 10. Script defaults template (YAML): `references/config-templates/defaults.yaml`
 11. Full API catalog: `references/api-catalog/index.md`
-12. Card routing (中文): `references/card-routing.zh-CN.md`
+12. Card routing (Chinese): `references/card-routing.zh-CN.md`
 13. Benchmark card prompt contracts: `references/prompt-contracts/`
 14. Topic contract: `references/prompt-contracts/topic.md`
 15. Style contract: `references/prompt-contracts/style.md`

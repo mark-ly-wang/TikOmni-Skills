@@ -10,11 +10,14 @@ This document defines where users configure this skill.
 
 ## 1. Configuration Sources
 
-1. `.env` in the current workspace for secrets and runtime environment (most common).
-2. `skills/tikomni-skill/references/runtime-config.md` for user-facing execution policy.
-3. Env template file: `skills/tikomni-skill/env.example` (no real secret inside).
-4. Script runtime template: `skills/tikomni-skill/references/config-templates/defaults.yaml` (internal default, maintainers/advanced users only).
-5. Optional: user can provide another config file path in prompt, and the agent should read that file first.
+1. `<repo_root>/.env` for base secrets/runtime environment (default path, not CWD-dependent).
+2. `skills/tikomni-skill/.env.local` for local override (higher priority than `.env`).
+3. `skills/tikomni-skill/references/runtime-config.md` for user-facing execution policy.
+4. Env template file: `skills/tikomni-skill/env.example` (no real secret inside).
+5. Script runtime template: `skills/tikomni-skill/references/config-templates/defaults.yaml` (internal default, maintainers/advanced users only).
+6. Optional: user can provide another config file path in prompt, and the agent should read that file first.
+
+Path rule: if `--env-file` / `runtime.env_file` is relative, resolve it from `<repo_root>`.
 
 ## 2. Required `.env` Variables
 
@@ -31,9 +34,10 @@ TIKOMNI_TIMEOUT_MS="60000"
 
 ## 3. Recommended File Layout
 
-1. `./.env`: your private local config.
-2. `skills/tikomni-skill/env.example`: env template.
-3. `skills/tikomni-skill/references/runtime-config.md`: runtime policy config.
+1. `<repo_root>/.env`: your private base config.
+2. `skills/tikomni-skill/.env.local`: optional local override.
+3. `skills/tikomni-skill/env.example`: env template.
+4. `skills/tikomni-skill/references/runtime-config.md`: runtime policy config.
 
 ## 4. CI Loading Without Leaking Logs
 
@@ -50,6 +54,7 @@ Notes:
 
 1. `set +x` prevents secret values from being echoed into logs.
 2. `skills/tikomni-skill/.env.local` should never be committed.
+3. Use `python3 skills/tikomni-skill/scripts/check_tikomni_readiness.py` to inspect `key_source/source_chain` without printing secrets.
 
 ## 5. Runtime Config Contract
 

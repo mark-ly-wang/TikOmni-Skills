@@ -11,11 +11,14 @@
 
 ## 1. 配置来源
 
-1. 当前工作区 `.env`：用于密钥和运行环境配置（最常见）。
-2. `skills/tikomni-skill/references/runtime-config.zh-CN.md`：用于用户可见的执行策略配置。
-3. 脚本运行默认模板：`skills/tikomni-skill/references/config-templates/defaults.yaml`。
-4. 可选：用户可在提示词里指定其他配置文档路径，Agent 应优先读取该路径。
-5. 环境变量模板：`skills/tikomni-skill/env.example`（示例文件，不含真实密钥）。
+1. `<repo_root>/.env`：基础密钥与运行环境配置（默认路径，不依赖当前工作目录）。
+2. `skills/tikomni-skill/.env.local`：本地覆盖（优先级高于 `.env`）。
+3. `skills/tikomni-skill/references/runtime-config.zh-CN.md`：用户可见执行策略配置。
+4. 脚本运行默认模板：`skills/tikomni-skill/references/config-templates/defaults.yaml`。
+5. 可选：用户可在提示词里指定其他配置文档路径，Agent 应优先读取该路径。
+6. 环境变量模板：`skills/tikomni-skill/env.example`（示例文件，不含真实密钥）。
+
+路径规则：`--env-file` / `runtime.env_file` 若为相对路径，按 `<repo_root>` 解析。
 
 ## 2. `.env` 必填项
 
@@ -32,9 +35,10 @@ TIKOMNI_TIMEOUT_MS="60000"
 
 ## 3. 推荐目录与文件
 
-1. `./.env`：你自己的私有配置（本机调试最方便）。
-2. `skills/tikomni-skill/env.example`：模板文件，可复制后再填值。
-3. `skills/tikomni-skill/references/runtime-config.zh-CN.md`：策略配置（输出目录、标签、策略）。
+1. `<repo_root>/.env`：基础私有配置。
+2. `skills/tikomni-skill/.env.local`：可选本地覆盖。
+3. `skills/tikomni-skill/env.example`：模板文件，可复制后再填值。
+4. `skills/tikomni-skill/references/runtime-config.zh-CN.md`：策略配置（输出目录、标签、策略）。
 
 ## 4. CI 如何读取而不暴露过程
 
@@ -51,6 +55,7 @@ set +a
 
 1. `set +x` 会关闭命令回显，避免把敏感值打印到日志。
 2. `skills/tikomni-skill/.env.local` 不应提交到仓库。
+3. 可用 `python3 skills/tikomni-skill/scripts/check_tikomni_readiness.py` 查看 `key_source/source_chain`，不输出密钥值。
 
 ## 5. 运行时配置契约
 

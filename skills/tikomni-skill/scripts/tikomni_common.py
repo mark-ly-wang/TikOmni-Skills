@@ -8,7 +8,8 @@ import socket
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Dict, Iterable, List, Optional
+from pathlib import Path
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 DEFAULT_BASE_URL = "https://api.tikomni.com"
 DEFAULT_TIMEOUT_MS = 60000
@@ -20,13 +21,16 @@ DEFAULT_USER_AGENT = (
 TERMINAL_TASK_STATUS = {"SUCCEEDED", "FAILED", "CANCELED", "CANCELLED"}
 
 
-def load_env_file(env_file: Optional[str]) -> None:
+def _parse_env_file(env_file: Optional[str]) -> Dict[str, str]:
     if not env_file:
-        return
-    if not os.path.exists(env_file):
-        return
+        return {}
 
-    with open(env_file, "r", encoding="utf-8") as handle:
+    path = Path(env_file)
+    if not path.exists() or not path.is_file():
+        return {}
+
+    parsed: Dict[str, str] = {}
+    with path.open("r", encoding="utf-8") as handle:
         for raw_line in handle:
             line = raw_line.strip()
             if not line or line.startswith("#") or "=" not in line:
@@ -34,8 +38,95 @@ def load_env_file(env_file: Optional[str]) -> None:
             key, value = line.split("=", 1)
             key = key.strip()
             value = value.strip().strip('"').strip("'")
-            if key and key not in os.environ:
-                os.environ[key] = value
+            if key:
+                parsed[key] = value
+    return parsed
+
+
+def get_repo_root() -> Path:
+    """Return canonical repository root regardless of current working directory."""
+    script_path = Path(__file__).resolve()
+    return script_path.parents[3]
+
+
+def _resolve_env_file_path(env_file: Optional[str]) -> Path:
+    repo_root = get_repo_root()
+    if not env_file:
+        return (repo_root / ".env").resolve()
+
+    candidate = Path(env_file).expanduser()
+    if not candidate.is_absolute():
+        candidate = repo_root / candidate
+    return candidate.resolve()
+
+
+def _infer_default_env_paths(primary_env_file: Optional[str]) -> Tuple[Path, Path]:
+    script_path = Path(__file__).resolve()
+    skill_root = script_path.parents[1]
+
+    workspace_env = _resolve_env_file_path(primary_env_file)
+    local_env = (skill_root / ".env.local").resolve()
+    return workspace_env, local_env
+
+
+def bootstrap_runtime_env(primary_env_file: Optional[str] = None) -> Dict[str, Any]:
+    """Load env values from .env + .env.local with deterministic priority.
+
+    Priority (highest -> lowest): process env > .env.local > .env
+    """
+
+    process_env = dict(os.environ)
+    workspace_env_path, local_env_path = _infer_default_env_paths(primary_env_file)
+
+    base_values = _parse_env_file(str(workspace_env_path))
+    local_values = _parse_env_file(str(local_env_path))
+
+    merged: Dict[str, str] = {}
+    merged.update(base_values)
+    merged.update(local_values)
+    merged.update(process_env)
+
+    os.environ.update(merged)
+
+    loaded_files: List[str] = []
+    if workspace_env_path.exists():
+        loaded_files.append(str(workspace_env_path))
+    if local_env_path.exists():
+        loaded_files.append(str(local_env_path))
+
+    key_source: Dict[str, str] = {}
+    source_chain: Dict[str, List[str]] = {}
+    for key in set(base_values.keys()) | set(local_values.keys()) | set(process_env.keys()):
+        chain: List[str] = []
+        if key in base_values:
+            chain.append(".env")
+        if key in local_values:
+            chain.append(".env.local")
+        if key in process_env:
+            chain.append("process_env")
+        source_chain[key] = chain
+
+        if key in process_env:
+            key_source[key] = "process_env"
+        elif key in local_values:
+            key_source[key] = ".env.local"
+        elif key in base_values:
+            key_source[key] = ".env"
+
+    return {
+        "repo_root": str(get_repo_root()),
+        "workspace_env": str(workspace_env_path),
+        "local_env": str(local_env_path),
+        "loaded_files": loaded_files,
+        "key_source": key_source,
+        "source_chain": source_chain,
+        "priority": ["process_env", ".env.local", ".env"],
+    }
+
+
+def load_env_file(env_file: Optional[str]) -> None:
+    """Backward-compatible wrapper. Prefer bootstrap_runtime_env."""
+    bootstrap_runtime_env(primary_env_file=env_file)
 
 
 def resolve_runtime(
@@ -44,7 +135,7 @@ def resolve_runtime(
     base_url: Optional[str],
     timeout_ms: Optional[int],
 ) -> Dict[str, Any]:
-    load_env_file(env_file)
+    bootstrap_info = bootstrap_runtime_env(primary_env_file=env_file)
 
     token = os.getenv(api_key_env, "").strip()
     if not token:
@@ -57,6 +148,11 @@ def resolve_runtime(
         "token": token,
         "base_url": resolved_base_url,
         "timeout_ms": resolved_timeout_ms,
+        "env_bootstrap": {
+            "loaded_files": bootstrap_info.get("loaded_files", []),
+            "api_key_source": bootstrap_info.get("key_source", {}).get(api_key_env, "unknown"),
+            "priority": bootstrap_info.get("priority", ["process_env", ".env.local", ".env"]),
+        },
     }
 
 

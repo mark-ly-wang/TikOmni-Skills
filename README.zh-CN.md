@@ -18,6 +18,11 @@
 - 固定 playbook 当前 GA：抖音主页提取、小红书主页提取。
 - 其他平台按目录意图路由调用。
 
+## 文档导航
+
+- 中文参考文档：[`docs/zh/references/`](./docs/zh/references/)
+- 阶段性 notes：[`docs/notes/`](./docs/notes/)
+
 ## 配置说明
 
 ### 1）先复制 env 模板
@@ -50,7 +55,7 @@ cp ./skills/tikomni-skill/env.example ./skills/tikomni-skill/.env.local
 - 运行默认配置模板：`skills/tikomni-skill/references/config-templates/defaults.yaml`
 - 运行配置文档：
   - EN：`skills/tikomni-skill/references/runtime-config.md`
-  - ZH：`skills/tikomni-skill/references/runtime-config.zh-CN.md`
+  - ZH：`docs/zh/references/runtime-config.zh-CN.md`
 
 ### 4）关键环境变量
 
@@ -102,4 +107,4 @@ python3 "./skills/tikomni-skill/scripts/run_tikomni_extract.py" "<url_or_id>"
 3. [runtime-config.md](./skills/tikomni-skill/references/runtime-config.md)
 4. [routing-rules.md](./skills/tikomni-skill/references/routing-rules.md)
 5. [normalize-rules.md](./skills/tikomni-skill/references/normalize-rules.md)
-6. [card-routing.zh-CN.md](./skills/tikomni-skill/references/card-routing.zh-CN.md)
+6. [API 目录索引](./skills/tikomni-skill/references/api-catalog/index.md)

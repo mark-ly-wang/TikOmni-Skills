@@ -18,6 +18,11 @@ It calls Tikomni public APIs (`u1` + `u2`) and writes run/result/error artifacts
 - Fixed playbooks are currently GA for Douyin homepage and Xiaohongshu homepage extraction.
 - Other domains are routed by catalog intent matching.
 
+## Docs Navigation
+
+- Chinese reference docs: [`docs/zh/references/`](./docs/zh/references/)
+- Stage notes: [`docs/notes/`](./docs/notes/)
+
 ## Configuration
 
 ### 1) Copy env template first
@@ -50,7 +55,7 @@ Path semantics:
 - Runtime config template: `skills/tikomni-skill/references/config-templates/defaults.yaml`
 - Runtime config docs:
   - EN: `skills/tikomni-skill/references/runtime-config.md`
-  - ZH: `skills/tikomni-skill/references/runtime-config.zh-CN.md`
+  - ZH: `docs/zh/references/runtime-config.zh-CN.md`
 
 ### 4) Important env variables
 
@@ -102,4 +107,4 @@ python3 "./skills/tikomni-skill/scripts/run_tikomni_extract.py" "<url_or_id>"
 3. [runtime-config.md](./skills/tikomni-skill/references/runtime-config.md)
 4. [routing-rules.md](./skills/tikomni-skill/references/routing-rules.md)
 5. [normalize-rules.md](./skills/tikomni-skill/references/normalize-rules.md)
-6. [card-routing.zh-CN.md](./skills/tikomni-skill/references/card-routing.zh-CN.md)
+6. [API catalog index](./skills/tikomni-skill/references/api-catalog/index.md)

@@ -49,8 +49,8 @@ Notes:
 ## 4. Output Layout
 
 ```yaml
-# Output root directory
-root_dir: docs/skill-output
+# Output root directory (default resolves from repo root, not current CWD)
+root_dir: tikomni-output
 # Run trace sub-directory
 runs_dir: _runs
 # Result sub-directory

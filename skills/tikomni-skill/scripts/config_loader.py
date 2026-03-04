@@ -12,7 +12,9 @@ try:
 except Exception:  # pragma: no cover - defensive fallback
     yaml = None
 
-DEFAULT_CONFIG_PATH = Path(__file__).resolve().parents[1] / "references" / "config-templates" / "defaults.yaml"
+SKILL_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = SKILL_ROOT.parents[1]
+DEFAULT_CONFIG_PATH = SKILL_ROOT / "references" / "config-templates" / "defaults.yaml"
 
 BUILTIN_DEFAULT_CONFIG: Dict[str, Any] = {
     "schema_version": "v1",
@@ -24,7 +26,7 @@ BUILTIN_DEFAULT_CONFIG: Dict[str, Any] = {
     },
     "storage_routes": {
         "default": {
-            "root_dir": "docs/skill-output",
+            "root_dir": "",
             "runs_dir": "_runs",
             "results_dir": "results",
             "errors_dir": "_errors",
@@ -138,19 +140,28 @@ def _deep_merge(defaults: Dict[str, Any], override: Dict[str, Any]) -> Dict[str,
     return merged
 
 
+def _resolve_repo_anchored_path(path_value: str) -> str:
+    candidate = Path(path_value).expanduser()
+    if not candidate.is_absolute():
+        candidate = REPO_ROOT / candidate
+    return str(candidate.resolve())
+
+
 def resolve_config_path(cli_config_path: Optional[str] = None) -> str:
     """Resolve config file path with priority:
     1) --config
     2) TIKOMNI_CONFIG_FILE
     3) references/config-templates/defaults.yaml
+
+    Relative paths are always anchored at repository root (not current CWD).
     """
 
     if cli_config_path and str(cli_config_path).strip():
-        return str(Path(cli_config_path).expanduser().resolve())
+        return _resolve_repo_anchored_path(str(cli_config_path).strip())
 
     env_path = os.getenv("TIKOMNI_CONFIG_FILE", "").strip()
     if env_path:
-        return str(Path(env_path).expanduser().resolve())
+        return _resolve_repo_anchored_path(env_path)
 
     return str(DEFAULT_CONFIG_PATH)
 
@@ -186,6 +197,13 @@ def _env_text(name: str) -> Optional[str]:
     return value or None
 
 
+def _require_absolute_env(name: str) -> str:
+    value = _env_text(name)
+    if value is None:
+        raise ValueError(f"{name} is required and must be an absolute path")
+    return _require_absolute_path(value, name)
+
+
 def _route_from_env(value: str) -> Optional[List[str]]:
     parts = [item.strip() for item in value.split("|")]
     normalized = [item for item in parts if item]
@@ -197,6 +215,44 @@ def _normalize_path_locale(raw_value: Optional[str]) -> str:
     if value in LOCALE_ROUTE_PRESETS:
         return value
     return "zh"
+
+
+def _require_absolute_path(path_value: str, env_key: str) -> str:
+    candidate = Path(path_value).expanduser()
+    if not candidate.is_absolute():
+        raise ValueError(f"{env_key} must be an absolute path")
+    return str(candidate.resolve())
+
+
+def resolve_storage_paths(config: Dict[str, Any]) -> Dict[str, str]:
+    """Resolve storage directories from an explicit absolute root (never CWD)."""
+
+    default_route = config_get(config, "storage_routes.default", {})
+    default_route = default_route if isinstance(default_route, dict) else {}
+
+    root_dir = Path(
+        _require_absolute_path(str(default_route.get("root_dir") or ""), "TIKOMNI_OUTPUT_ROOT")
+    )
+
+    resolved: Dict[str, str] = {
+        "root_dir": str(root_dir),
+    }
+    for key in ("runs_dir", "results_dir", "errors_dir"):
+        raw_value = str(default_route.get(key) or "").strip()
+        if not raw_value:
+            raw_value = {
+                "runs_dir": "_runs",
+                "results_dir": "results",
+                "errors_dir": "_errors",
+            }[key]
+
+        part = Path(raw_value).expanduser()
+        if part.is_absolute():
+            resolved[key] = str(part.resolve())
+        else:
+            resolved[key] = str((root_dir / part).resolve())
+
+    return resolved
 
 
 def apply_env_overrides(config: Dict[str, Any]) -> Dict[str, Any]:
@@ -221,8 +277,9 @@ def apply_env_overrides(config: Dict[str, Any]) -> Dict[str, Any]:
     if timeout_ms is not None:
         runtime["timeout_ms"] = timeout_ms
 
+    default_route["root_dir"] = _require_absolute_env("TIKOMNI_OUTPUT_ROOT")
+
     for env_key, config_key in {
-        "TIKOMNI_OUTPUT_ROOT": "root_dir",
         "TIKOMNI_OUTPUT_RUNS_DIR": "runs_dir",
         "TIKOMNI_OUTPUT_RESULTS_DIR": "results_dir",
         "TIKOMNI_OUTPUT_ERRORS_DIR": "errors_dir",
@@ -268,6 +325,10 @@ def apply_env_overrides(config: Dict[str, Any]) -> Dict[str, Any]:
             "prefix": prefix,
             "parts": env_parts,
         }
+
+    resolved_storage = resolve_storage_paths(config)
+    for key, value in resolved_storage.items():
+        default_route[key] = value
 
     return config
 

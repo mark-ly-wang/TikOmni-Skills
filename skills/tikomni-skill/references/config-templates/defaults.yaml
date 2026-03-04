@@ -24,7 +24,7 @@ content_kind_workflows:
 
 storage_routes:
   default:
-    root_dir: docs/skill-output
+    root_dir: tikomni-output
     runs_dir: _runs
     results_dir: results
     errors_dir: _errors

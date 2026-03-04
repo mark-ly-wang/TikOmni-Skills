@@ -58,15 +58,19 @@ TikOmni 用户配置统一走 **环境变量**，不需要编辑 YAML。
 必填：
 ```bash
 TIKOMNI_API_KEY="你的真实 key"
+# 必填绝对路径
+TIKOMNI_OUTPUT_ROOT="/absolute/path/to/tikomni-output"
+# 必填绝对路径
+TIKOMNI_CARD_ROOT="/absolute/path/to/tikomni-cards"
 ```
 
-高级可选（都有默认值）：
+高级可选：
 ```bash
 # 运行时
 TIKOMNI_TIMEOUT_MS="60000"
 
-# 输出目录
-TIKOMNI_OUTPUT_ROOT="docs/skill-output"
+# 输出根目录下的子目录
+# 默认值：_runs / results / _errors
 TIKOMNI_OUTPUT_RUNS_DIR="_runs"
 TIKOMNI_OUTPUT_RESULTS_DIR="results"
 TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
@@ -74,16 +78,13 @@ TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
 # 命名规则
 TIKOMNI_FILENAME_PATTERN="{type}-{timestamp}-{job_id}.md"
 
-# 卡片根目录（默认：/mnt/openclaw/data/WIKI）
-TIKOMNI_CARD_ROOT="/mnt/openclaw/data/WIKI"
-
 # 卡片目录语言预设（默认 zh）
 TIKOMNI_PATH_LOCALE="zh"   # zh | en
 
 # 显式路由（最高优先级，分隔符：|）
-TIKOMNI_CARD_ROUTE_WORK="10-内容系统|15-对标研究|01-作品对标卡"
-TIKOMNI_CARD_ROUTE_AUTHOR="10-内容系统|15-对标研究|03-作者对标卡"
-TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="10-内容系统|15-对标研究|02-作者样本集|{platform}-{author_slug}"
+TIKOMNI_CARD_ROUTE_WORK="content-system|benchmark|work-cards"
+TIKOMNI_CARD_ROUTE_AUTHOR="content-system|benchmark|author-cards"
+TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="content-system|benchmark|author-samples|{platform}-{author_slug}"
 ```
 
 路由优先级：

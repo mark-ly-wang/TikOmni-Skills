@@ -6,11 +6,15 @@ if __package__ in {None, ""}:
 
     _self = Path(__file__).resolve()
     for _parent in _self.parents:
-        if (_parent / "scripts").is_dir():
+        if (_parent / "scripts" / "core" / "bootstrap_env.py").is_file():
             sys.path.insert(0, str(_parent))
             break
 
 """Xiaohongshu extraction: subtitle-first, fallback to U2."""
+
+from scripts.core.bootstrap_env import bootstrap_for_direct_run
+
+bootstrap_for_direct_run(__file__, __package__)
 
 import argparse
 import json
@@ -20,7 +24,7 @@ from typing import Any, Dict, List, Optional
 
 from scripts.pipeline.asr.asr_pipeline import run_u2_asr_with_timeout_retry
 from scripts.core.config_loader import config_get, load_tikomni_config
-from scripts.core.extract_pipeline import build_api_trace, request_with_optional_fallback
+from scripts.core.extract_pipeline import build_api_trace, request_with_optional_fallback, resolve_trace_error_context
 from scripts.core.tikomni_common import (
     deep_find_all,
     deep_find_first,
@@ -56,6 +60,7 @@ def _build_result(
     confidence: str,
     error_reason: Optional[str],
     extract_trace: List[Dict[str, Any]],
+    fallback_trace: List[Dict[str, Any]],
     request_id: Optional[str],
     text_source: str,
     note_id: Optional[str],
@@ -78,7 +83,9 @@ def _build_result(
         "insights": summary_block["insights"],
         "confidence": confidence,
         "error_reason": error_reason,
+        "missing_fields": [],
         "extract_trace": extract_trace,
+        "fallback_trace": fallback_trace,
         "request_id": request_id,
     }
 
@@ -280,6 +287,7 @@ def run_xiaohongshu_extract(
             confidence="low",
             error_reason="missing_share_text_or_note_id",
             extract_trace=[],
+            fallback_trace=[],
             request_id=None,
             text_source="none",
             note_id=None,
@@ -323,13 +331,19 @@ def run_xiaohongshu_extract(
     )
 
     if not note_response["ok"]:
+        error_ctx = resolve_trace_error_context(
+            responses=[note_response],
+            extract_trace=trace,
+            default_error_reason="u1_get_note_info_failed",
+        )
         result = _build_result(
             source_input=source_input,
             raw_content="",
             confidence="low",
-            error_reason=note_response.get("error_reason") or "u1_get_note_info_failed",
+            error_reason=error_ctx.get("error_reason"),
             extract_trace=trace,
-            request_id=note_response.get("request_id"),
+            fallback_trace=error_ctx.get("fallback_trace", []),
+            request_id=error_ctx.get("request_id"),
             text_source="none",
             note_id=source_input.get("note_id"),
             subtitle_hit=False,
@@ -365,13 +379,20 @@ def run_xiaohongshu_extract(
     )
 
     if subtitle_text:
+        success_ctx = resolve_trace_error_context(
+            responses=[note_response],
+            extract_trace=trace,
+            explicit_error_reason=None,
+            explicit_request_id=note_response.get("request_id"),
+        )
         result = _build_result(
             source_input=source_input,
             raw_content=subtitle_text,
             confidence="high",
             error_reason=None,
             extract_trace=trace,
-            request_id=note_response.get("request_id"),
+            fallback_trace=success_ctx.get("fallback_trace", []),
+            request_id=success_ctx.get("request_id"),
             text_source="subtitle",
             note_id=str(resolved_note_id) if resolved_note_id else source_input.get("note_id"),
             subtitle_hit=True,
@@ -394,13 +415,19 @@ def run_xiaohongshu_extract(
     selected_video_url = video_candidates[0] if video_candidates else None
 
     if not selected_video_url:
+        error_ctx = resolve_trace_error_context(
+            responses=[note_response],
+            extract_trace=trace,
+            default_error_reason="subtitle_missing_and_no_video_url_for_u2",
+        )
         result = _build_result(
             source_input=source_input,
             raw_content="",
             confidence="low",
-            error_reason="subtitle_missing_and_no_video_url_for_u2",
+            error_reason=error_ctx.get("error_reason"),
             extract_trace=trace,
-            request_id=note_response.get("request_id"),
+            fallback_trace=error_ctx.get("fallback_trace", []),
+            request_id=error_ctx.get("request_id"),
             text_source="none",
             note_id=str(resolved_note_id) if resolved_note_id else source_input.get("note_id"),
             subtitle_hit=False,
@@ -456,17 +483,24 @@ def run_xiaohongshu_extract(
     if not poll_result.get("ok") and (
         not submit_response.get("ok") or not (poll_result.get("task_id") or task_id)
     ):
-        result = _build_result(
-            source_input=source_input,
-            raw_content="",
-            confidence="low",
-            error_reason=poll_result.get("error_reason") or submit_response.get("error_reason") or "u2_submit_failed_or_missing_task_id",
+        error_ctx = resolve_trace_error_context(
+            responses=[poll_result, submit_response, note_response],
             extract_trace=trace,
-            request_id=(
+            default_error_reason="u2_submit_failed_or_missing_task_id",
+            explicit_request_id=(
                 poll_result.get("request_id")
                 or submit_response.get("request_id")
                 or note_response.get("request_id")
             ),
+        )
+        result = _build_result(
+            source_input=source_input,
+            raw_content="",
+            confidence="low",
+            error_reason=error_ctx.get("error_reason"),
+            extract_trace=trace,
+            fallback_trace=error_ctx.get("fallback_trace", []),
+            request_id=error_ctx.get("request_id"),
             text_source="u2",
             note_id=str(resolved_note_id) if resolved_note_id else source_input.get("note_id"),
             subtitle_hit=False,
@@ -486,13 +520,20 @@ def run_xiaohongshu_extract(
         return result
 
     raw_content = poll_result.get("transcript_text", "") if poll_result.get("ok") else ""
+    final_ctx = resolve_trace_error_context(
+        responses=[poll_result, submit_response, note_response],
+        extract_trace=trace,
+        explicit_error_reason=poll_result.get("error_reason"),
+        explicit_request_id=poll_result.get("request_id") or submit_response.get("request_id") or note_response.get("request_id"),
+    )
     result = _build_result(
         source_input=source_input,
         raw_content=raw_content,
         confidence="high" if poll_result.get("ok") and raw_content else "low",
-        error_reason=poll_result.get("error_reason"),
+        error_reason=final_ctx.get("error_reason"),
         extract_trace=trace,
-        request_id=poll_result.get("request_id") or submit_response.get("request_id") or note_response.get("request_id"),
+        fallback_trace=final_ctx.get("fallback_trace", []),
+        request_id=final_ctx.get("request_id"),
         text_source="u2",
         note_id=str(resolved_note_id) if resolved_note_id else source_input.get("note_id"),
         subtitle_hit=False,
@@ -627,7 +668,9 @@ def main() -> None:
             "insights": ["source=xiaohongshu:runtime", "runtime_not_ready"],
             "confidence": "low",
             "error_reason": str(error),
+            "missing_fields": [],
             "extract_trace": [],
+            "fallback_trace": [],
             "request_id": None,
         }
 

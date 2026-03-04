@@ -9,12 +9,16 @@ if __package__ in {None, ""}:
 
     _self = Path(__file__).resolve()
     for _parent in _self.parents:
-        if (_parent / "scripts").is_dir():
+        if (_parent / "scripts" / "core" / "bootstrap_env.py").is_file():
             sys.path.insert(0, str(_parent))
             break
 
-
 import argparse
+import os
+
+from scripts.core.bootstrap_env import bootstrap_for_direct_run
+
+bootstrap_for_direct_run(__file__, __package__)
 
 from scripts.core.config_loader import REPO_ROOT, SKILL_ROOT, config_get, load_tikomni_config, resolve_storage_paths
 from scripts.core.tikomni_common import bootstrap_runtime_env, write_json_stdout
@@ -53,7 +57,7 @@ def main() -> None:
     if resolved_output_root:
         try:
             output_root_in_skill_dir = os.path.commonpath([resolved_output_root, skill_root_str]) == skill_root_str
-        except Exception:
+        except (ValueError, OSError, TypeError):
             output_root_in_skill_dir = False
 
     payload = {

@@ -9,27 +9,31 @@ if __package__ in {None, ""}:
 
     _self = Path(__file__).resolve()
     for _parent in _self.parents:
-        if (_parent / "scripts").is_dir():
+        if (_parent / "scripts" / "core" / "bootstrap_env.py").is_file():
             sys.path.insert(0, str(_parent))
             break
 
 
 import argparse
+
+from scripts.core.bootstrap_env import bootstrap_for_direct_run
+
+bootstrap_for_direct_run(__file__, __package__)
 import hashlib
 import json
 import re
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from scripts.core.config_loader import config_get, load_tikomni_config, resolve_storage_paths
+from scripts.core.extract_pipeline import resolve_trace_error_context
 from scripts.platform.douyin.douyin_video_type_matrix import normalize_douyin_video_type
+from scripts.pipeline.asr.asr_pipeline import submit_u2_asr_with_retry
 from scripts.pipeline.asr.poll_u2_task import poll_u2_task
 from scripts.platform.douyin.select_low_quality_video_url import select_low_quality_video_url
 from scripts.core.tikomni_common import (
     call_json_api,
-    extract_task_id,
     normalize_text,
     resolve_runtime,
     summarize_content,
@@ -401,102 +405,6 @@ def _u1_fetch_one_video(
     return web_response
 
 
-def _u2_submit(
-    *,
-    base_url: str,
-    token: str,
-    timeout_ms: int,
-    original_video_url: str,
-) -> Dict[str, Any]:
-    return call_json_api(
-        base_url=base_url,
-        path=U2_SUBMIT_ENDPOINT,
-        token=token,
-        method="POST",
-        timeout_ms=timeout_ms,
-        body={"input": {"file_urls": [original_video_url]}},
-    )
-
-
-def _is_retriable_submit_failure(response: Dict[str, Any]) -> bool:
-    status_code = _safe_int(response.get("status_code"))
-    if status_code in {502, 503, 504}:
-        return True
-
-    error_reason = (normalize_text(response.get("error_reason")) or "").upper()
-    return "UPSTREAM_TIMEOUT" in error_reason or "TIMEOUT" in error_reason
-
-
-def _u2_submit_with_retry(
-    *,
-    base_url: str,
-    token: str,
-    timeout_ms: int,
-    original_video_url: str,
-    max_retries: int,
-    backoff_ms: int,
-) -> Dict[str, Any]:
-    retries = max(0, int(max_retries))
-    base_backoff = max(0, int(backoff_ms))
-    max_attempts = 1 + retries
-
-    retry_chain: List[Dict[str, Any]] = []
-    final_response: Dict[str, Any] = {}
-    final_task_id: Optional[str] = None
-    final_submit_status = "failed_unknown"
-
-    for attempt in range(1, max_attempts + 1):
-        wait_ms = 0 if attempt == 1 else base_backoff * (2 ** (attempt - 2))
-        if wait_ms > 0:
-            time.sleep(wait_ms / 1000.0)
-
-        submit_response = _u2_submit(
-            base_url=base_url,
-            token=token,
-            timeout_ms=timeout_ms,
-            original_video_url=original_video_url,
-        )
-        task_id = extract_task_id(submit_response.get("data"))
-        retriable = _is_retriable_submit_failure(submit_response)
-
-        retry_chain.append(
-            {
-                "attempt": attempt,
-                "wait_ms": wait_ms,
-                "status_code": submit_response.get("status_code"),
-                "error_reason": submit_response.get("error_reason"),
-                "ok": submit_response.get("ok"),
-                "task_id": task_id,
-                "retriable": retriable,
-            }
-        )
-
-        final_response = submit_response
-        final_task_id = task_id
-
-        if submit_response.get("ok") and task_id:
-            final_submit_status = "success"
-            break
-
-        if submit_response.get("ok") and not task_id:
-            final_submit_status = "failed_missing_task_id"
-            break
-
-        if retriable and attempt < max_attempts:
-            final_submit_status = "retrying"
-            continue
-
-        final_submit_status = "failed_retries_exhausted" if retriable else "failed_non_retriable"
-        break
-
-    return {
-        "submit_response": final_response,
-        "task_id": final_task_id,
-        "retry_chain": retry_chain,
-        "final_submit_status": final_submit_status,
-    }
-
-
 def _trace_step(
     *,
     step: str,
@@ -537,6 +445,7 @@ def _build_result(
     confidence: str,
     error_reason: Optional[str],
     extract_trace: List[Dict[str, Any]],
+    fallback_trace: List[Dict[str, Any]],
     request_id: Optional[str],
     u2_task_id: Optional[str],
     u2_task_status: str,
@@ -587,7 +496,9 @@ def _build_result(
         "insights": insights,
         "confidence": confidence,
         "error_reason": error_reason,
+        "missing_fields": [],
         "extract_trace": extract_trace,
+        "fallback_trace": fallback_trace,
         "request_id": request_id,
         "endpoint_list": endpoint_list,
     }
@@ -640,6 +551,7 @@ def run_douyin_single_video(
             confidence="low",
             error_reason="missing_share_url",
             extract_trace=[],
+            fallback_trace=[],
             request_id=None,
             u2_task_id=None,
             u2_task_status="UNKNOWN",
@@ -708,7 +620,11 @@ def run_douyin_single_video(
     )
 
     if not one_video_response.get("ok"):
-        error_reason = one_video_response.get("error_reason") or "u1_fetch_one_video_failed"
+        error_ctx = resolve_trace_error_context(
+            responses=[one_video_response],
+            extract_trace=trace,
+            default_error_reason="u1_fetch_one_video_failed",
+        )
         result = _build_result(
             source_input=source_input,
             platform_work_id=None,
@@ -728,9 +644,10 @@ def run_douyin_single_video(
             video_type_reason="u1_failed",
             raw_content="",
             confidence="low",
-            error_reason=error_reason,
+            error_reason=error_ctx.get("error_reason"),
             extract_trace=trace,
-            request_id=one_video_response.get("request_id"),
+            fallback_trace=error_ctx.get("fallback_trace", []),
+            request_id=error_ctx.get("request_id"),
             u2_task_id=None,
             u2_task_status="UNKNOWN",
             u2_gate_reason="u1_failed",
@@ -755,6 +672,11 @@ def run_douyin_single_video(
 
     aweme_detail = _extract_aweme_detail(one_video_response.get("data"))
     if not aweme_detail:
+        error_ctx = resolve_trace_error_context(
+            responses=[one_video_response],
+            extract_trace=trace,
+            default_error_reason="aweme_detail_missing",
+        )
         result = _build_result(
             source_input=source_input,
             platform_work_id=None,
@@ -774,9 +696,10 @@ def run_douyin_single_video(
             video_type_reason="aweme_detail_missing",
             raw_content="",
             confidence="low",
-            error_reason="aweme_detail_missing",
+            error_reason=error_ctx.get("error_reason"),
             extract_trace=trace,
-            request_id=one_video_response.get("request_id"),
+            fallback_trace=error_ctx.get("fallback_trace", []),
+            request_id=error_ctx.get("request_id"),
             u2_task_id=None,
             u2_task_status="UNKNOWN",
             u2_gate_reason="aweme_detail_missing",
@@ -864,20 +787,20 @@ def run_douyin_single_video(
     error_reason: Optional[str] = None
     u2_task_id: Optional[str] = None
     u2_task_status = "SKIPPED"
-    final_request_id = one_video_response.get("request_id")
+    submit_response: Dict[str, Any] = {}
+    poll_result: Dict[str, Any] = {}
 
     if can_u2 and video_down_url:
-        submit_bundle = _u2_submit_with_retry(
+        submit_bundle = submit_u2_asr_with_retry(
             base_url=runtime["base_url"],
             token=runtime["token"],
             timeout_ms=runtime["timeout_ms"],
-            original_video_url=video_down_url,
+            video_url=video_down_url,
             max_retries=u2_submit_max_retries,
             backoff_ms=u2_submit_backoff_ms,
         )
         submit_response = submit_bundle["submit_response"]
         u2_task_id = submit_bundle.get("task_id")
-        final_request_id = submit_response.get("request_id") or final_request_id
 
         trace.append(
             _trace_step(
@@ -916,7 +839,6 @@ def run_douyin_single_video(
                 poll_interval_sec=poll_interval_sec,
                 max_polls=max_polls,
             )
-            final_request_id = poll_result.get("request_id") or final_request_id
             u2_task_status = poll_result.get("task_status") or "UNKNOWN"
             raw_content = poll_result.get("transcript_text", "") if poll_result.get("ok") else ""
             error_reason = poll_result.get("error_reason")
@@ -933,6 +855,14 @@ def run_douyin_single_video(
                     "attempts": len(poll_result.get("trace", [])),
                 }
             )
+
+    error_ctx = resolve_trace_error_context(
+        responses=[poll_result, submit_response, one_video_response],
+        extract_trace=trace,
+        explicit_error_reason=error_reason,
+        explicit_request_id=poll_result.get("request_id") or submit_response.get("request_id") or one_video_response.get("request_id"),
+    )
+    error_reason = error_ctx.get("error_reason")
 
     if error_reason:
         confidence = "low"
@@ -960,7 +890,8 @@ def run_douyin_single_video(
         confidence=confidence,
         error_reason=error_reason,
         extract_trace=trace,
-        request_id=final_request_id,
+        fallback_trace=error_ctx.get("fallback_trace", []),
+        request_id=error_ctx.get("request_id"),
         u2_task_id=u2_task_id,
         u2_task_status=u2_task_status,
         u2_gate_reason=gate_reason,
@@ -1065,7 +996,9 @@ def main() -> None:
             "insights": ["source=douyin:single-video-low-quality", "runtime_not_ready"],
             "confidence": "low",
             "error_reason": str(error),
+            "missing_fields": [],
             "extract_trace": [],
+            "fallback_trace": [],
             "request_id": None,
             "endpoint_list": [],
         }

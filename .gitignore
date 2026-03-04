@@ -8,3 +8,7 @@
 
 # build artifacts
 dist/
+
+# python cache artifacts
+__pycache__/
+*.py[cod]

@@ -6,25 +6,31 @@ description: Use this skill when users ask to analyze a video/post, analyze an a
 # Tikomni Skill
 
 ## Mission
-Complete user-facing content tasks across platforms: analyze a video/post, analyze an author, build benchmark cards, and fetch structured data/copy/comments with traceable outputs (`raw + normalized + markdown`). CLI defaults keep traceability on: write-card enabled, and Douyin single-video runner persists JSON artifacts to output root unless explicitly disabled.
+Complete user-facing content tasks across platforms: analyze a video/post, analyze an author, build benchmark cards, and fetch structured data/copy/comments with traceable outputs (`raw + normalized + markdown`).
 
-## Script Layout (v2)
-- Unified entry: `scripts/cli/run_tikomni_extract.py`
+Default behavior:
+- `--write-card` is enabled by default (disable with `--no-write-card`).
+- Unified entry JSON persistence is enabled by default for all registered workflows (disable globally with `--no-persist-output`).
+
+## Script Layout (Phase A/B aligned)
+- Unified CLI entry: `scripts/cli/run_tikomni_extract.py`
+- Workflow registry (mapping): `scripts/registry/workflow_registry.py`
+- Platform handlers: `scripts/platform/douyin/run_douyin_single_video.py`, `scripts/platform/xiaohongshu/run_xiaohongshu_extract.py`
+- Shared core: `scripts/core/`
+- Shared pipeline: `scripts/pipeline/asr/`
+- Writers: `scripts/writers/`
 - Readiness check: `scripts/cli/check_tikomni_readiness.py`
-- Douyin runner: `scripts/platform/douyin/run_douyin_single_video.py`
-- Xiaohongshu runner: `scripts/platform/xiaohongshu/run_xiaohongshu_extract.py`
-- Writer entry: `scripts/writers/write_author_homepage_samples.py`
 
-## Supported Platforms
-Primary coverage includes: Douyin, Xiaohongshu, TikTok, Kuaishou, Bilibili, Weibo, Toutiao, Xigua, Zhihu, WeChat Channels, WeChat MP, YouTube, Instagram, Threads, Twitter/X, Reddit, LinkedIn, Lemon8, Pipixia.
-
-Use API catalog as the canonical source for capability details and endpoint mapping: `references/api-catalog/index.md`.
+## Routing Boundary (Hard)
+1. Use unified entry + registry mapping: `run_tikomni_extract` parses inputs and resolves handlers through registry.
+2. Registry scope is mapping only: `(platform, content_kind) -> handler`.
+3. Routing policy source of truth: `references/capability-routing-matrix.md` + `references/routing-rules.md`.
 
 ## Execution Policy
 1. **Matrix-first routing (hard rule):** Always match capability using `references/capability-routing-matrix.md` first.
 2. **Fixed capability first (hard rule):** If request matches an active fixed capability in matrix, use that route chain/playbook directly.
 3. **Fallback-only after miss (hard rule):** Only when no active fixed capability matches, use universal intent fallback route.
-4. **Policy vs execution boundary (hard rule):** Playbooks/matrix define routing policy, not a claim that a specific script has executed successfully; execution truth must come from runtime trace/output.
+4. **Policy vs execution boundary (hard rule):** Playbooks/matrix define routing policy, not execution success; execution truth comes from runtime trace/output.
 5. **No fabrication (hard rule):** Never invent unavailable fields. Missing data must be reported via `missing_fields` with reason.
 6. **Single-source rules:** Do not redefine API/output/routing rules in this file; use referenced docs as source of truth.
 
@@ -41,27 +47,19 @@ Use API catalog as the canonical source for capability details and endpoint mapp
 7. Deliver markdown output per `references/output-markdown.md`.
 
 ## Quality Bar
-- **Traceability:** Output must include source route/playbook and key decision trace.
+- **Traceability:** Output includes source route/playbook and key decision trace.
 - **Field integrity:** Structured fields align with normalization rules; no silent field dropping.
 - **Missing-data discipline:** Any unavailable required field must be placed in `missing_fields`; do not infer or fabricate.
-- **Actionability:** Final summary should be directly usable for user intent (extraction/reporting/analysis).
+- **Actionability:** Final summary is directly usable for user intent (extraction/reporting/analysis).
 
 ## References
-### Core (active)
 1. Capability routing matrix (first-class): `references/capability-routing-matrix.md`
 2. Routing rules: `references/routing-rules.md`
-3. Normalize rules: `references/normalize-rules.md`
-4. Runtime config: `references/runtime-config.md`
+3. Runtime config: `references/runtime-config.md`
+4. Normalize rules: `references/normalize-rules.md`
 5. API catalog entry: `references/api-catalog/index.md`
 6. Douyin homepage playbook: `references/playbooks/douyin-home-extract.md`
 7. Xiaohongshu homepage playbook: `references/playbooks/xiaohongshu-home-extract.md`
 8. Copy extraction rules: `references/playbooks/copy-extract-rules.md`
 9. Markdown output rules: `references/output-markdown.md`
 10. Prompt contracts: `references/prompt-contracts/`
-
-### Phase B planned references (placeholders; not created in Phase A)
-1. Universal intent routing guide: `references/guides/universal-intent-routing.md`
-2. Video analysis guide: `references/guides/video-analysis.md`
-3. Article analysis guide: `references/guides/article-analysis.md`
-4. Author home analysis guide: `references/guides/author-home-analysis.md`
-5. Comment analysis guide: `references/guides/comment-analysis.md`

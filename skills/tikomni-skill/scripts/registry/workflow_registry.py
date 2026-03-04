@@ -163,6 +163,7 @@ def _run_xiaohongshu_note_workflow(ctx: WorkflowContext) -> Mapping[str, Any]:
         card_root=ctx.get("card_root"),
         storage_config=ctx.get("storage_config"),
         allow_process_env=bool(ctx.get("allow_process_env", False)),
+        persist_output=bool(ctx.get("persist_output", True)),
     )
 
 

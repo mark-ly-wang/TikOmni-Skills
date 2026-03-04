@@ -74,6 +74,9 @@ TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
 # 命名规则
 TIKOMNI_FILENAME_PATTERN="{type}-{timestamp}-{job_id}.md"
 
+# 卡片根目录（默认：/mnt/openclaw/data/WIKI）
+TIKOMNI_CARD_ROOT="/mnt/openclaw/data/WIKI"
+
 # 卡片目录语言预设（默认 zh）
 TIKOMNI_PATH_LOCALE="zh"   # zh | en
 

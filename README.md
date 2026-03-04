@@ -74,6 +74,9 @@ TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
 # Naming
 TIKOMNI_FILENAME_PATTERN="{type}-{timestamp}-{job_id}.md"
 
+# Card root (default: /mnt/openclaw/data/WIKI)
+TIKOMNI_CARD_ROOT="/mnt/openclaw/data/WIKI"
+
 # Card route locale preset (default zh)
 TIKOMNI_PATH_LOCALE="zh"   # zh | en
 

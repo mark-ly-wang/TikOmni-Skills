@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 
 from config_loader import load_tikomni_config
 from tikomni_common import normalize_text, read_json_file, write_json_stdout
-from write_benchmark_card import DEFAULT_WIKI_ROOT, write_benchmark_card
+from write_benchmark_card import DEFAULT_CARD_ROOT, write_benchmark_card
 
 
 def _read_input(path: str) -> Any:
@@ -45,7 +45,7 @@ def main() -> None:
     parser.add_argument("--platform", required=True, help="Platform name, e.g. douyin/xiaohongshu")
     parser.add_argument("--config", default=None, help="Runtime config YAML path")
     parser.add_argument("--input-json", default="-", help="JSON list/dict path or '-' for stdin")
-    parser.add_argument("--wiki-root", default=DEFAULT_WIKI_ROOT, help="WIKI root")
+    parser.add_argument("--card-root", default=DEFAULT_CARD_ROOT, help="Card root")
     parser.add_argument("--sample-author", default="", help="Override author folder name")
     parser.add_argument("--collect-material", action="store_true", help="Also write CMAT cards")
     args = parser.parse_args()
@@ -63,7 +63,7 @@ def main() -> None:
             payload=payload_with_kind,
             platform=args.platform,
             card_type="author_sample_work",
-            wiki_root=args.wiki_root,
+            card_root=args.card_root,
             collect_material=args.collect_material,
             sample_author=_author_hint(payload, args.sample_author),
             content_kind="author_home",

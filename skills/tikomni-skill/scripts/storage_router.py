@@ -147,7 +147,7 @@ def render_route_parts(parts: List[str], *, context: Dict[str, str]) -> List[str
 
 def build_card_output_path(
     *,
-    wiki_root: str,
+    card_root: str,
     platform: str,
     card_type: str,
     author_slug: str,
@@ -171,7 +171,7 @@ def build_card_output_path(
         "timestamp": timestamp,
     }
     rendered_parts = render_route_parts(parts, context=route_context)
-    directory = os.path.join(wiki_root, *rendered_parts)
+    directory = os.path.join(card_root, *rendered_parts)
     os.makedirs(directory, exist_ok=True)
 
     if card_type == "material":

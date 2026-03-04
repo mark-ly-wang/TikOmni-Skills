@@ -84,9 +84,9 @@ TIKOMNI_CARD_ROOT="/absolute/path/to/tikomni-cards"
 TIKOMNI_PATH_LOCALE="zh"   # zh | en
 
 # Explicit routes (highest priority, separator: |)
-TIKOMNI_CARD_ROUTE_WORK="10-内容系统|15-对标研究|01-作品对标卡"
-TIKOMNI_CARD_ROUTE_AUTHOR="10-内容系统|15-对标研究|03-作者对标卡"
-TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="10-内容系统|15-对标研究|02-作者样本集|{platform}-{author_slug}"
+TIKOMNI_CARD_ROUTE_WORK="content-system|benchmark|work-cards"
+TIKOMNI_CARD_ROUTE_AUTHOR="content-system|benchmark|author-cards"
+TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="content-system|benchmark|author-samples|{platform}-{author_slug}"
 ```
 
 Route precedence:

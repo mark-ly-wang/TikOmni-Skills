@@ -1,28 +1,82 @@
-# TikOmni Skills
+# TikOmni Skills ✨
 
 English | [中文说明 (README.zh-CN.md)](./README.zh-CN.md)
 
-This repository hosts the TikOmni skill package used by AI agents.
+A production-ready skill package for AI agents to fetch structured data from major social platforms through TikOmni APIs.
 
-## What users need to know
+## 🚀 What this repository is
 
-- This skill enables agents to fetch structured data from supported platforms through TikOmni APIs.
-- It includes fixed extraction playbooks (for example, Douyin/Xiaohongshu homepage extraction) and routing logic.
-- End users do **not** need to run repository maintenance scripts.
+This repository provides the `tikomni-skill` used by AI agents.
 
-## Where to use
+With this skill, agents can:
+- collect cross-platform public content data
+- normalize fields into consistent structured output
+- generate markdown-ready extraction artifacts (for workflows and downstream analysis)
+
+## 🌐 Official links
 
 - Website: https://tikomni.com
-- Dashboard: https://app.tikomni.com
-- API: https://api.tikomni.com
+- Sign up / Dashboard (get API key): https://app.tikomni.com
+- API endpoint: https://api.tikomni.com
 - API docs: https://docs.tikomni.com
 
-## Basic usage
+## 📦 Supported platforms
 
-Use this skill through your AI agent environment (OpenClaw/Codex/Claude Code integrations).
+Current catalog includes mainstream platforms such as:
+- Douyin, Xiaohongshu, Kuaishou, Bilibili, Weibo
+- TikTok, YouTube, Instagram, Threads, Twitter/X, Reddit, LinkedIn
+- WeChat Channels, WeChat Official Accounts, Toutiao, Xigua, Zhihu, Lemon8, Pipixia
 
-If you need installation or integration help, open an issue in this repository.
+(See full list in `skills/tikomni-skill/references/api-catalog/index.md`.)
 
-## Security
+## 🧩 What structured data you can get
 
-Never commit secrets or private credentials to Git.
+Depending on platform and endpoint, the skill can return:
+- author/account metadata
+- post/video basic info
+- engagement metrics (likes/comments/shares, etc. when available)
+- subtitles/transcripts/copy text (when supported)
+- routing and request trace metadata for reproducibility
+
+## 🔧 Install this skill
+
+Use the integration method matching your agent runtime.
+
+### OpenClaw
+Place this repo (or `skills/tikomni-skill`) in your OpenClaw workspace skills path, then let OpenClaw load the skill.
+
+### Codex
+Install/copy `skills/tikomni-skill` into your Codex skills directory.
+
+### Claude Code
+Install/copy `skills/tikomni-skill` into your Claude skills directory.
+
+## ⚙️ Configure after installation
+
+To use TikOmni APIs, set your API key in environment variables.
+
+Required:
+```bash
+TIKOMNI_API_KEY="your_real_key"
+```
+
+Recommended placement:
+- `<repo_root>/.env` (project-level)
+- or `skills/tikomni-skill/.env.local` (local override)
+
+## ▶️ How to use
+
+Use the skill through natural-language requests in your AI agent, for example:
+- “Extract Douyin homepage data for this URL.”
+- “Get Xiaohongshu author posts and summarize key topics.”
+- “Fetch video copy/subtitles and output structured markdown.”
+
+## 🔐 Security
+
+- Never commit real secrets (`.env`, `.env.local`, CI secrets)
+- Never expose API keys in logs or output
+
+## 📚 Core references
+
+- Skill entry: [`skills/tikomni-skill/SKILL.md`](./skills/tikomni-skill/SKILL.md)
+- API catalog: [`skills/tikomni-skill/references/api-catalog/index.md`](./skills/tikomni-skill/references/api-catalog/index.md)

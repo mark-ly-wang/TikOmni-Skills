@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     import yaml
@@ -69,6 +69,56 @@ BUILTIN_DEFAULT_CONFIG: Dict[str, Any] = {
     },
 }
 
+LOCALE_ROUTE_PRESETS: Dict[str, Dict[str, Dict[str, Any]]] = {
+    "zh": {
+        "work": {
+            "prefix": "CBV",
+            "parts": ["10-内容系统", "15-对标研究", "01-作品对标卡"],
+        },
+        "author": {
+            "prefix": "CBA",
+            "parts": ["10-内容系统", "15-对标研究", "03-作者对标卡"],
+        },
+        "author_sample_work": {
+            "prefix": "CBV",
+            "parts": ["10-内容系统", "15-对标研究", "02-作者样本集", "{platform}-{author_slug}"],
+        },
+        "material": {
+            "prefix": "CMAT",
+            "parts": ["10-内容系统", "12-素材库", "素材卡", "{year}", "{year_month}"],
+        },
+    },
+    "en": {
+        "work": {
+            "prefix": "CBV",
+            "parts": ["10-content-system", "15-benchmark-research", "01-work-benchmark-cards"],
+        },
+        "author": {
+            "prefix": "CBA",
+            "parts": ["10-content-system", "15-benchmark-research", "03-author-benchmark-cards"],
+        },
+        "author_sample_work": {
+            "prefix": "CBV",
+            "parts": [
+                "10-content-system",
+                "15-benchmark-research",
+                "02-author-sample-works",
+                "{platform}-{author_slug}",
+            ],
+        },
+        "material": {
+            "prefix": "CMAT",
+            "parts": ["10-content-system", "12-material-library", "material-cards", "{year}", "{year_month}"],
+        },
+    },
+}
+
+CARD_ROUTE_ENV_KEYS: Dict[str, str] = {
+    "work": "TIKOMNI_CARD_ROUTE_WORK",
+    "author": "TIKOMNI_CARD_ROUTE_AUTHOR",
+    "author_sample_work": "TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK",
+}
+
 
 def _deep_clone(value: Any) -> Any:
     if isinstance(value, dict):
@@ -120,18 +170,121 @@ def _builtin_defaults() -> Dict[str, Any]:
     return _deep_clone(BUILTIN_DEFAULT_CONFIG)
 
 
+def _env_int(name: str) -> Optional[int]:
+    raw = os.getenv(name, "").strip()
+    if not raw:
+        return None
+    try:
+        value = int(raw)
+    except Exception:
+        return None
+    return value if value > 0 else None
+
+
+def _env_text(name: str) -> Optional[str]:
+    value = os.getenv(name, "").strip()
+    return value or None
+
+
+def _route_from_env(value: str) -> Optional[List[str]]:
+    parts = [item.strip() for item in value.split("|")]
+    normalized = [item for item in parts if item]
+    return normalized if normalized else None
+
+
+def _normalize_path_locale(raw_value: Optional[str]) -> str:
+    value = (raw_value or "").strip().lower()
+    if value in LOCALE_ROUTE_PRESETS:
+        return value
+    return "zh"
+
+
+def apply_env_overrides(config: Dict[str, Any]) -> Dict[str, Any]:
+    runtime = config.setdefault("runtime", {}) if isinstance(config.get("runtime"), dict) else {}
+    config["runtime"] = runtime
+
+    storage_routes = config.setdefault("storage_routes", {}) if isinstance(config.get("storage_routes"), dict) else {}
+    config["storage_routes"] = storage_routes
+
+    default_route = storage_routes.setdefault("default", {}) if isinstance(storage_routes.get("default"), dict) else {}
+    storage_routes["default"] = default_route
+
+    card_type_routes = (
+        storage_routes.setdefault("card_type_routes", {}) if isinstance(storage_routes.get("card_type_routes"), dict) else {}
+    )
+    storage_routes["card_type_routes"] = card_type_routes
+
+    naming_rules = config.setdefault("naming_rules", {}) if isinstance(config.get("naming_rules"), dict) else {}
+    config["naming_rules"] = naming_rules
+
+    timeout_ms = _env_int("TIKOMNI_TIMEOUT_MS")
+    if timeout_ms is not None:
+        runtime["timeout_ms"] = timeout_ms
+
+    for env_key, config_key in {
+        "TIKOMNI_OUTPUT_ROOT": "root_dir",
+        "TIKOMNI_OUTPUT_RUNS_DIR": "runs_dir",
+        "TIKOMNI_OUTPUT_RESULTS_DIR": "results_dir",
+        "TIKOMNI_OUTPUT_ERRORS_DIR": "errors_dir",
+    }.items():
+        value = _env_text(env_key)
+        if value is not None:
+            default_route[config_key] = value
+
+    filename_pattern = _env_text("TIKOMNI_FILENAME_PATTERN")
+    if filename_pattern is not None:
+        naming_rules["filename_pattern"] = filename_pattern
+
+    path_locale = _normalize_path_locale(os.getenv("TIKOMNI_PATH_LOCALE", "zh"))
+    locale_routes = LOCALE_ROUTE_PRESETS.get(path_locale, LOCALE_ROUTE_PRESETS["zh"])
+
+    for route_key, route_value in locale_routes.items():
+        existing = card_type_routes.get(route_key)
+        prefix = route_value.get("prefix")
+        if isinstance(existing, dict) and isinstance(existing.get("prefix"), str) and existing.get("prefix").strip():
+            prefix = existing.get("prefix")
+        card_type_routes[route_key] = {
+            "prefix": prefix,
+            "parts": _deep_clone(route_value.get("parts", [])),
+        }
+
+    for route_key, env_name in CARD_ROUTE_ENV_KEYS.items():
+        raw_value = _env_text(env_name)
+        if raw_value is None:
+            continue
+
+        env_parts = _route_from_env(raw_value)
+        if not env_parts:
+            continue
+
+        current = card_type_routes.get(route_key)
+        prefix = ""
+        if isinstance(current, dict) and isinstance(current.get("prefix"), str):
+            prefix = current.get("prefix") or ""
+        if not prefix:
+            prefix = LOCALE_ROUTE_PRESETS["zh"].get(route_key, {}).get("prefix", "")
+
+        card_type_routes[route_key] = {
+            "prefix": prefix,
+            "parts": env_parts,
+        }
+
+    return config
+
+
 def load_tikomni_config(cli_config_path: Optional[str] = None) -> Tuple[Dict[str, Any], str]:
     path = resolve_config_path(cli_config_path)
 
     if yaml is None:
-        return _builtin_defaults(), "builtin-defaults"
+        return apply_env_overrides(_builtin_defaults()), "builtin-defaults"
 
     try:
         loaded = _load_yaml(path)
     except Exception:
-        return _builtin_defaults(), "builtin-defaults"
+        return apply_env_overrides(_builtin_defaults()), "builtin-defaults"
 
-    return _deep_merge(_builtin_defaults(), loaded), path
+    merged = _deep_merge(_builtin_defaults(), loaded)
+    return apply_env_overrides(merged), path
 
 
 def config_get(config: Dict[str, Any], dotted_key: str, default: Any = None) -> Any:

@@ -51,18 +51,46 @@
 ### Claude Code
 把 `skills/tikomni-skill` 复制到 Claude Code 的 skills 目录。
 
-## ⚙️ 安装后怎么配置
+## ⚙️ 安装后怎么配置（仅 env）
 
-要调用 TikOmni API，需要先配置 API Key。
+TikOmni 用户配置统一走 **环境变量**，不需要编辑 YAML。
 
 必填：
 ```bash
 TIKOMNI_API_KEY="你的真实 key"
 ```
 
+高级可选（都有默认值）：
+```bash
+# 运行时
+TIKOMNI_TIMEOUT_MS="60000"
+
+# 输出目录
+TIKOMNI_OUTPUT_ROOT="docs/skill-output"
+TIKOMNI_OUTPUT_RUNS_DIR="_runs"
+TIKOMNI_OUTPUT_RESULTS_DIR="results"
+TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
+
+# 命名规则
+TIKOMNI_FILENAME_PATTERN="{type}-{timestamp}-{job_id}.md"
+
+# 卡片目录语言预设（默认 zh）
+TIKOMNI_PATH_LOCALE="zh"   # zh | en
+
+# 显式路由（最高优先级，分隔符：|）
+TIKOMNI_CARD_ROUTE_WORK="10-内容系统|15-对标研究|01-作品对标卡"
+TIKOMNI_CARD_ROUTE_AUTHOR="10-内容系统|15-对标研究|03-作者对标卡"
+TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="10-内容系统|15-对标研究|02-作者样本集|{platform}-{author_slug}"
+```
+
+路由优先级：
+1) 显式 `TIKOMNI_CARD_ROUTE_*`
+2) `TIKOMNI_PATH_LOCALE` 预设（`zh`/`en`，默认 `zh`）
+3) 内置/默认配置
+
 推荐配置位置：
 - `<repo_root>/.env`
-- 或 `skills/tikomni-skill/.env.local`（本地覆盖）
+- `skills/tikomni-skill/.env.local`（本地覆盖）
 
 ## ▶️ 怎么使用
 

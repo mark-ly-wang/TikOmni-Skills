@@ -51,18 +51,46 @@ Install/copy `skills/tikomni-skill` into your Codex skills directory.
 ### Claude Code
 Install/copy `skills/tikomni-skill` into your Claude skills directory.
 
-## ⚙️ Configure after installation
+## ⚙️ Configure after installation (env-only)
 
-To use TikOmni APIs, set your API key in environment variables.
+TikOmni user configuration is **env-only**. You do not need to edit YAML.
 
 Required:
 ```bash
 TIKOMNI_API_KEY="your_real_key"
 ```
 
+Optional advanced env vars (all have defaults):
+```bash
+# Runtime
+TIKOMNI_TIMEOUT_MS="60000"
+
+# Output directories
+TIKOMNI_OUTPUT_ROOT="docs/skill-output"
+TIKOMNI_OUTPUT_RUNS_DIR="_runs"
+TIKOMNI_OUTPUT_RESULTS_DIR="results"
+TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
+
+# Naming
+TIKOMNI_FILENAME_PATTERN="{type}-{timestamp}-{job_id}.md"
+
+# Card route locale preset (default zh)
+TIKOMNI_PATH_LOCALE="zh"   # zh | en
+
+# Explicit routes (highest priority, separator: |)
+TIKOMNI_CARD_ROUTE_WORK="10-内容系统|15-对标研究|01-作品对标卡"
+TIKOMNI_CARD_ROUTE_AUTHOR="10-内容系统|15-对标研究|03-作者对标卡"
+TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="10-内容系统|15-对标研究|02-作者样本集|{platform}-{author_slug}"
+```
+
+Route precedence:
+1) `TIKOMNI_CARD_ROUTE_*` explicit env
+2) `TIKOMNI_PATH_LOCALE` preset (`zh`/`en`, default `zh`)
+3) built-in/default config
+
 Recommended placement:
 - `<repo_root>/.env` (project-level)
-- or `skills/tikomni-skill/.env.local` (local override)
+- `skills/tikomni-skill/.env.local` (local override)
 
 ## ▶️ How to use
 

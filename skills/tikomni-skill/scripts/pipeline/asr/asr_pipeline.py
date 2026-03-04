@@ -2,6 +2,7 @@
 """Shared ASR pipeline helpers for runner scripts."""
 
 import time
+from urllib.parse import urlparse, urlunparse
 from typing import Any, Dict, List, Optional
 
 from scripts.core.tikomni_common import (
@@ -191,6 +192,118 @@ def poll_u2_task_core(
     }
 
 
+def normalize_media_url(url: str) -> str:
+    text = str(url or "").strip()
+    if not text:
+        return ""
+    try:
+        parsed = urlparse(text)
+    except Exception:
+        return text
+
+    scheme = (parsed.scheme or "").lower()
+    if scheme == "http":
+        parsed = parsed._replace(scheme="https")
+    return urlunparse(parsed)
+
+
+def is_valid_u2_media_candidate(url: str) -> bool:
+    lower = str(url or "").lower()
+    if not (lower.startswith("http://") or lower.startswith("https://")):
+        return False
+    image_tokens = [".jpg", ".jpeg", ".png", ".webp", "imageview2", "imagemogr2", "redimage", "frame/"]
+    if any(token in lower for token in image_tokens):
+        return False
+    media_tokens = [".mp4", ".m3u8", ".m4a", ".mp3", "video", "stream", "audio", "vod"]
+    return any(token in lower for token in media_tokens)
+
+
+def normalize_media_candidates(candidates: List[str]) -> List[str]:
+    normalized: List[str] = []
+    seen = set()
+    for raw in candidates or []:
+        url = normalize_media_url(raw)
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        normalized.append(url)
+    return normalized
+
+
+def run_u2_asr_candidates_with_timeout_retry(
+    *,
+    base_url: str,
+    token: str,
+    timeout_ms: int,
+    candidates: List[str],
+    submit_max_retries: int,
+    submit_backoff_ms: int,
+    poll_interval_sec: float,
+    max_polls: int,
+    timeout_retry_enabled: bool = True,
+    timeout_retry_max_retries: int = 3,
+) -> Dict[str, Any]:
+    normalized_candidates = normalize_media_candidates(candidates)
+    attempts: List[Dict[str, Any]] = []
+
+    final_bundle: Dict[str, Any] = {
+        "submit_bundle": {},
+        "poll_result": {"ok": False, "task_status": "UNKNOWN", "error_reason": "no_candidates"},
+        "rounds": [],
+        "timeout_retry": {"enabled": bool(timeout_retry_enabled), "configured_max_retries": max(0, min(3, int(timeout_retry_max_retries))), "triggered": False, "result": "not_triggered"},
+    }
+    chosen_url: Optional[str] = None
+
+    for index, candidate in enumerate(normalized_candidates, start=1):
+        valid = is_valid_u2_media_candidate(candidate)
+        if not valid:
+            attempts.append({
+                "index": index,
+                "candidate": candidate,
+                "valid": False,
+                "result": "skipped_non_media_candidate",
+            })
+            continue
+
+        bundle = run_u2_asr_with_timeout_retry(
+            base_url=base_url,
+            token=token,
+            timeout_ms=timeout_ms,
+            video_url=candidate,
+            submit_max_retries=submit_max_retries,
+            submit_backoff_ms=submit_backoff_ms,
+            poll_interval_sec=poll_interval_sec,
+            max_polls=max_polls,
+            timeout_retry_enabled=timeout_retry_enabled,
+            timeout_retry_max_retries=timeout_retry_max_retries,
+        )
+        poll_result = bundle.get("poll_result", {})
+        error_reason = str(poll_result.get("error_reason") or "")
+        ok = bool(poll_result.get("ok"))
+
+        attempts.append({
+            "index": index,
+            "candidate": candidate,
+            "valid": True,
+            "ok": ok,
+            "error_reason": error_reason,
+            "task_status": poll_result.get("task_status"),
+        })
+
+        final_bundle = bundle
+        chosen_url = candidate
+        if ok:
+            break
+
+        if error_reason == "INVALID_SOURCE_URL":
+            continue
+
+    final_bundle["candidate_attempts"] = attempts
+    final_bundle["chosen_candidate"] = chosen_url
+    final_bundle["normalized_candidates"] = normalized_candidates
+    return final_bundle
+
+
 def run_u2_asr_with_timeout_retry(
     *,
     base_url: str,
@@ -204,6 +317,7 @@ def run_u2_asr_with_timeout_retry(
     timeout_retry_enabled: bool = True,
     timeout_retry_max_retries: int = 3,
 ) -> Dict[str, Any]:
+    video_url = normalize_media_url(video_url)
     conservative_retries = max(0, min(3, int(timeout_retry_max_retries)))
     retries = conservative_retries if timeout_retry_enabled else 0
     max_rounds = 1 + retries

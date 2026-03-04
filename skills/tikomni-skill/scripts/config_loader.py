@@ -7,6 +7,8 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+from tikomni_common import bootstrap_runtime_env
+
 try:
     import yaml
 except Exception:  # pragma: no cover - defensive fallback
@@ -147,7 +149,7 @@ def _resolve_repo_anchored_path(path_value: str) -> str:
     return str(candidate.resolve())
 
 
-def resolve_config_path(cli_config_path: Optional[str] = None) -> str:
+def resolve_config_path(cli_config_path: Optional[str] = None, env_values: Optional[Dict[str, str]] = None) -> str:
     """Resolve config file path with priority:
     1) --config
     2) TIKOMNI_CONFIG_FILE
@@ -159,9 +161,14 @@ def resolve_config_path(cli_config_path: Optional[str] = None) -> str:
     if cli_config_path and str(cli_config_path).strip():
         return _resolve_repo_anchored_path(str(cli_config_path).strip())
 
-    env_path = os.getenv("TIKOMNI_CONFIG_FILE", "").strip()
-    if env_path:
-        return _resolve_repo_anchored_path(env_path)
+    raw_env_path = ""
+    if isinstance(env_values, dict):
+        raw_env_path = str(env_values.get("TIKOMNI_CONFIG_FILE", "")).strip()
+    if not raw_env_path:
+        raw_env_path = os.getenv("TIKOMNI_CONFIG_FILE", "").strip()
+
+    if raw_env_path:
+        return _resolve_repo_anchored_path(raw_env_path)
 
     return str(DEFAULT_CONFIG_PATH)
 
@@ -181,8 +188,14 @@ def _builtin_defaults() -> Dict[str, Any]:
     return _deep_clone(BUILTIN_DEFAULT_CONFIG)
 
 
-def _env_int(name: str) -> Optional[int]:
-    raw = os.getenv(name, "").strip()
+def _read_env(name: str, env_values: Optional[Dict[str, str]] = None) -> str:
+    if isinstance(env_values, dict) and name in env_values:
+        return str(env_values.get(name, "") or "").strip()
+    return os.getenv(name, "").strip()
+
+
+def _env_int(name: str, env_values: Optional[Dict[str, str]] = None) -> Optional[int]:
+    raw = _read_env(name, env_values=env_values)
     if not raw:
         return None
     try:
@@ -192,13 +205,13 @@ def _env_int(name: str) -> Optional[int]:
     return value if value > 0 else None
 
 
-def _env_text(name: str) -> Optional[str]:
-    value = os.getenv(name, "").strip()
+def _env_text(name: str, env_values: Optional[Dict[str, str]] = None) -> Optional[str]:
+    value = _read_env(name, env_values=env_values)
     return value or None
 
 
-def _require_absolute_env(name: str) -> str:
-    value = _env_text(name)
+def _require_absolute_env(name: str, env_values: Optional[Dict[str, str]] = None) -> str:
+    value = _env_text(name, env_values=env_values)
     if value is None:
         raise ValueError(f"{name} is required and must be an absolute path")
     return _require_absolute_path(value, name)
@@ -255,7 +268,7 @@ def resolve_storage_paths(config: Dict[str, Any]) -> Dict[str, str]:
     return resolved
 
 
-def apply_env_overrides(config: Dict[str, Any]) -> Dict[str, Any]:
+def apply_env_overrides(config: Dict[str, Any], env_values: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
     runtime = config.setdefault("runtime", {}) if isinstance(config.get("runtime"), dict) else {}
     config["runtime"] = runtime
 
@@ -273,40 +286,45 @@ def apply_env_overrides(config: Dict[str, Any]) -> Dict[str, Any]:
     naming_rules = config.setdefault("naming_rules", {}) if isinstance(config.get("naming_rules"), dict) else {}
     config["naming_rules"] = naming_rules
 
-    timeout_ms = _env_int("TIKOMNI_TIMEOUT_MS")
+    timeout_ms = _env_int("TIKOMNI_TIMEOUT_MS", env_values=env_values)
     if timeout_ms is not None:
         runtime["timeout_ms"] = timeout_ms
 
-    default_route["root_dir"] = _require_absolute_env("TIKOMNI_OUTPUT_ROOT")
+    default_route["root_dir"] = _require_absolute_env("TIKOMNI_OUTPUT_ROOT", env_values=env_values)
 
     for env_key, config_key in {
         "TIKOMNI_OUTPUT_RUNS_DIR": "runs_dir",
         "TIKOMNI_OUTPUT_RESULTS_DIR": "results_dir",
         "TIKOMNI_OUTPUT_ERRORS_DIR": "errors_dir",
     }.items():
-        value = _env_text(env_key)
+        value = _env_text(env_key, env_values=env_values)
         if value is not None:
             default_route[config_key] = value
 
-    filename_pattern = _env_text("TIKOMNI_FILENAME_PATTERN")
+    filename_pattern = _env_text("TIKOMNI_FILENAME_PATTERN", env_values=env_values)
     if filename_pattern is not None:
         naming_rules["filename_pattern"] = filename_pattern
 
-    path_locale = _normalize_path_locale(os.getenv("TIKOMNI_PATH_LOCALE", "zh"))
+    path_locale = _normalize_path_locale(_read_env("TIKOMNI_PATH_LOCALE", env_values=env_values) or "zh")
     locale_routes = LOCALE_ROUTE_PRESETS.get(path_locale, LOCALE_ROUTE_PRESETS["zh"])
 
     for route_key, route_value in locale_routes.items():
         existing = card_type_routes.get(route_key)
-        prefix = route_value.get("prefix")
-        if isinstance(existing, dict) and isinstance(existing.get("prefix"), str) and existing.get("prefix").strip():
-            prefix = existing.get("prefix")
+        existing_prefix = ""
+        existing_parts: List[str] = []
+        if isinstance(existing, dict):
+            if isinstance(existing.get("prefix"), str):
+                existing_prefix = existing.get("prefix", "").strip()
+            if isinstance(existing.get("parts"), list) and existing.get("parts"):
+                existing_parts = [str(item) for item in existing.get("parts", []) if str(item).strip()]
+
         card_type_routes[route_key] = {
-            "prefix": prefix,
-            "parts": _deep_clone(route_value.get("parts", [])),
+            "prefix": existing_prefix or str(route_value.get("prefix") or ""),
+            "parts": existing_parts or _deep_clone(route_value.get("parts", [])),
         }
 
     for route_key, env_name in CARD_ROUTE_ENV_KEYS.items():
-        raw_value = _env_text(env_name)
+        raw_value = _env_text(env_name, env_values=env_values)
         if raw_value is None:
             continue
 
@@ -333,19 +351,29 @@ def apply_env_overrides(config: Dict[str, Any]) -> Dict[str, Any]:
     return config
 
 
-def load_tikomni_config(cli_config_path: Optional[str] = None) -> Tuple[Dict[str, Any], str]:
-    path = resolve_config_path(cli_config_path)
+def load_tikomni_config(
+    cli_config_path: Optional[str] = None,
+    env_file: Optional[str] = None,
+    allow_process_env: bool = False,
+) -> Tuple[Dict[str, Any], str]:
+    bootstrap = bootstrap_runtime_env(
+        primary_env_file=env_file,
+        allow_process_env=allow_process_env,
+    )
+    env_values = bootstrap.get("effective_env", {}) if isinstance(bootstrap, dict) else {}
+
+    path = resolve_config_path(cli_config_path, env_values=env_values if isinstance(env_values, dict) else None)
 
     if yaml is None:
-        return apply_env_overrides(_builtin_defaults()), "builtin-defaults"
+        return apply_env_overrides(_builtin_defaults(), env_values=env_values), "builtin-defaults"
 
     try:
         loaded = _load_yaml(path)
     except Exception:
-        return apply_env_overrides(_builtin_defaults()), "builtin-defaults"
+        return apply_env_overrides(_builtin_defaults(), env_values=env_values), "builtin-defaults"
 
     merged = _deep_merge(_builtin_defaults(), loaded)
-    return apply_env_overrides(merged), path
+    return apply_env_overrides(merged, env_values=env_values), path
 
 
 def config_get(config: Dict[str, Any], dotted_key: str, default: Any = None) -> Any:

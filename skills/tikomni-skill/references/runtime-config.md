@@ -48,6 +48,10 @@ Notes:
 
 ## 4. Output Layout
 
+`TIKOMNI_OUTPUT_ROOT` controls runner outputs (`_runs/results/_errors`) only.
+Card markdown written by `--write-card` is routed by `TIKOMNI_CARD_ROOT` + card routes.
+Do not assume card files follow output root.
+
 ```yaml
 # Output root directory (default resolves from repo root, not current CWD)
 root_dir: tikomni-output
@@ -115,9 +119,12 @@ max_fallback_attempts: 2
 1. Where should I configure local env?
    - In local CLI/CUI runs: workspace `.env`.
    - In CI runs: CI secrets or private env file loaded at runtime.
-2. How to verify which source provided the key?
+2. Which root controls what?
+   - `TIKOMNI_OUTPUT_ROOT`: runner output files (`_runs/results/_errors`).
+   - `TIKOMNI_CARD_ROOT`: markdown cards produced only when `--write-card` is enabled.
+3. How to verify which source provided the key?
    - Run `python3 skills/tikomni-skill/scripts/check_tikomni_readiness.py`.
    - It prints `key_source` and `source_chain` only (no secret value).
-3. How to prevent key leakage?
+4. How to prevent key leakage?
    - Never commit real `.env` files.
    - Never print `TIKOMNI_API_KEY` in logs.

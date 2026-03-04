@@ -17,7 +17,7 @@ from tikomni_common import normalize_text, read_json_file, write_json_stdout
 def _default_card_root() -> str:
     raw = os.getenv("TIKOMNI_CARD_ROOT", "").strip()
     if not raw:
-        return "/mnt/openclaw/data/WIKI"
+        raise ValueError("TIKOMNI_CARD_ROOT is required and must be an absolute path")
 
     candidate = Path(raw).expanduser()
     if not candidate.is_absolute():

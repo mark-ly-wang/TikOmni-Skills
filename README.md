@@ -58,27 +58,25 @@ TikOmni user configuration is **env-only**. You do not need to edit YAML.
 Required:
 ```bash
 TIKOMNI_API_KEY="your_real_key"
+# required absolute path
+TIKOMNI_OUTPUT_ROOT="/absolute/path/to/tikomni-output"
+# required absolute path
+TIKOMNI_CARD_ROOT="/absolute/path/to/tikomni-cards"
 ```
 
-Optional advanced env vars (all have defaults):
+Optional advanced env vars:
 ```bash
 # Runtime
 TIKOMNI_TIMEOUT_MS="60000"
 
-# Output directories
-# TIKOMNI_OUTPUT_ROOT must be an absolute path.
-# Default root (when unset) internally falls back to <repo_root>/tikomni-output (outside skill dir)
-TIKOMNI_OUTPUT_ROOT="/absolute/path/to/tikomni-output"
+# Output subdirectories under TIKOMNI_OUTPUT_ROOT
+# defaults: _runs / results / _errors
 TIKOMNI_OUTPUT_RUNS_DIR="_runs"
 TIKOMNI_OUTPUT_RESULTS_DIR="results"
 TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
 
 # Naming
 TIKOMNI_FILENAME_PATTERN="{type}-{timestamp}-{job_id}.md"
-
-# Card root (set your own absolute path)
-# TIKOMNI_CARD_ROOT must be an absolute path.
-TIKOMNI_CARD_ROOT="/absolute/path/to/tikomni-cards"
 
 # Card route locale preset (default zh)
 TIKOMNI_PATH_LOCALE="zh"   # zh | en

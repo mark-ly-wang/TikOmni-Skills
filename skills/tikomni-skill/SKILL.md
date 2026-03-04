@@ -45,17 +45,15 @@ Call Tikomni APIs via direct HTTP and output `raw + normalized` data with Markdo
 4. Xiaohongshu homepage playbook: `references/playbooks/xiaohongshu-home-extract.md`
 5. Copy extraction rules: `references/playbooks/copy-extract-rules.md`
 6. Markdown output rules: `references/output-markdown.md`
-7. Customization guide: `references/customization-guide.md`
-8. Configuration guide: `references/configuration.md`
-9. Runtime config template (policy docs): `references/runtime-config.md`
-10. Script defaults template (YAML): `references/config-templates/defaults.yaml`
-11. Full API catalog: `references/api-catalog/index.md`
-12. Benchmark card prompt contracts: `references/prompt-contracts/`
-13. Topic contract: `references/prompt-contracts/topic.md`
-14. Style contract: `references/prompt-contracts/style.md`
-15. Hook contract: `references/prompt-contracts/hook.md`
-16. Structure contract: `references/prompt-contracts/structure.md`
-17. CTA contract: `references/prompt-contracts/cta.md`
-18. Summary contract: `references/prompt-contracts/summary.md`
-19. ASR clean contract: `references/prompt-contracts/asr-clean.md`
-20. Insight contract: `references/prompt-contracts/insight.md`
+7. Runtime config template (policy docs): `references/runtime-config.md`
+8. Script defaults template (YAML): `references/config-templates/defaults.yaml`
+9. Full API catalog: `references/api-catalog/index.md`
+10. Benchmark card prompt contracts: `references/prompt-contracts/`
+11. Topic contract: `references/prompt-contracts/topic.md`
+12. Style contract: `references/prompt-contracts/style.md`
+13. Hook contract: `references/prompt-contracts/hook.md`
+14. Structure contract: `references/prompt-contracts/structure.md`
+15. CTA contract: `references/prompt-contracts/cta.md`
+16. Summary contract: `references/prompt-contracts/summary.md`
+17. ASR clean contract: `references/prompt-contracts/asr-clean.md`
+18. Insight contract: `references/prompt-contracts/insight.md`

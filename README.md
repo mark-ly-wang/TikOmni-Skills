@@ -103,8 +103,9 @@ python3 "./skills/tikomni-skill/scripts/run_tikomni_extract.py" "<url_or_id>"
 ## Core References
 
 1. [skills/tikomni-skill/SKILL.md](./skills/tikomni-skill/SKILL.md)
-2. [configuration.md](./skills/tikomni-skill/references/configuration.md)
-3. [runtime-config.md](./skills/tikomni-skill/references/runtime-config.md)
-4. [routing-rules.md](./skills/tikomni-skill/references/routing-rules.md)
-5. [normalize-rules.md](./skills/tikomni-skill/references/normalize-rules.md)
-6. [API catalog index](./skills/tikomni-skill/references/api-catalog/index.md)
+2. [configuration.md](./docs/en/references/configuration.md)
+3. [customization-guide.md](./docs/en/references/customization-guide.md)
+4. [runtime-config.md](./skills/tikomni-skill/references/runtime-config.md)
+5. [routing-rules.md](./skills/tikomni-skill/references/routing-rules.md)
+6. [normalize-rules.md](./skills/tikomni-skill/references/normalize-rules.md)
+7. [API catalog index](./skills/tikomni-skill/references/api-catalog/index.md)

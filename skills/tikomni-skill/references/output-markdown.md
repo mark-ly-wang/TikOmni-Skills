@@ -12,7 +12,7 @@ If runtime config is missing, use the fallback template below.
 ## 2. Fallback Directory Template
 
 ```text
-docs/skill-output/
+tikomni-output/
   _runs/
   _errors/
   douyin/home/

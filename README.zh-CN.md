@@ -66,7 +66,8 @@ TIKOMNI_API_KEY="你的真实 key"
 TIKOMNI_TIMEOUT_MS="60000"
 
 # 输出目录
-TIKOMNI_OUTPUT_ROOT="docs/skill-output"
+# 默认根目录解析为 <repo_root>/tikomni-output（在 skill 目录外）
+TIKOMNI_OUTPUT_ROOT="tikomni-output"
 TIKOMNI_OUTPUT_RUNS_DIR="_runs"
 TIKOMNI_OUTPUT_RESULTS_DIR="results"
 TIKOMNI_OUTPUT_ERRORS_DIR="_errors"

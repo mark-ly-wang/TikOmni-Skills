@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import os
 
-from config_loader import config_get, load_tikomni_config
+from config_loader import REPO_ROOT, SKILL_ROOT, config_get, load_tikomni_config, resolve_storage_paths
 from tikomni_common import bootstrap_runtime_env, write_json_stdout
 
 
@@ -27,6 +27,16 @@ def main() -> None:
     source_chain = bootstrap.get("source_chain", {}).get(api_key_env, [])
     key_is_present = bool((os.getenv(api_key_env) or "").strip())
 
+    storage_paths = resolve_storage_paths(config)
+    resolved_output_root = storage_paths.get("root_dir", "")
+    skill_root_str = str(SKILL_ROOT.resolve())
+    output_root_in_skill_dir = False
+    if resolved_output_root:
+        try:
+            output_root_in_skill_dir = os.path.commonpath([resolved_output_root, skill_root_str]) == skill_root_str
+        except Exception:
+            output_root_in_skill_dir = False
+
     payload = {
         "ready": key_is_present,
         "api_key_env": api_key_env,
@@ -34,10 +44,12 @@ def main() -> None:
         "key_source": key_source or "missing",
         "source_chain": source_chain,
         "priority": bootstrap.get("priority", ["process_env", ".env.local", ".env"]),
-        "repo_root": bootstrap.get("repo_root"),
+        "repo_root": bootstrap.get("repo_root") or str(REPO_ROOT.resolve()),
         "workspace_env": bootstrap.get("workspace_env"),
         "local_env": bootstrap.get("local_env"),
         "loaded_files": bootstrap.get("loaded_files", []),
+        "storage_paths": storage_paths,
+        "output_root_in_skill_dir": output_root_in_skill_dir,
     }
     write_json_stdout(payload)
     raise SystemExit(0 if key_is_present else 1)

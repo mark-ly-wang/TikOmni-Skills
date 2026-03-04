@@ -66,7 +66,8 @@ Optional advanced env vars (all have defaults):
 TIKOMNI_TIMEOUT_MS="60000"
 
 # Output directories
-TIKOMNI_OUTPUT_ROOT="docs/skill-output"
+# Default root resolves to <repo_root>/tikomni-output (outside skill dir)
+TIKOMNI_OUTPUT_ROOT="tikomni-output"
 TIKOMNI_OUTPUT_RUNS_DIR="_runs"
 TIKOMNI_OUTPUT_RESULTS_DIR="results"
 TIKOMNI_OUTPUT_ERRORS_DIR="_errors"

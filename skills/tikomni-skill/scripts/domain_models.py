@@ -65,7 +65,7 @@ class StorageTarget:
     schema_version: str = DEFAULT_SCHEMA_VERSION
     content_kind: str = "douyin_video"
     route_key: str = "default"
-    root_dir: str = "docs/skill-output"
+    root_dir: str = "tikomni-output"
     runs_dir: str = "_runs"
     results_dir: str = "results"
     errors_dir: str = "_errors"

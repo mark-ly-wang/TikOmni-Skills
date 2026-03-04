@@ -18,7 +18,7 @@ from tikomni_common import (
     summarize_content,
     write_json_stdout,
 )
-from write_benchmark_card import DEFAULT_CARD_ROOT, write_benchmark_card
+from write_benchmark_card import write_benchmark_card
 
 
 def _normalize_input(input_value: Optional[str], share_text: Optional[str], note_id: Optional[str]) -> Dict[str, Optional[str]]:
@@ -257,8 +257,9 @@ def run_xiaohongshu_extract(
     write_card: bool,
     card_type: str,
     collect_material: bool,
-    card_root: str,
+    card_root: Optional[str],
     storage_config: Optional[Dict[str, Any]] = None,
+    allow_process_env: bool = False,
 ) -> Dict[str, Any]:
     source_input = _normalize_input(input_value, share_text, note_id)
     if not source_input["share_text"] and not source_input["note_id"]:
@@ -281,6 +282,7 @@ def run_xiaohongshu_extract(
         api_key_env=api_key_env,
         base_url=base_url,
         timeout_ms=timeout_ms,
+        allow_process_env=allow_process_env,
     )
 
     trace: List[Dict[str, Any]] = []
@@ -508,11 +510,24 @@ def main() -> None:
     parser.add_argument("--note-id", default=None, help="Xiaohongshu note_id")
     parser.add_argument("--config", default=None, help="Runtime config YAML path")
     parser.add_argument("--env-file", default=None, help="Optional env file path")
+    parser.add_argument("--allow-process-env", action="store_true", help="Allow process env to override .env/.env.local")
     parser.add_argument("--api-key-env", default=None, help="API key env variable name")
     parser.add_argument("--base-url", default=None, help="Tikomni base URL")
     parser.add_argument("--timeout-ms", type=int, default=None, help="Request timeout ms")
     parser.add_argument("--poll-interval-sec", type=float, default=None, help="U2 polling interval seconds")
     parser.add_argument("--max-polls", type=int, default=None, help="Max U2 polls")
+    parser.add_argument(
+        "--u2-submit-max-retries",
+        type=int,
+        default=None,
+        help="Max retries for retriable U2 submit failures",
+    )
+    parser.add_argument(
+        "--u2-submit-backoff-ms",
+        type=int,
+        default=None,
+        help="Base backoff ms for retriable U2 submit failures (exponential)",
+    )
     parser.add_argument(
         "--u2-timeout-retry-enabled",
         type=str,
@@ -530,10 +545,14 @@ def main() -> None:
     parser.add_argument("--write-card", action="store_true", help="Write benchmark card to card root")
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
     parser.add_argument("--collect-material", action="store_true", help="Write extra CMAT card")
-    parser.add_argument("--card-root", default=DEFAULT_CARD_ROOT, help="Card root")
+    parser.add_argument("--card-root", default=None, help="Card root (absolute); falls back to TIKOMNI_CARD_ROOT when writing cards")
     args = parser.parse_args()
 
-    config, _ = load_tikomni_config(args.config)
+    config, _ = load_tikomni_config(
+        args.config,
+        env_file=args.env_file,
+        allow_process_env=args.allow_process_env,
+    )
 
     resolved_env_file = args.env_file or config_get(config, "runtime.env_file", None)
     api_key_env = args.api_key_env or config_get(config, "runtime.auth_env_key", "TIKOMNI_API_KEY")
@@ -545,8 +564,16 @@ def main() -> None:
         else config_get(config, "asr_strategy.poll_interval_sec", 3.0)
     )
     max_polls = args.max_polls if args.max_polls is not None else config_get(config, "asr_strategy.max_polls", 30)
-    u2_submit_max_retries = config_get(config, "asr_strategy.submit_retry.xiaohongshu_note.max_retries", 0)
-    u2_submit_backoff_ms = config_get(config, "asr_strategy.submit_retry.xiaohongshu_note.backoff_ms", 0)
+    u2_submit_max_retries = (
+        args.u2_submit_max_retries
+        if args.u2_submit_max_retries is not None
+        else config_get(config, "asr_strategy.submit_retry.xiaohongshu_note.max_retries", 0)
+    )
+    u2_submit_backoff_ms = (
+        args.u2_submit_backoff_ms
+        if args.u2_submit_backoff_ms is not None
+        else config_get(config, "asr_strategy.submit_retry.xiaohongshu_note.backoff_ms", 0)
+    )
     u2_timeout_retry_enabled = (
         (str(args.u2_timeout_retry_enabled).lower() == "true")
         if args.u2_timeout_retry_enabled is not None
@@ -579,6 +606,7 @@ def main() -> None:
             collect_material=args.collect_material,
             card_root=args.card_root,
             storage_config=config,
+            allow_process_env=args.allow_process_env,
         )
     except ValueError as error:
         result = {

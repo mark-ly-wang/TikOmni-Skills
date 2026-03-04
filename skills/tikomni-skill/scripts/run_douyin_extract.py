@@ -8,7 +8,7 @@ from asr_pipeline import run_u2_asr_with_timeout_retry
 from config_loader import config_get, load_tikomni_config
 from extract_pipeline import build_api_trace, request_with_optional_fallback
 from tikomni_common import deep_find_first, resolve_runtime, summarize_content, write_json_stdout
-from write_benchmark_card import DEFAULT_CARD_ROOT, write_benchmark_card
+from write_benchmark_card import write_benchmark_card
 
 
 def _normalize_input(input_value: Optional[str], share_url: Optional[str], aweme_id: Optional[str]) -> Dict[str, Optional[str]]:
@@ -101,8 +101,9 @@ def run_douyin_extract(
     write_card: bool,
     card_type: str,
     collect_material: bool,
-    card_root: str,
+    card_root: Optional[str],
     storage_config: Optional[Dict[str, Any]] = None,
+    allow_process_env: bool = False,
 ) -> Dict[str, Any]:
     normalized_input = _normalize_input(input_value, share_url, aweme_id)
     if not normalized_input["share_url"] and not normalized_input["aweme_id"]:
@@ -134,6 +135,7 @@ def run_douyin_extract(
         api_key_env=api_key_env,
         base_url=base_url,
         timeout_ms=timeout_ms,
+        allow_process_env=allow_process_env,
     )
 
     trace = []
@@ -313,6 +315,7 @@ def main() -> None:
     parser.add_argument("--aweme-id", default=None, help="Douyin aweme_id")
     parser.add_argument("--config", default=None, help="Runtime config YAML path")
     parser.add_argument("--env-file", default=None, help="Optional env file path")
+    parser.add_argument("--allow-process-env", action="store_true", help="Allow process env to override .env/.env.local")
     parser.add_argument("--api-key-env", default=None, help="API key env variable name")
     parser.add_argument("--base-url", default=None, help="Tikomni base URL")
     parser.add_argument("--timeout-ms", type=int, default=None, help="Request timeout ms")
@@ -346,10 +349,14 @@ def main() -> None:
     parser.add_argument("--write-card", action="store_true", help="Write benchmark card to card root")
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
     parser.add_argument("--collect-material", action="store_true", help="Write extra CMAT card")
-    parser.add_argument("--card-root", default=DEFAULT_CARD_ROOT, help="Card root")
+    parser.add_argument("--card-root", default=None, help="Card root (absolute); falls back to TIKOMNI_CARD_ROOT when writing cards")
     args = parser.parse_args()
 
-    config, _ = load_tikomni_config(args.config)
+    config, _ = load_tikomni_config(
+        args.config,
+        env_file=args.env_file,
+        allow_process_env=args.allow_process_env,
+    )
 
     resolved_env_file = args.env_file or config_get(config, "runtime.env_file", None)
     api_key_env = args.api_key_env or config_get(config, "runtime.auth_env_key", "TIKOMNI_API_KEY")
@@ -402,6 +409,7 @@ def main() -> None:
             collect_material=args.collect_material,
             card_root=args.card_root,
             storage_config=config,
+            allow_process_env=args.allow_process_env,
         )
     except ValueError as error:
         result = {

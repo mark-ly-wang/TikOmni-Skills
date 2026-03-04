@@ -32,6 +32,7 @@ def main() -> None:
     parser.add_argument("task_id", help="U2 task id")
     parser.add_argument("--env-file", default=None, help="Optional env file path (e.g. skills/tikomni-skill/.env.local)")
     parser.add_argument("--api-key-env", default="TIKOMNI_API_KEY", help="API key env variable name")
+    parser.add_argument("--allow-process-env", action="store_true", help="Allow process env to override .env/.env.local")
     parser.add_argument("--base-url", default=None, help="Tikomni API base url")
     parser.add_argument("--timeout-ms", type=int, default=None, help="Request timeout in milliseconds")
     parser.add_argument("--poll-interval-sec", type=float, default=3.0, help="Polling interval in seconds")
@@ -44,6 +45,7 @@ def main() -> None:
             api_key_env=args.api_key_env,
             base_url=args.base_url,
             timeout_ms=args.timeout_ms,
+            allow_process_env=args.allow_process_env,
         )
     except ValueError as error:
         write_json_stdout(

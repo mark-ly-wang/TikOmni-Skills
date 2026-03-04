@@ -69,10 +69,14 @@ def _infer_default_env_paths(primary_env_file: Optional[str]) -> Tuple[Path, Pat
     return workspace_env, local_env
 
 
-def bootstrap_runtime_env(primary_env_file: Optional[str] = None) -> Dict[str, Any]:
+def bootstrap_runtime_env(
+    primary_env_file: Optional[str] = None,
+    allow_process_env: bool = False,
+) -> Dict[str, Any]:
     """Load env values from .env + .env.local with deterministic priority.
 
-    Priority (highest -> lowest): process env > .env.local > .env
+    Default priority (highest -> lowest): .env.local > .env
+    Optional (when allow_process_env=True): process env > .env.local > .env
     """
 
     process_env = dict(os.environ)
@@ -84,7 +88,8 @@ def bootstrap_runtime_env(primary_env_file: Optional[str] = None) -> Dict[str, A
     merged: Dict[str, str] = {}
     merged.update(base_values)
     merged.update(local_values)
-    merged.update(process_env)
+    if allow_process_env:
+        merged.update(process_env)
 
     os.environ.update(merged)
 
@@ -96,22 +101,30 @@ def bootstrap_runtime_env(primary_env_file: Optional[str] = None) -> Dict[str, A
 
     key_source: Dict[str, str] = {}
     source_chain: Dict[str, List[str]] = {}
-    for key in set(base_values.keys()) | set(local_values.keys()) | set(process_env.keys()):
+    all_keys = set(base_values.keys()) | set(local_values.keys())
+    if allow_process_env:
+        all_keys |= set(process_env.keys())
+
+    for key in all_keys:
         chain: List[str] = []
         if key in base_values:
             chain.append(".env")
         if key in local_values:
             chain.append(".env.local")
-        if key in process_env:
+        if allow_process_env and key in process_env:
             chain.append("process_env")
         source_chain[key] = chain
 
-        if key in process_env:
+        if allow_process_env and key in process_env:
             key_source[key] = "process_env"
         elif key in local_values:
             key_source[key] = ".env.local"
         elif key in base_values:
             key_source[key] = ".env"
+
+    priority = [".env.local", ".env"]
+    if allow_process_env:
+        priority.insert(0, "process_env")
 
     return {
         "repo_root": str(get_repo_root()),
@@ -120,13 +133,15 @@ def bootstrap_runtime_env(primary_env_file: Optional[str] = None) -> Dict[str, A
         "loaded_files": loaded_files,
         "key_source": key_source,
         "source_chain": source_chain,
-        "priority": ["process_env", ".env.local", ".env"],
+        "priority": priority,
+        "allow_process_env": bool(allow_process_env),
+        "effective_env": merged,
     }
 
 
-def load_env_file(env_file: Optional[str]) -> None:
+def load_env_file(env_file: Optional[str], allow_process_env: bool = False) -> None:
     """Backward-compatible wrapper. Prefer bootstrap_runtime_env."""
-    bootstrap_runtime_env(primary_env_file=env_file)
+    bootstrap_runtime_env(primary_env_file=env_file, allow_process_env=allow_process_env)
 
 
 def resolve_runtime(
@@ -134,15 +149,28 @@ def resolve_runtime(
     api_key_env: str,
     base_url: Optional[str],
     timeout_ms: Optional[int],
+    allow_process_env: bool = False,
 ) -> Dict[str, Any]:
-    bootstrap_info = bootstrap_runtime_env(primary_env_file=env_file)
+    bootstrap_info = bootstrap_runtime_env(
+        primary_env_file=env_file,
+        allow_process_env=allow_process_env,
+    )
+    effective_env = bootstrap_info.get("effective_env", {}) if isinstance(bootstrap_info, dict) else {}
 
-    token = os.getenv(api_key_env, "").strip()
+    token = str(effective_env.get(api_key_env, "") or "").strip()
+    if not token and allow_process_env:
+        token = os.getenv(api_key_env, "").strip()
     if not token:
-        raise ValueError(f"missing_api_key:{api_key_env}")
+        raise ValueError(
+            f"missing_api_key:{api_key_env} (set in .env/.env.local or pass --allow-process-env)"
+        )
 
-    resolved_base_url = (base_url or os.getenv("TIKOMNI_BASE_URL") or DEFAULT_BASE_URL).strip().rstrip("/")
-    resolved_timeout_ms = int(timeout_ms or os.getenv("TIKOMNI_TIMEOUT_MS") or DEFAULT_TIMEOUT_MS)
+    resolved_base_url = str(base_url or effective_env.get("TIKOMNI_BASE_URL") or DEFAULT_BASE_URL).strip().rstrip("/")
+    timeout_raw = timeout_ms if timeout_ms is not None else effective_env.get("TIKOMNI_TIMEOUT_MS")
+    try:
+        resolved_timeout_ms = int(timeout_raw or DEFAULT_TIMEOUT_MS)
+    except Exception:
+        resolved_timeout_ms = DEFAULT_TIMEOUT_MS
 
     return {
         "token": token,
@@ -151,7 +179,8 @@ def resolve_runtime(
         "env_bootstrap": {
             "loaded_files": bootstrap_info.get("loaded_files", []),
             "api_key_source": bootstrap_info.get("key_source", {}).get(api_key_env, "unknown"),
-            "priority": bootstrap_info.get("priority", ["process_env", ".env.local", ".env"]),
+            "priority": bootstrap_info.get("priority", [".env.local", ".env"]),
+            "allow_process_env": bool(allow_process_env),
         },
     }
 

@@ -8,7 +8,7 @@ from typing import Any, Dict, List
 
 from config_loader import load_tikomni_config
 from tikomni_common import normalize_text, read_json_file, write_json_stdout
-from write_benchmark_card import DEFAULT_CARD_ROOT, write_benchmark_card
+from write_benchmark_card import write_benchmark_card
 
 
 def _read_input(path: str) -> Any:
@@ -45,12 +45,16 @@ def main() -> None:
     parser.add_argument("--platform", required=True, help="Platform name, e.g. douyin/xiaohongshu")
     parser.add_argument("--config", default=None, help="Runtime config YAML path")
     parser.add_argument("--input-json", default="-", help="JSON list/dict path or '-' for stdin")
-    parser.add_argument("--card-root", default=DEFAULT_CARD_ROOT, help="Card root")
+    parser.add_argument("--allow-process-env", action="store_true", help="Allow process env to override .env/.env.local")
+    parser.add_argument("--card-root", default=None, help="Card root (absolute); falls back to TIKOMNI_CARD_ROOT when writing cards")
     parser.add_argument("--sample-author", default="", help="Override author folder name")
     parser.add_argument("--collect-material", action="store_true", help="Also write CMAT cards")
     args = parser.parse_args()
 
-    config, _ = load_tikomni_config(args.config)
+    config, _ = load_tikomni_config(
+        args.config,
+        allow_process_env=args.allow_process_env,
+    )
 
     data = _read_input(args.input_json)
     payloads = _items(data)

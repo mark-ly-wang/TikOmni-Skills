@@ -3,7 +3,7 @@
 ## 0. 先配置再扩展
 
 1. 在 `.env` 中配置运行环境（`TIKOMNI_API_KEY` 为必填）。
-2. 编辑 `references/runtime-config.zh-CN.md`，定义输出目录、markdown 默认值和执行策略。
+2. 编辑 `docs/zh/tikomni/runtime-config.md`，定义输出目录、markdown 默认值和执行策略。
 3. 若用户在提示词指定了自定义配置路径，应优先读取该路径。
 
 ## 1. 可扩展项

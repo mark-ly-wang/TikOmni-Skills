@@ -12,7 +12,7 @@ This document defines where users configure this skill.
 
 1. `<repo_root>/.env` for base secrets/runtime environment (default path, not CWD-dependent).
 2. `skills/tikomni-skill/.env.local` for local override (higher priority than `.env`).
-3. `skills/tikomni-skill/references/runtime-config.md` for user-facing execution policy.
+3. `docs/en/tikomni/runtime-config.md` for user-facing execution policy.
 4. Env template file: `skills/tikomni-skill/env.example` (no real secret inside).
 5. Script runtime template: `skills/tikomni-skill/references/config-templates/defaults.yaml` (internal default, maintainers/advanced users only).
 6. Optional: user can provide another config file path in prompt, and the agent should read that file first.
@@ -37,7 +37,7 @@ TIKOMNI_TIMEOUT_MS="60000"
 1. `<repo_root>/.env`: your private base config.
 2. `skills/tikomni-skill/.env.local`: optional local override.
 3. `skills/tikomni-skill/env.example`: env template.
-4. `skills/tikomni-skill/references/runtime-config.md`: runtime policy config.
+4. `docs/en/tikomni/runtime-config.md`: runtime policy config.
 
 ## 4. CI Loading Without Leaking Logs
 

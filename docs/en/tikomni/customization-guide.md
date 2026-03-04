@@ -3,7 +3,7 @@
 ## 0. Start from Configuration
 
 1. Update environment values in `.env` (`TIKOMNI_API_KEY` is required).
-2. Edit `references/runtime-config.md` to set output folders, markdown defaults, and execution policy.
+2. Edit `docs/en/tikomni/runtime-config.md` to set output folders, markdown defaults, and execution policy.
 3. If the user provides a custom config path, use that file as the first config source.
 
 ## 1. What Can Be Extended

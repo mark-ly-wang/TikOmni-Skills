@@ -5,7 +5,7 @@ import argparse
 
 from config_loader import config_get, load_tikomni_config
 from extract_pipeline import detect_platform_from_input
-from run_douyin_extract import run_douyin_extract
+from run_douyin_single_video import run_douyin_single_video
 from run_xiaohongshu_extract import run_xiaohongshu_extract
 from tikomni_common import write_json_stdout
 
@@ -87,24 +87,26 @@ def main() -> None:
 
     try:
         if platform == "douyin":
-            result = run_douyin_extract(
+            douyin_app_timeout_ms = config_get(config, "runtime.douyin.app_timeout_ms", None)
+            douyin_web_timeout_ms = config_get(config, "runtime.douyin.web_timeout_ms", None)
+            result = run_douyin_single_video(
                 input_value=args.input,
                 share_url=None,
-                aweme_id=None,
                 env_file=resolved_env_file,
                 api_key_env=api_key_env,
                 base_url=base_url,
                 timeout_ms=timeout_ms,
+                app_timeout_ms=douyin_app_timeout_ms,
+                web_timeout_ms=douyin_web_timeout_ms,
                 poll_interval_sec=float(poll_interval_sec),
                 max_polls=int(max_polls),
                 u2_submit_max_retries=int(u2_submit_max_retries),
                 u2_submit_backoff_ms=int(u2_submit_backoff_ms),
-                u2_timeout_retry_enabled=bool(u2_timeout_retry_enabled),
-                u2_timeout_retry_max_retries=int(u2_timeout_retry_max_retries),
                 write_card=args.write_card,
                 card_type=args.card_type,
                 collect_material=args.collect_material,
                 card_root=args.card_root,
+                content_kind="single_video",
                 storage_config=config,
                 allow_process_env=args.allow_process_env,
             )

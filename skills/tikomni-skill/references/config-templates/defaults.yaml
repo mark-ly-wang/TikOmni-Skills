@@ -19,7 +19,7 @@ platform_adapters:
     u2_task_poll: /api/u2/v1/tasks/{task_id}
 
 content_kind_workflows:
-  douyin_video: run_douyin_extract
+  douyin_video: run_douyin_single_video
   xiaohongshu_note: run_xiaohongshu_extract
 
 storage_routes:

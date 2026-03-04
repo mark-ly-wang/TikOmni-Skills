@@ -20,7 +20,7 @@ This folder contains executable runtime config templates used by local scripts.
 ## Current Script Support
 
 - `scripts/run_tikomni_extract.py`
-- `scripts/run_douyin_extract.py`
+- `scripts/run_douyin_single_video.py`
 - `scripts/run_xiaohongshu_extract.py`
 
 Example:

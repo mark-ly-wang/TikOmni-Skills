@@ -6,11 +6,15 @@ if __package__ in {None, ""}:
 
     _self = Path(__file__).resolve()
     for _parent in _self.parents:
-        if (_parent / "scripts").is_dir():
+        if (_parent / "scripts" / "core" / "bootstrap_env.py").is_file():
             sys.path.insert(0, str(_parent))
             break
 
 """Poll Tikomni U2 task until terminal state."""
+
+from scripts.core.bootstrap_env import bootstrap_for_direct_run
+
+bootstrap_for_direct_run(__file__, __package__)
 
 import argparse
 from typing import Any, Dict

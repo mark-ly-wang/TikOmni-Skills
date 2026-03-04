@@ -2,18 +2,18 @@
 
 Edit this file to customize skill behavior.
 
-## 0. What does “local config” mean?
+## 0. Local Config Scope
 
-1. “Local” means the environment where your agent is currently running.
-2. If you run from CLI/CUI on your laptop, local means your laptop.
-3. If you run in CI/server, local means that CI runner/server.
+1. "Local" is the environment where your agent is running.
+2. For laptop CLI/CUI runs, local means your laptop.
+3. For CI/server runs, local means that runner/server.
 
 ## 1. Quick Start
 
 1. Copy `skills/tikomni-skill/env.example` to a private env file (for example, workspace `.env` or `skills/tikomni-skill/.env.local`).
 2. Fill in your real `TIKOMNI_API_KEY`.
 3. Edit this file for output folders, metadata, and extraction behavior.
-4. On execution, read this file first, then resolve the API key via `auth_env_key`.
+4. On execution, `scripts/cli/run_tikomni_extract.py` loads config first, then resolves API key via `auth_env_key`.
 
 ## 2. Profile
 
@@ -41,23 +41,27 @@ env_file: .env
 
 Notes:
 
-1. `env_file` is a declared path and should never be printed with secret values.
-2. If `env_file` is relative, it is resolved from repository root (not CWD).
+1. `env_file` is a declared path and must never be printed with secret values.
+2. If `env_file` is relative, resolve it from repository root (not CWD).
 3. If `env_file` is omitted, default is `<repo_root>/.env`.
 4. Real API key must come from environment variables, never from markdown content.
 
 ## 4. Output Layout
 
 `TIKOMNI_OUTPUT_ROOT` controls runner outputs (`_runs/results/_errors`) only.
-Default behavior: `scripts/platform/douyin/run_douyin_single_video.py` persists JSON artifacts automatically.
-- success -> `<runs_dir>/<results_dir>/<YYYYMMDD>/<timestamp>-douyin-<id>.json`
-- error -> `<errors_dir>/<YYYYMMDD>/<timestamp>-douyin-<id>.json`
-Use `--no-persist-output` to disable artifact persistence for a run.
+
+Default behavior:
+- Unified entry (`run_tikomni_extract`) persists JSON by default for all registered workflows.
+- success -> `<runs_dir>/<results_dir>/<YYYYMMDD>/<timestamp>-<platform>-<id>.json`
+- error -> `<errors_dir>/<YYYYMMDD>/<timestamp>-<platform>-<id>.json`
+- disable per run with `--no-persist-output` (global for workflow outputs).
 
 Card markdown written by `--write-card` is routed by `TIKOMNI_CARD_ROOT` + card routes.
-Default behavior: `scripts/cli/run_tikomni_extract.py` / `scripts/platform/douyin/run_douyin_single_video.py` enable write-card by default.
-Use `--no-write-card` to disable card writing for a run.
-Do not assume card files follow output root.
+
+Default behavior:
+- `scripts/cli/run_tikomni_extract.py` enables `--write-card` by default.
+- Platform handlers (Douyin/XHS) inherit this default unless `--no-write-card` is set explicitly.
+- Do not assume card files are always under output root.
 
 ```yaml
 # Output root directory (default resolves from repo root, not current CWD)
@@ -107,7 +111,7 @@ Notes:
 1. U2 submit no longer accepts or forwards `idempotency-key` headers.
 2. Non-timeout errors keep original behavior and are not retried by `u2_timeout_retry`.
 
-## 7. Routing Policy
+## 7. Registry + Routing Runtime
 
 ```yaml
 # Endpoint priority for same platform + same intent
@@ -121,16 +125,21 @@ fallback_enabled: true
 max_fallback_attempts: 2
 ```
 
+Notes:
+
+1. `--content-kind auto` uses registry default mapping per platform.
+2. Registry is mapping-only; policy priority stays in capability matrix/routing rules.
+
 ## 8. FAQ
 
 1. Where should I configure local env?
    - In local CLI/CUI runs: workspace `.env`.
    - In CI runs: CI secrets or private env file loaded at runtime.
 2. Which root controls what?
-   - `TIKOMNI_OUTPUT_ROOT`: runner output files (`_runs/results/_errors`, default on for Douyin; disable with `--no-persist-output`).
-   - `TIKOMNI_CARD_ROOT`: markdown cards (default on in `scripts/cli/run_tikomni_extract.py` / `scripts/platform/douyin/run_douyin_single_video.py`; disable with `--no-write-card`).
+   - `TIKOMNI_OUTPUT_ROOT`: runner output files (`_runs/results/_errors`); unified-entry workflow JSON persistence is enabled by default for all workflows and can be disabled with `--no-persist-output`.
+   - `TIKOMNI_CARD_ROOT`: markdown cards; card writing is enabled by default and can be disabled with `--no-write-card`.
 3. How to verify which source provided the key?
-   - Run `python3 skills/tikomni-skill/scripts/cli/check_tikomni_readiness.py`.
+   - Run `python3 scripts/cli/check_tikomni_readiness.py`.
    - It prints `key_source` and `source_chain` only (no secret value).
 4. How to prevent key leakage?
    - Never commit real `.env` files.

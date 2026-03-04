@@ -7,13 +7,25 @@ import json
 import os
 import re
 import unicodedata
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from analysis_pipeline import DEFAULT_MODULE_SECTIONS, build_analysis_sections
 from storage_router import build_card_output_path, normalize_card_type, resolve_effective_card_type
 from tikomni_common import normalize_text, read_json_file, write_json_stdout
 
-DEFAULT_CARD_ROOT = (os.getenv("TIKOMNI_CARD_ROOT", "/mnt/openclaw/data/WIKI").strip() or "/mnt/openclaw/data/WIKI")
+def _default_card_root() -> str:
+    raw = os.getenv("TIKOMNI_CARD_ROOT", "").strip()
+    if not raw:
+        return "/mnt/openclaw/data/WIKI"
+
+    candidate = Path(raw).expanduser()
+    if not candidate.is_absolute():
+        raise ValueError("TIKOMNI_CARD_ROOT must be an absolute path")
+    return str(candidate.resolve())
+
+
+DEFAULT_CARD_ROOT = _default_card_root()
 CARD_TYPES = ["work", "author", "author_sample_work"]
 ASR_CLEAN_CONTRACT = "prompt-contracts/asr-clean.md@v1"
 

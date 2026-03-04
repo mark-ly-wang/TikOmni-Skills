@@ -66,8 +66,9 @@ TIKOMNI_API_KEY="你的真实 key"
 TIKOMNI_TIMEOUT_MS="60000"
 
 # 输出目录
-# 默认根目录解析为 <repo_root>/tikomni-output（在 skill 目录外）
-TIKOMNI_OUTPUT_ROOT="tikomni-output"
+# TIKOMNI_OUTPUT_ROOT must be an absolute path（必须是绝对路径）。
+# 默认根目录（未设置时）内部回退为 <repo_root>/tikomni-output（在 skill 目录外）
+TIKOMNI_OUTPUT_ROOT="/mnt/openclaw/data/tikomni-output"
 TIKOMNI_OUTPUT_RUNS_DIR="_runs"
 TIKOMNI_OUTPUT_RESULTS_DIR="results"
 TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
@@ -76,6 +77,7 @@ TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
 TIKOMNI_FILENAME_PATTERN="{type}-{timestamp}-{job_id}.md"
 
 # 卡片根目录（默认：/mnt/openclaw/data/WIKI）
+# TIKOMNI_CARD_ROOT must be an absolute path（必须是绝对路径）。
 TIKOMNI_CARD_ROOT="/mnt/openclaw/data/WIKI"
 
 # 卡片目录语言预设（默认 zh）

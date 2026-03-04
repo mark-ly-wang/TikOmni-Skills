@@ -211,6 +211,13 @@ def _normalize_path_locale(raw_value: Optional[str]) -> str:
     return "zh"
 
 
+def _require_absolute_path(path_value: str, env_key: str) -> str:
+    candidate = Path(path_value).expanduser()
+    if not candidate.is_absolute():
+        raise ValueError(f"{env_key} must be an absolute path")
+    return str(candidate.resolve())
+
+
 def _resolve_from_repo_root(path_value: Optional[str]) -> Path:
     raw = (path_value or "").strip()
     if not raw:
@@ -273,8 +280,11 @@ def apply_env_overrides(config: Dict[str, Any]) -> Dict[str, Any]:
     if timeout_ms is not None:
         runtime["timeout_ms"] = timeout_ms
 
+    output_root_value = _env_text("TIKOMNI_OUTPUT_ROOT")
+    if output_root_value is not None:
+        default_route["root_dir"] = _require_absolute_path(output_root_value, "TIKOMNI_OUTPUT_ROOT")
+
     for env_key, config_key in {
-        "TIKOMNI_OUTPUT_ROOT": "root_dir",
         "TIKOMNI_OUTPUT_RUNS_DIR": "runs_dir",
         "TIKOMNI_OUTPUT_RESULTS_DIR": "results_dir",
         "TIKOMNI_OUTPUT_ERRORS_DIR": "errors_dir",

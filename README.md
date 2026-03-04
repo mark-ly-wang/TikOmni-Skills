@@ -66,8 +66,9 @@ Optional advanced env vars (all have defaults):
 TIKOMNI_TIMEOUT_MS="60000"
 
 # Output directories
-# Default root resolves to <repo_root>/tikomni-output (outside skill dir)
-TIKOMNI_OUTPUT_ROOT="tikomni-output"
+# TIKOMNI_OUTPUT_ROOT must be an absolute path.
+# Default root (when unset) internally falls back to <repo_root>/tikomni-output (outside skill dir)
+TIKOMNI_OUTPUT_ROOT="/mnt/openclaw/data/tikomni-output"
 TIKOMNI_OUTPUT_RUNS_DIR="_runs"
 TIKOMNI_OUTPUT_RESULTS_DIR="results"
 TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
@@ -76,6 +77,7 @@ TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
 TIKOMNI_FILENAME_PATTERN="{type}-{timestamp}-{job_id}.md"
 
 # Card root (default: /mnt/openclaw/data/WIKI)
+# TIKOMNI_CARD_ROOT must be an absolute path.
 TIKOMNI_CARD_ROOT="/mnt/openclaw/data/WIKI"
 
 # Card route locale preset (default zh)

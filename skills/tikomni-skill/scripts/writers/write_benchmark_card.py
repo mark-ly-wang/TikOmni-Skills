@@ -173,16 +173,28 @@ def _extract_platform_work_id(payload: Dict[str, Any]) -> str:
 
 
 def _extract_author(payload: Dict[str, Any]) -> Dict[str, str]:
-    author = payload.get("author")
-    if not isinstance(author, dict):
-        author = {}
+    author_raw = payload.get("author")
+    author = author_raw if isinstance(author_raw, dict) else {}
 
     source = _source_dict(payload)
     source_author = source.get("author") if isinstance(source.get("author"), dict) else {}
 
-    nickname = normalize_text(author.get("nickname")) or normalize_text(source_author.get("nickname"))
-    unique_id = normalize_text(author.get("unique_id")) or normalize_text(source_author.get("unique_id"))
-    sec_uid = normalize_text(author.get("sec_uid")) or normalize_text(source_author.get("sec_uid"))
+    author_text = normalize_text(author_raw) if isinstance(author_raw, str) else ""
+    nickname = (
+        normalize_text(author.get("nickname"))
+        or author_text
+        or normalize_text(source_author.get("nickname"))
+    )
+    unique_id = (
+        normalize_text(payload.get("unique_id"))
+        or normalize_text(author.get("unique_id"))
+        or normalize_text(source_author.get("unique_id"))
+    )
+    sec_uid = (
+        normalize_text(payload.get("sec_uid"))
+        or normalize_text(author.get("sec_uid"))
+        or normalize_text(source_author.get("sec_uid"))
+    )
 
     return {
         "nickname": nickname,
@@ -306,18 +318,30 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
     title = _pick_text(payload, ["title", "desc"], ["title", "desc"])
     platform_work_id = _extract_platform_work_id(payload)
 
-    source_url = _pick_text(payload, ["share_url", "source_url", "url"], ["share_url", "source_url", "url"])
-    share_url = _pick_text(payload, ["share_url"], ["share_url", "url", "source_url"]) or source_url
+    source_url = _pick_text(
+        payload,
+        ["source_url", "share_url", "url"],
+        ["source_url", "share_url", "url", "share_text"],
+    )
+    share_url = _pick_text(
+        payload,
+        ["share_url", "canonical_share_url"],
+        ["share_url", "canonical_share_url", "url", "source_url", "share_text"],
+    ) or source_url
 
     cover_image = _pick_text(
         payload,
         ["cover_image", "cover_url", "cover"],
         ["cover_image", "cover_url", "cover", "origin_cover"],
     )
+    selected_images = payload.get("selected_image_urls")
+    if not cover_image and isinstance(selected_images, list) and selected_images:
+        cover_image = normalize_text(selected_images[0])
+
     video_down_url = _pick_text(
         payload,
-        ["video_down_url", "original_video_url", "video_url", "download_url"],
-        ["video_down_url", "original_video_url", "video_url", "download_url"],
+        ["video_down_url", "selected_video_url", "original_video_url", "video_url", "download_url"],
+        ["video_down_url", "selected_video_url", "original_video_url", "video_url", "download_url"],
     )
 
     create_time_sec = _safe_int(payload.get("create_time_sec"), default=0)

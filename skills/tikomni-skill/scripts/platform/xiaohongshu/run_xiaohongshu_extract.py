@@ -246,6 +246,207 @@ def _app_response_has_core_fields(response_data: Any) -> bool:
     return subtitle_hit or video_hit
 
 
+def _pick_text_from_paths(payload: Any, paths: List[List[str]]) -> str:
+    for path in paths:
+        raw = deep_find_first(payload, path)
+        if isinstance(raw, (dict, list)):
+            continue
+        text = normalize_text(raw)
+        if text:
+            return text
+    return ""
+
+
+def _pick_int_from_paths(payload: Any, paths: List[List[str]]) -> Optional[int]:
+    for path in paths:
+        value = deep_find_first(payload, path)
+        if isinstance(value, bool):
+            return int(value)
+        if isinstance(value, int):
+            return value
+        if isinstance(value, float):
+            return int(value)
+        if isinstance(value, str):
+            text = value.strip()
+            if text.isdigit() or (text.startswith("-") and text[1:].isdigit()):
+                return int(text)
+    return None
+
+
+def _dedupe_keep_order(values: List[str]) -> List[str]:
+    output: List[str] = []
+    seen = set()
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        output.append(value)
+    return output
+
+
+def _build_candidate_merge_sources(*, app_candidates: List[str], enrich_candidates: List[str], app_label: str) -> List[str]:
+    sources: List[str] = []
+    if app_candidates:
+        sources.append(app_label)
+    if enrich_candidates:
+        sources.append("web_v2_enrich")
+    return sources
+
+
+def _extract_xhs_metadata(
+    *,
+    payload: Any,
+    source_input: Dict[str, Optional[str]],
+    selected_video_url: Optional[str],
+    selected_image_urls: List[str],
+) -> Dict[str, Any]:
+    share_from_source = normalize_text(source_input.get("share_text"))
+
+    title = _pick_text_from_paths(payload, [["title"], ["note", "title"], ["desc"], ["content"]])
+    author = _pick_text_from_paths(
+        payload,
+        [
+            ["nickname"],
+            ["author_nickname"],
+            ["user_nickname"],
+            ["author", "nickname"],
+            ["user", "nickname"],
+            ["author", "name"],
+            ["user", "name"],
+        ],
+    )
+
+    create_time_sec = _pick_int_from_paths(
+        payload,
+        [["create_time_sec"], ["create_time"], ["publish_time"], ["publish_time_sec"], ["note", "time"]],
+    )
+    duration_ms = _pick_int_from_paths(
+        payload,
+        [["duration_ms"], ["duration"], ["duration_sec"], ["video", "duration"], ["note", "duration"]],
+    )
+    if duration_ms is not None and duration_ms > 0 and duration_ms < 10000:
+        duration_ms *= 1000
+
+    share_url = _pick_text_from_paths(payload, [["share_url"], ["webpage_url"], ["url"], ["share_link"], ["share_text"]])
+    source_url = _pick_text_from_paths(payload, [["source_url"], ["webpage_url"], ["url"], ["share_url"]])
+    if not share_url:
+        share_url = share_from_source
+    if not source_url:
+        source_url = share_url or share_from_source
+
+    cover_image = _pick_text_from_paths(payload, [["cover_image"], ["cover_url"], ["cover"], ["image", "url"], ["origin_cover"]])
+    if not cover_image and selected_image_urls:
+        cover_image = selected_image_urls[0]
+
+    video_down_url = _pick_text_from_paths(
+        payload,
+        [
+            ["video_down_url"],
+            ["original_video_url"],
+            ["video_url"],
+            ["play_url"],
+            ["master_url"],
+            ["selected_video_url"],
+        ],
+    )
+    if not video_down_url:
+        video_down_url = normalize_text(selected_video_url)
+
+    unique_id = _pick_text_from_paths(payload, [["author", "unique_id"], ["user", "unique_id"], ["unique_id"]])
+    sec_uid = _pick_text_from_paths(payload, [["author", "sec_uid"], ["user", "sec_uid"], ["sec_uid"]])
+
+    return {
+        "title": title,
+        "author": author,
+        "create_time_sec": create_time_sec,
+        "duration_ms": duration_ms,
+        "digg_count": _pick_int_from_paths(payload, [["digg_count"], ["liked_count"], ["like_count"], ["likes"]]),
+        "comment_count": _pick_int_from_paths(payload, [["comment_count"], ["comments_count"], ["comments"]]),
+        "collect_count": _pick_int_from_paths(payload, [["collect_count"], ["collected_count"], ["favorite_count"]]),
+        "share_count": _pick_int_from_paths(payload, [["share_count"], ["shared_count"]]),
+        "share_url": share_url,
+        "source_url": source_url,
+        "cover_image": cover_image,
+        "video_down_url": video_down_url,
+        "unique_id": unique_id,
+        "sec_uid": sec_uid,
+    }
+
+
+def _is_sparse_metadata(metadata_fields: Dict[str, Any]) -> bool:
+    if not normalize_text(metadata_fields.get("title")):
+        return True
+    if not normalize_text(metadata_fields.get("author")):
+        return True
+    if metadata_fields.get("create_time_sec") is None:
+        return True
+    metric_keys = ["digg_count", "comment_count", "collect_count", "share_count"]
+    return not any(metadata_fields.get(key) is not None for key in metric_keys)
+
+
+def _append_missing_metadata_fields(missing_fields: List[Dict[str, str]], metadata_fields: Dict[str, Any]) -> None:
+    missing_set = {item.get("field") for item in missing_fields if isinstance(item, dict)}
+
+    def _append(field: str) -> None:
+        if field in missing_set:
+            return
+        missing_fields.append({"field": field, "reason": "missing_metadata"})
+        missing_set.add(field)
+
+    for key in ["title", "author", "share_url", "source_url", "cover_image", "video_down_url", "unique_id", "sec_uid"]:
+        if not normalize_text(metadata_fields.get(key)):
+            _append(key)
+
+    for key in ["create_time_sec", "duration_ms", "digg_count", "comment_count", "collect_count", "share_count"]:
+        if metadata_fields.get(key) is None:
+            _append(key)
+
+
+def _fetch_sparse_metadata_enrich(
+    *,
+    base_url: str,
+    token: str,
+    timeout_ms: int,
+    source_input: Dict[str, Optional[str]],
+    note_id: Optional[str],
+) -> Dict[str, Any]:
+    share_text = source_input.get("share_text")
+    resolved_note_id = note_id or source_input.get("note_id") or _extract_note_id_from_share(share_text)
+
+    if _is_short_share_url(share_text) and share_text:
+        response = call_json_api(
+            base_url=base_url,
+            path=WEB_V2_V3_ENDPOINT,
+            token=token,
+            method="GET",
+            timeout_ms=timeout_ms,
+            params={"short_url": share_text},
+        )
+        response["_endpoint"] = WEB_V2_V3_ENDPOINT
+        response["_route_label"] = "web_v2_v3_sparse_enrich"
+        return response
+
+    if resolved_note_id:
+        response = call_json_api(
+            base_url=base_url,
+            path=WEB_V2_V2_ENDPOINT,
+            token=token,
+            method="GET",
+            timeout_ms=timeout_ms,
+            params={"note_id": resolved_note_id},
+        )
+        response["_endpoint"] = WEB_V2_V2_ENDPOINT
+        response["_route_label"] = "web_v2_v2_sparse_enrich"
+        return response
+
+    return {
+        "ok": False,
+        "error": "missing_share_text_and_note_id_for_sparse_enrich",
+        "_endpoint": None,
+        "_route_label": "web_v2_sparse_enrich_skipped",
+    }
+
+
 def _fetch_note_info(*, base_url: str, token: str, timeout_ms: int, source_input: Dict[str, Optional[str]]) -> Dict[str, Any]:
     attempts: List[Dict[str, Any]] = []
 
@@ -717,7 +918,9 @@ def _build_result(
     selected_image_urls: List[str],
     downloaded_assets: List[Dict[str, Any]],
     missing_fields: Optional[List[Dict[str, str]]] = None,
+    metadata_fields: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
+    metadata = metadata_fields or {}
     summary_block = summarize_content(raw_content, source=f"xiaohongshu:{text_source}")
     insights = list(summary_block.get("insights", []))
     insights.extend([
@@ -739,6 +942,20 @@ def _build_result(
         "selected_video_url": selected_video_url,
         "selected_video_candidates": selected_video_candidates,
         "selected_image_urls": selected_image_urls,
+        "title": metadata.get("title"),
+        "author": metadata.get("author"),
+        "create_time_sec": metadata.get("create_time_sec"),
+        "duration_ms": metadata.get("duration_ms"),
+        "digg_count": metadata.get("digg_count"),
+        "comment_count": metadata.get("comment_count"),
+        "collect_count": metadata.get("collect_count"),
+        "share_count": metadata.get("share_count"),
+        "share_url": metadata.get("share_url"),
+        "source_url": metadata.get("source_url"),
+        "cover_image": metadata.get("cover_image"),
+        "video_down_url": metadata.get("video_down_url"),
+        "unique_id": metadata.get("unique_id"),
+        "sec_uid": metadata.get("sec_uid"),
         "downloaded_assets": downloaded_assets,
         "raw_content": raw_content,
         "summary": summary_block["summary"],
@@ -777,6 +994,7 @@ def run_xiaohongshu_extract(
     persist_output: bool = True,
 ) -> Dict[str, Any]:
     source_input = _normalize_input(input_value, share_text, note_id)
+    metadata_fields: Dict[str, Any] = {}
     if not source_input["share_text"] and not source_input["note_id"]:
         result = _build_result(
             source_input=source_input,
@@ -798,6 +1016,7 @@ def run_xiaohongshu_extract(
             selected_image_urls=[],
             downloaded_assets=[],
             missing_fields=[{"field": "share_text_or_note_id", "reason": "missing_input"}],
+            metadata_fields=metadata_fields,
         )
         if write_card:
             result["card_write"] = write_benchmark_card(
@@ -877,6 +1096,7 @@ def run_xiaohongshu_extract(
             selected_image_urls=[],
             downloaded_assets=[],
             missing_fields=[{"field": "u1_note_info", "reason": "all_routes_failed"}],
+            metadata_fields=metadata_fields,
         )
         if write_card:
             result["card_write"] = write_benchmark_card(
@@ -896,22 +1116,74 @@ def run_xiaohongshu_extract(
             persist_output=persist_output,
         )
 
-    resolved_note_id = _resolve_note_id(note_response.get("data"), source_input)
+    effective_payload = note_response.get("data")
+    app_route_success = str(note_response.get("_route_label") or "") == "app"
+    metadata_enrich_on_sparse = bool(config_get(storage_config or {}, "xhs.metadata_enrich_on_sparse", True))
 
-    title = normalize_text(deep_find_first(note_response.get("data"), ["title"]))
-    desc = normalize_text(deep_find_first(note_response.get("data"), ["desc", "content"]))
+    initial_metadata = _extract_xhs_metadata(
+        payload=effective_payload,
+        source_input=source_input,
+        selected_video_url=None,
+        selected_image_urls=[],
+    )
+    sparse_metadata_detected = bool(app_route_success and metadata_enrich_on_sparse and _is_sparse_metadata(initial_metadata))
+    metadata_enrich_hit = False
+    enrich_response: Optional[Dict[str, Any]] = None
+    enrich_payload: Any = None
+
+    if sparse_metadata_detected:
+        enrich_response = _fetch_sparse_metadata_enrich(
+            base_url=runtime["base_url"],
+            token=runtime["token"],
+            timeout_ms=runtime["timeout_ms"],
+            source_input=source_input,
+            note_id=source_input.get("note_id"),
+        )
+        trace.append(
+            build_api_trace(
+                step="u1_sparse_metadata_enrich",
+                endpoint=enrich_response.get("_endpoint"),
+                response=enrich_response,
+                extra={"route_label": enrich_response.get("_route_label")},
+            )
+        )
+        if enrich_response.get("ok"):
+            metadata_enrich_hit = True
+            enrich_payload = enrich_response.get("data")
+            effective_payload = {"app": note_response.get("data"), "web_v2_enrich": enrich_payload}
+
+    resolved_note_id = _resolve_note_id(effective_payload, source_input)
+
+    title = normalize_text(deep_find_first(effective_payload, ["title"]))
+    desc = normalize_text(deep_find_first(effective_payload, ["desc", "content"]))
     caption_text = "\n".join([t for t in [title, desc] if t]).strip()
 
-    subtitle_inline_text = "" if force_u2_fallback else _extract_subtitle_inline_text(note_response.get("data"))
-    subtitle_urls = [] if force_u2_fallback else _extract_subtitle_urls(note_response.get("data"))
+    subtitle_inline_text = "" if force_u2_fallback else _extract_subtitle_inline_text(effective_payload)
+    subtitle_urls = [] if force_u2_fallback else _extract_subtitle_urls(effective_payload)
     subtitle_url_text = "" if force_u2_fallback else _fetch_subtitle_text(subtitle_urls, runtime["timeout_ms"])
     subtitle_text = subtitle_inline_text or subtitle_url_text
 
-    video_candidates = _extract_video_candidates(note_response.get("data"))
-    image_candidates, image_quality_strategy = _extract_image_candidates_with_strategy(note_response.get("data"))
+    app_video_candidates = _extract_video_candidates(note_response.get("data"))
+    app_image_candidates, image_quality_strategy = _extract_image_candidates_with_strategy(note_response.get("data"))
+    enrich_video_candidates = _extract_video_candidates(enrich_payload) if metadata_enrich_hit else []
+    enrich_image_candidates = _extract_image_candidates(enrich_payload) if metadata_enrich_hit else []
+
+    video_candidates = _dedupe_keep_order(app_video_candidates + enrich_video_candidates)
+    image_candidates = _dedupe_keep_order(app_image_candidates + enrich_image_candidates)
+
     selected_video_url = video_candidates[0] if video_candidates else None
-    type_field_value = _extract_note_type_field(note_response.get("data"))
-    note_content_type = _detect_note_content_type(note_response.get("data"), video_candidates, image_candidates)
+    type_field_value = _extract_note_type_field(effective_payload)
+    note_content_type = _detect_note_content_type(effective_payload, video_candidates, image_candidates)
+
+    metadata_fields = _extract_xhs_metadata(
+        payload=effective_payload,
+        source_input=source_input,
+        selected_video_url=selected_video_url,
+        selected_image_urls=image_candidates,
+    )
+
+    missing_fields: List[Dict[str, str]] = []
+    _append_missing_metadata_fields(missing_fields, metadata_fields)
 
     trace.append(
         {
@@ -924,10 +1196,22 @@ def run_xiaohongshu_extract(
             "subtitle_hit": bool(subtitle_text),
             "subtitle_url_count": len(subtitle_urls),
             "force_u2_fallback": force_u2_fallback,
+            "sparse_metadata_detected": sparse_metadata_detected,
+            "metadata_enrich_hit": metadata_enrich_hit,
+            "candidate_merge_sources": {
+                "video": _build_candidate_merge_sources(
+                    app_candidates=app_video_candidates,
+                    enrich_candidates=enrich_video_candidates,
+                    app_label="app",
+                ),
+                "image": _build_candidate_merge_sources(
+                    app_candidates=app_image_candidates,
+                    enrich_candidates=enrich_image_candidates,
+                    app_label="app",
+                ),
+            },
         }
     )
-
-    missing_fields: List[Dict[str, str]] = []
 
     # Video-note path: aligned with douyin single-video pipeline (subtitle-first difference retained).
     if note_content_type in {"video", "mixed"}:
@@ -958,6 +1242,7 @@ def run_xiaohongshu_extract(
                 selected_image_urls=image_candidates,
                 downloaded_assets=[],
                 missing_fields=missing_fields,
+                metadata_fields=metadata_fields,
             )
             if write_card:
                 result["card_write"] = write_benchmark_card(
@@ -1004,6 +1289,7 @@ def run_xiaohongshu_extract(
                 selected_image_urls=image_candidates,
                 downloaded_assets=[],
                 missing_fields=missing_fields,
+                metadata_fields=metadata_fields,
             )
             if write_card:
                 result["card_write"] = write_benchmark_card(
@@ -1040,6 +1326,8 @@ def run_xiaohongshu_extract(
         task_id = submit_bundle.get("task_id")
         poll_result = u2_bundle.get("poll_result", {})
         selected_video_url = u2_bundle.get("chosen_candidate") or selected_video_url
+        if selected_video_url and not normalize_text(metadata_fields.get("video_down_url")):
+            metadata_fields["video_down_url"] = selected_video_url
 
         trace.append(
             {
@@ -1098,6 +1386,7 @@ def run_xiaohongshu_extract(
                 selected_image_urls=image_candidates,
                 downloaded_assets=[],
                 missing_fields=missing_fields,
+                metadata_fields=metadata_fields,
             )
             if write_card:
                 result["card_write"] = write_benchmark_card(
@@ -1144,6 +1433,7 @@ def run_xiaohongshu_extract(
             selected_image_urls=image_candidates,
             downloaded_assets=[],
             missing_fields=missing_fields,
+            metadata_fields=metadata_fields,
         )
 
         if write_card:
@@ -1208,6 +1498,7 @@ def run_xiaohongshu_extract(
         selected_image_urls=image_candidates,
         downloaded_assets=downloaded_assets,
         missing_fields=missing_fields,
+        metadata_fields=metadata_fields,
     )
 
     if write_card:

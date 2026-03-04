@@ -44,7 +44,8 @@ python3 ./skills/tikomni-skill/scripts/run_tikomni_extract.py "<url_or_id>"
 加载优先级：`process env > .env.local > .env`
 
 说明：
-- 不要再依赖 `docs/en` / `docs/zh` 里的旧配置文档。当前以本 README + `skills/tikomni-skill/references/runtime-config.md` 为准。
+- 不要再依赖 `docs/en` / `docs/zh` 里的旧配置文档。
+- 用户配置唯一入口就是 `.env` / `.env.local`。
 - 若使用相对路径（如 `--env-file` / `runtime.env_file`），按 `<repo_root>` 解析。
 
 ### 4) 必填/可选环境变量（含示例）
@@ -145,7 +146,7 @@ Load priority: `process env > .env.local > .env`
 
 Notes:
 - Do not rely on legacy docs under `docs/en` or `docs/zh`.
-- Use this README + `skills/tikomni-skill/references/runtime-config.md` as source of truth.
+- User configuration entry is ONLY `.env` / `.env.local`.
 - Relative paths (for example `--env-file` / `runtime.env_file`) are resolved from `<repo_root>`.
 
 ### 4) Required and optional env vars (with examples)

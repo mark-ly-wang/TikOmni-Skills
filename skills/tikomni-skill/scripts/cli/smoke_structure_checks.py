@@ -71,6 +71,11 @@ def run_checks() -> Dict[str, Any]:
             "path": root / "scripts" / "platform" / "xiaohongshu" / "run_xiaohongshu_extract.py",
         },
         {
+            "name": "author_home/orchestrator/run_author_analysis.py",
+            "module": "scripts.author_home.orchestrator.run_author_analysis",
+            "path": root / "scripts" / "author_home" / "orchestrator" / "run_author_analysis.py",
+        },
+        {
             "name": "pipeline/asr/poll_u2_task.py",
             "module": "scripts.pipeline.asr.poll_u2_task",
             "path": root / "scripts" / "pipeline" / "asr" / "poll_u2_task.py",
@@ -101,12 +106,20 @@ def run_checks() -> Dict[str, Any]:
 
         douyin_handler, douyin_kind = DEFAULT_WORKFLOW_REGISTRY.resolve("douyin", "auto")
         xhs_handler, xhs_kind = DEFAULT_WORKFLOW_REGISTRY.resolve("xiaohongshu", "auto")
-        resolve_ok = bool(douyin_handler and douyin_kind == "single_video" and xhs_handler and xhs_kind)
+        douyin_home_handler, douyin_home_kind = DEFAULT_WORKFLOW_REGISTRY.resolve("douyin", "author_home")
+        xhs_home_handler, xhs_home_kind = DEFAULT_WORKFLOW_REGISTRY.resolve("xiaohongshu", "author_home")
+        resolve_ok = bool(
+            douyin_handler and douyin_kind == "single_video" and xhs_handler and xhs_kind and douyin_home_handler and xhs_home_handler
+        )
         resolve_detail = {
             "douyin_kind": douyin_kind,
             "xiaohongshu_kind": xhs_kind,
             "douyin_handler": bool(douyin_handler),
             "xiaohongshu_handler": bool(xhs_handler),
+            "douyin_home_kind": douyin_home_kind,
+            "xhs_home_kind": xhs_home_kind,
+            "douyin_home_handler": bool(douyin_home_handler),
+            "xhs_home_handler": bool(xhs_home_handler),
         }
 
     registry_ok = bool(registry_import.get("ok") and resolve_ok)

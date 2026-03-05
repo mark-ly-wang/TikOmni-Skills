@@ -38,6 +38,28 @@ Depending on platform and endpoint, the skill can return:
 - subtitles/transcripts/copy text (when supported)
 - routing and request trace metadata for reproducibility
 
+## ✅ Currently available capabilities (human-facing)
+
+> Practical feature scope you can use right now:
+
+### 1) Douyin / Xiaohongshu single-content analysis
+- Single video/note extraction: title, author, publish time, engagement basics, etc.
+- Text layer: subtitle/copy extraction when supported by upstream endpoints
+- Output: normalized structured result + reusable work card
+
+### 2) Douyin / Xiaohongshu author-home analysis
+- Author-level collection and analysis from homepage content (latest-first pagination)
+- Default behavior: full fetch with a cap of 200 items unless explicitly specified otherwise
+- Output:
+  - per-work card collection
+  - author profile (nickname, platform id, IP location, fans/likes/collections, bio, avatar, work count, etc.)
+  - business analysis + benchmark analysis
+
+### 3) General capabilities
+- Cross-platform normalization into a consistent schema
+- Workflow-friendly outputs for strategy review, benchmarking, and knowledge capture
+- Traceable metadata for troubleshooting and reproducibility
+
 ## 🔧 Install this skill
 
 Use the integration method matching your agent runtime.

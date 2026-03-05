@@ -42,6 +42,8 @@ class WorkflowContext(TypedDict, total=False):
     page_size: int
     pages_max: int
     max_items: int
+    asr_batch_size: int
+    checkpoint: Optional[Dict[str, Any]]
 
 
 class ResultEnvelope(TypedDict, total=False):
@@ -182,6 +184,16 @@ def _run_douyin_author_home_workflow(ctx: WorkflowContext) -> Mapping[str, Any]:
         page_size=int(ctx.get("page_size", 20)),
         pages_max=int(ctx.get("pages_max", 50)),
         max_items=int(ctx.get("max_items", 200)),
+        poll_interval_sec=float(ctx.get("poll_interval_sec", 3.0)),
+        max_polls=int(ctx.get("max_polls", 30)),
+        douyin_u2_submit_max_retries=int(ctx.get("douyin_u2_submit_max_retries", 2)),
+        douyin_u2_submit_backoff_ms=int(ctx.get("douyin_u2_submit_backoff_ms", 1500)),
+        xhs_u2_submit_max_retries=int(ctx.get("xhs_u2_submit_max_retries", 0)),
+        xhs_u2_submit_backoff_ms=int(ctx.get("xhs_u2_submit_backoff_ms", 0)),
+        u2_timeout_retry_enabled=bool(ctx.get("u2_timeout_retry_enabled", True)),
+        u2_timeout_retry_max_retries=int(ctx.get("u2_timeout_retry_max_retries", 3)),
+        asr_batch_size=int(ctx.get("asr_batch_size", 20)),
+        checkpoint=ctx.get("checkpoint") if isinstance(ctx.get("checkpoint"), dict) else None,
         write_card=bool(ctx.get("write_card", True)),
         collect_material=bool(ctx.get("collect_material", False)),
         card_root=ctx.get("card_root"),
@@ -199,6 +211,16 @@ def _run_xhs_author_home_workflow(ctx: WorkflowContext) -> Mapping[str, Any]:
         page_size=int(ctx.get("page_size", 20)),
         pages_max=int(ctx.get("pages_max", 50)),
         max_items=int(ctx.get("max_items", 200)),
+        poll_interval_sec=float(ctx.get("poll_interval_sec", 3.0)),
+        max_polls=int(ctx.get("max_polls", 30)),
+        douyin_u2_submit_max_retries=int(ctx.get("douyin_u2_submit_max_retries", 2)),
+        douyin_u2_submit_backoff_ms=int(ctx.get("douyin_u2_submit_backoff_ms", 1500)),
+        xhs_u2_submit_max_retries=int(ctx.get("xhs_u2_submit_max_retries", 0)),
+        xhs_u2_submit_backoff_ms=int(ctx.get("xhs_u2_submit_backoff_ms", 0)),
+        u2_timeout_retry_enabled=bool(ctx.get("u2_timeout_retry_enabled", True)),
+        u2_timeout_retry_max_retries=int(ctx.get("u2_timeout_retry_max_retries", 3)),
+        asr_batch_size=int(ctx.get("asr_batch_size", 20)),
+        checkpoint=ctx.get("checkpoint") if isinstance(ctx.get("checkpoint"), dict) else None,
         write_card=bool(ctx.get("write_card", True)),
         collect_material=bool(ctx.get("collect_material", False)),
         card_root=ctx.get("card_root"),

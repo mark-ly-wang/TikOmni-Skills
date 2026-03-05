@@ -500,11 +500,20 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
         "hot_score": hot_score,
         "raw_content": raw_content,
         "asr_clean": asr_clean,
+        "asr_source": normalize_text(payload.get("asr_source")) or "fallback_none",
         "asr_clean_contract": ASR_CLEAN_CONTRACT,
         "request_id": payload.get("request_id"),
         "confidence": normalize_text(payload.get("confidence")) or "low",
         "error_reason": payload.get("error_reason"),
         "extract_trace": payload.get("extract_trace", []),
+        "analysis_output": payload.get("analysis_output") if isinstance(payload.get("analysis_output"), dict) else {},
+        "business_score": _safe_int(payload.get("business_score"), default=0),
+        "benchmark_gap_score": _safe_int(payload.get("benchmark_gap_score"), default=0),
+        "style_radar": payload.get("style_radar") if isinstance(payload.get("style_radar"), dict) else {},
+        "core_contradictions": payload.get("core_contradictions") if isinstance(payload.get("core_contradictions"), list) else [],
+        "recommendations": payload.get("recommendations") if isinstance(payload.get("recommendations"), list) else [],
+        "business_analysis": normalize_text(payload.get("business_analysis")),
+        "benchmark_analysis": normalize_text(payload.get("benchmark_analysis")),
     }
 
 
@@ -873,6 +882,106 @@ def _build_output_path(
     }
 
 
+def _render_author_markdown(
+    *,
+    card_id: str,
+    card_type: str,
+    fields: Dict[str, Any],
+    generated_at: str,
+) -> str:
+    analysis_output = fields.get("analysis_output") if isinstance(fields.get("analysis_output"), dict) else {}
+
+    business_score = _safe_int(fields.get("business_score"), default=_safe_int(analysis_output.get("business_score"), default=0))
+    benchmark_gap_score = _safe_int(fields.get("benchmark_gap_score"), default=_safe_int(analysis_output.get("benchmark_gap_score"), default=0))
+    style_radar = fields.get("style_radar") if isinstance(fields.get("style_radar"), dict) else analysis_output.get("style_radar", {})
+    if not isinstance(style_radar, dict):
+        style_radar = {}
+
+    core_contradictions = fields.get("core_contradictions") if isinstance(fields.get("core_contradictions"), list) else analysis_output.get("core_contradictions", [])
+    if not isinstance(core_contradictions, list):
+        core_contradictions = []
+
+    recommendations = fields.get("recommendations") if isinstance(fields.get("recommendations"), list) else analysis_output.get("recommendations", [])
+    if not isinstance(recommendations, list):
+        recommendations = []
+
+    business_analysis = normalize_text(fields.get("business_analysis")) or normalize_text(analysis_output.get("business_analysis"))
+    benchmark_analysis = normalize_text(fields.get("benchmark_analysis")) or normalize_text(analysis_output.get("benchmark_analysis"))
+    author_portrait = normalize_text(fields.get("summary")) or normalize_text(analysis_output.get("author_portrait"))
+
+    fm = {
+        "card_id": card_id,
+        "card_type": card_type,
+        "platform": fields.get("platform"),
+        "generated_at": generated_at,
+        "updated_at": generated_at,
+        "title": fields.get("title"),
+        "platform_work_id": fields.get("platform_work_id"),
+        "author": fields.get("author"),
+        "author_handle": fields.get("author_handle"),
+        "author_platform_id": fields.get("author_platform_id"),
+        "business_score": business_score,
+        "benchmark_gap_score": benchmark_gap_score,
+        "request_id": fields.get("request_id"),
+    }
+
+    frontmatter = ["---"]
+    for key, value in fm.items():
+        frontmatter.append(f"{key}: {json.dumps(value, ensure_ascii=False)}")
+    frontmatter.append("---")
+
+    lines = [
+        *frontmatter,
+        "",
+        "## 作者画像",
+        author_portrait or "数据不足",
+        "",
+        "## 商业分析",
+        business_analysis or "数据不足",
+        "",
+        "## 对标分析",
+        benchmark_analysis or "数据不足",
+        "",
+        "## 评分",
+        f"- business_score: {business_score}",
+        f"- benchmark_gap_score: {benchmark_gap_score}",
+        "",
+        "## 风格雷达",
+        "```json",
+        json.dumps(style_radar, ensure_ascii=False, indent=2),
+        "```",
+        "",
+        "## 核心矛盾",
+    ]
+
+    if core_contradictions:
+        lines.extend([f"- {normalize_text(item)}" for item in core_contradictions if normalize_text(item)])
+    else:
+        lines.append("- 数据不足")
+
+    lines.extend(["", "## 建议动作"])
+    if recommendations:
+        lines.extend([f"- {normalize_text(item)}" for item in recommendations if normalize_text(item)])
+    else:
+        lines.append("- 数据不足")
+
+    lines.extend(
+        [
+            "",
+            "## 附录",
+            f"- confidence: {fields.get('confidence')}",
+            f"- error_reason: {fields.get('error_reason')}",
+            f"- asr_clean_contract: {fields.get('asr_clean_contract')}",
+            "",
+            "```json",
+            json.dumps(fields.get("extract_trace", []), ensure_ascii=False, indent=2),
+            "```",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def _render_markdown(
     *,
     card_id: str,
@@ -880,6 +989,13 @@ def _render_markdown(
     fields: Dict[str, Any],
     generated_at: str,
 ) -> str:
+    if card_type == "author":
+        return _render_author_markdown(
+            card_id=card_id,
+            card_type=card_type,
+            fields=fields,
+            generated_at=generated_at,
+        )
     author_name = fields.get("author") or fields.get("author_handle") or fields.get("author_platform_id") or "未知作者"
     title = fields.get("title") or "（标题缺失）"
     metrics_line = (
@@ -918,6 +1034,7 @@ def _render_markdown(
         "tags": fields.get("tags", []),
         "content_type": fields.get("content_type"),
         "category": fields.get("category"),
+        "asr_source": fields.get("asr_source"),
     }
 
     frontmatter = ["---"]
@@ -965,6 +1082,7 @@ def _render_markdown(
             "",
             "### trace",
             f"- request_id: {fields.get('request_id')}",
+            f"- asr_source: {fields.get('asr_source')}",
             f"- asr_clean_contract: {fields.get('asr_clean_contract')}",
             f"- confidence: {fields.get('confidence')}",
             f"- error_reason: {fields.get('error_reason')}",

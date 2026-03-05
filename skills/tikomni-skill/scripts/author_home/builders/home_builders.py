@@ -39,13 +39,15 @@ def _work_payload(work: Dict[str, Any], profile: Dict[str, Any], analysis_text: 
     publish_time = work.get("publish_time")
     create_time_sec = _coerce_unix_sec(publish_time)
     return {
-        "content_kind": "author_home",
+        # Reuse single-video card template fields while keeping author sample routing.
+        "content_kind": "single_video",
         "platform_work_id": work.get("platform_work_id"),
         "title": work.get("title") or work.get("desc"),
         "desc": work.get("desc") or work.get("title"),
         "source_url": work.get("source_url"),
         "share_url": work.get("share_url"),
         "cover_image": work.get("cover_image"),
+        "video_down_url": work.get("video_down_url"),
         "author": author,
         "author_handle": author.get("author_handle"),
         "author_platform_id": author.get("author_platform_id"),
@@ -58,8 +60,10 @@ def _work_payload(work: Dict[str, Any], profile: Dict[str, Any], analysis_text: 
         "share_count": int(metrics.get("share", 0) or 0),
         "play_count": int(metrics.get("play", 0) or 0),
         "summary": analysis_text or "",
-        "insights": ["source=author_home_componentized", "work_card_reused_writer"],
-        "raw_content": work.get("desc") or "",
+        "insights": ["source=author_home_componentized", "work_card_reused_single_video_template"],
+        "raw_content": work.get("asr_raw") or "",
+        "asr_clean": work.get("asr_clean") or "",
+        "asr_source": work.get("asr_source") or "fallback_none",
     }
 
 
@@ -131,6 +135,14 @@ def build_author_card(
         "play_count": 0,
         "raw_content": analysis_payload.get("business_analysis", ""),
         "platform_work_id": f"author-{profile.get('platform_author_id') or 'unknown'}",
+        "analysis_output": analysis_payload,
+        "business_score": int(analysis_payload.get("business_score", 0) or 0),
+        "benchmark_gap_score": int(analysis_payload.get("benchmark_gap_score", 0) or 0),
+        "style_radar": analysis_payload.get("style_radar") if isinstance(analysis_payload.get("style_radar"), dict) else {},
+        "core_contradictions": analysis_payload.get("core_contradictions") if isinstance(analysis_payload.get("core_contradictions"), list) else [],
+        "recommendations": analysis_payload.get("recommendations") if isinstance(analysis_payload.get("recommendations"), list) else [],
+        "business_analysis": analysis_payload.get("business_analysis", ""),
+        "benchmark_analysis": analysis_payload.get("benchmark_analysis", ""),
     }
 
     return write_benchmark_card(

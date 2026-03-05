@@ -37,5 +37,18 @@ source_endpoints: []
 fallback_used: false
 generated_at: ""
 tags: []
+rate_limit_wait_ms: 0
+retry_attempt: 0
+fallback_trigger_reason: ""
+asr_source: "xhs_subtitle|u2|fallback_none"
 ---
 ```
+
+## 5. Author Card Required Sections
+- 作者画像
+- 商业分析
+- 对标分析
+- 评分（business_score / benchmark_gap_score）
+- 风格雷达（style_radar）
+- 核心矛盾（core_contradictions）
+- 建议动作（recommendations）

@@ -21,6 +21,9 @@ def build_api_trace(
         "request_id": response.get("request_id"),
         "ok": response.get("ok"),
         "error_reason": response.get("error_reason"),
+        "rate_limit_wait_ms": response.get("rate_limit_wait_ms", 0),
+        "retry_attempt": response.get("retry_attempt", 0),
+        "fallback_trigger_reason": response.get("fallback_trigger_reason"),
     }
     if extra:
         payload.update(extra)
@@ -58,6 +61,9 @@ def build_fallback_trace_from_extract_trace(extract_trace: Optional[List[Dict[st
             "final_submit_status",
             "subtitle_hit",
             "force_u2_fallback",
+            "rate_limit_wait_ms",
+            "retry_attempt",
+            "fallback_trigger_reason",
         ):
             if key in step:
                 compact[key] = step.get(key)
@@ -102,6 +108,14 @@ def resolve_trace_error_context(
     }
 
 
+def _resolve_fallback_trigger_reason(primary: Dict[str, Any]) -> str:
+    if primary.get("timeout_retry_exhausted"):
+        return "primary_timeout_retry_exhausted"
+    if primary.get("error_reason"):
+        return "primary_non_timeout_failure"
+    return "primary_unknown_failure"
+
+
 def request_with_optional_fallback(
     *,
     base_url: str,
@@ -125,6 +139,7 @@ def request_with_optional_fallback(
     if primary.get("ok") or not fallback_path:
         return primary
 
+    fallback_reason = _resolve_fallback_trigger_reason(primary)
     fallback = call_json_api(
         base_url=base_url,
         path=fallback_path,
@@ -135,6 +150,7 @@ def request_with_optional_fallback(
     )
     fallback["_endpoint"] = fallback_path
     fallback["_primary_failed"] = primary
+    fallback["fallback_trigger_reason"] = fallback_reason
     return fallback
 
 

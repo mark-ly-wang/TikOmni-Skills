@@ -90,3 +90,4 @@ prompt_contracts:
     Hook: prompt-contracts/hook.md@v1
     结构: prompt-contracts/structure.md@v1
     洞察分析: prompt-contracts/insight.md@v1
+  author_analysis: prompt-contracts/author-analysis.md@v1

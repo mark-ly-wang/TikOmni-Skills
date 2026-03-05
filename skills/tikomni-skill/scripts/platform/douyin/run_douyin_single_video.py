@@ -473,6 +473,9 @@ def _u1_fetch_one_video(
     if app_response.get("ok"):
         return app_response
 
+    app_response["fallback_trigger_reason"] = (
+        "primary_timeout_retry_exhausted" if app_response.get("timeout_retry_exhausted") else "primary_non_timeout_failure"
+    )
     web_response = call_json_api(
         base_url=base_url,
         path=WEB_ENDPOINT,
@@ -483,6 +486,7 @@ def _u1_fetch_one_video(
     )
     web_response["_endpoint"] = WEB_ENDPOINT
     web_response["_app_failed"] = app_response
+    web_response["fallback_trigger_reason"] = app_response.get("fallback_trigger_reason")
     return web_response
 
 
@@ -503,6 +507,9 @@ def _trace_step(
                 "status_code": response.get("status_code"),
                 "request_id": response.get("request_id"),
                 "error_reason": response.get("error_reason"),
+                "rate_limit_wait_ms": response.get("rate_limit_wait_ms", 0),
+                "retry_attempt": response.get("retry_attempt", 0),
+                "fallback_trigger_reason": response.get("fallback_trigger_reason"),
             }
         )
     if extra:
@@ -563,6 +570,7 @@ def _build_result(
     u2_gate_reason: str,
     create_time_sec: Optional[int] = None,
     cover_image: Optional[str] = None,
+    asr_source: str = "fallback_none",
 ) -> Dict[str, Any]:
     summary_block = summarize_content(raw_content, source="douyin:single-video-low-quality")
     insights = list(summary_block.get("insights", []))
@@ -608,6 +616,7 @@ def _build_result(
         "u2_task_id": u2_task_id,
         "u2_task_status": u2_task_status,
         "raw_content": raw_content,
+        "asr_source": asr_source,
         "summary": summary_block.get("summary", ""),
         "insights": insights,
         "confidence": confidence,
@@ -1022,6 +1031,7 @@ def run_douyin_single_video(
         u2_task_id=u2_task_id,
         u2_task_status=u2_task_status,
         u2_gate_reason=gate_reason,
+        asr_source="u2" if raw_content else "fallback_none",
     )
 
     if write_card:

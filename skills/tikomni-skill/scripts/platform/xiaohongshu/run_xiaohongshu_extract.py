@@ -352,12 +352,39 @@ def _extract_xhs_metadata(
     if not video_down_url:
         video_down_url = normalize_text(selected_video_url)
 
-    unique_id = _pick_text_from_paths(payload, [["author", "unique_id"], ["user", "unique_id"], ["unique_id"]])
-    sec_uid = _pick_text_from_paths(payload, [["author", "sec_uid"], ["user", "sec_uid"], ["sec_uid"]])
+    xhs_user_id = _pick_text_from_paths(
+        payload,
+        [["author", "userid"], ["author", "user_id"], ["user", "userid"], ["user", "user_id"], ["user_id"], ["userid"], ["id"]],
+    )
+    author_handle = _pick_text_from_paths(
+        payload,
+        [["author", "red_id"], ["user", "red_id"], ["red_id"], ["author", "nickname"], ["user", "nickname"], ["nickname"]],
+    ) or author
+
+    xhs_sec_token = _pick_text_from_paths(
+        payload,
+        [["xhs_sec_token"], ["xsec_token"], ["xsecToken"], ["note", "xsecToken"], ["user", "xsecToken"], ["user", "xsec_token"]],
+    )
+    if not xhs_sec_token:
+        for url_text in [share_url, source_url, share_from_source]:
+            text = normalize_text(url_text)
+            if not text:
+                continue
+            try:
+                query = urllib.parse.urlparse(text).query
+                xhs_sec_token = urllib.parse.parse_qs(query).get("xsec_token", [""])[0]
+            except Exception:
+                xhs_sec_token = ""
+            if normalize_text(xhs_sec_token):
+                break
 
     return {
         "title": title,
         "author": author,
+        "author_handle": author_handle,
+        "author_platform_id": xhs_user_id,
+        "xhs_user_id": xhs_user_id,
+        "xhs_sec_token": normalize_text(xhs_sec_token),
         "create_time_sec": create_time_sec,
         "duration_ms": duration_ms,
         "digg_count": _pick_int_from_paths(payload, [["digg_count"], ["liked_count"], ["like_count"], ["likes"]]),
@@ -368,8 +395,6 @@ def _extract_xhs_metadata(
         "source_url": source_url,
         "cover_image": cover_image,
         "video_down_url": video_down_url,
-        "unique_id": unique_id,
-        "sec_uid": sec_uid,
     }
 
 
@@ -393,7 +418,18 @@ def _append_missing_metadata_fields(missing_fields: List[Dict[str, str]], metada
         missing_fields.append({"field": field, "reason": "missing_metadata"})
         missing_set.add(field)
 
-    for key in ["title", "author", "share_url", "source_url", "cover_image", "video_down_url", "unique_id", "sec_uid"]:
+    for key in [
+        "title",
+        "author",
+        "author_handle",
+        "author_platform_id",
+        "xhs_user_id",
+        "xhs_sec_token",
+        "share_url",
+        "source_url",
+        "cover_image",
+        "video_down_url",
+    ]:
         if not normalize_text(metadata_fields.get(key)):
             _append(key)
 
@@ -954,8 +990,10 @@ def _build_result(
         "source_url": metadata.get("source_url"),
         "cover_image": metadata.get("cover_image"),
         "video_down_url": metadata.get("video_down_url"),
-        "unique_id": metadata.get("unique_id"),
-        "sec_uid": metadata.get("sec_uid"),
+        "author_handle": metadata.get("author_handle"),
+        "author_platform_id": metadata.get("author_platform_id"),
+        "xhs_user_id": metadata.get("xhs_user_id"),
+        "xhs_sec_token": metadata.get("xhs_sec_token"),
         "downloaded_assets": downloaded_assets,
         "raw_content": raw_content,
         "summary": summary_block["summary"],

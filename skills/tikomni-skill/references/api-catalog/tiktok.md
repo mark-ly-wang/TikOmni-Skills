@@ -135,7 +135,7 @@
 | POST | /api/u1/v1/tiktok/interaction/like | 点赞/Like | header:authorization | body:aweme_id, body:cookie, body:device_id, body:iid, body:proxy | other | TikTok-Interaction-API |
 | POST | /api/u1/v1/tiktok/interaction/post_comment | 发送评论/Post comment | header:authorization | body:aweme_id, body:text, body:cookie, body:device_id, body:iid, body:proxy | comments | TikTok-Interaction-API |
 | POST | /api/u1/v1/tiktok/interaction/reply_comment | 回复评论/Reply to comment | header:authorization | body:aweme_id, body:reply_id, body:text, body:cookie, body:device_id, body:iid, body:proxy | comments | TikTok-Interaction-API |
-| GET | /api/u1/v1/tiktok/shop/web/fetch_hot_selling_products_list | 获取热卖商品列表/Get hot selling products list | header:authorization | query:region | trend | TikTok-Shop-Web-API |
+| GET | /api/u1/v1/tiktok/shop/web/fetch_hot_selling_products_list | 获取热卖商品列表/Get hot selling products list | header:authorization | query:region, query:count | trend | TikTok-Shop-Web-API |
 | GET | /api/u1/v1/tiktok/shop/web/fetch_product_detail | 获取商品详情V1(桌面端-数据完整)/Get product detail V1(Full data) | header:authorization, query:product_id | query:seller_id, query:region | single_post | TikTok-Shop-Web-API |
 | GET | /api/u1/v1/tiktok/shop/web/fetch_product_detail_v2 | 获取商品详情V2(移动端-数据少)/Get product detail V2 (Less Data) | header:authorization, query:product_id | query:seller_id, query:region | single_post | TikTok-Shop-Web-API |
 | GET | /api/u1/v1/tiktok/shop/web/fetch_product_detail_v3 | 获取商品详情V3(移动端-数据完整)/Get product detail V3 (Full Data) | header:authorization, query:product_id | query:region | single_post | TikTok-Shop-Web-API |

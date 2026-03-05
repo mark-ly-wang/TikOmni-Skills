@@ -145,6 +145,22 @@ def _check_publish_time_text_render() -> Dict[str, Any]:
         return {"ok": False, "error": f"{type(error).__name__}: {error}"}
 
 
+def _check_xhs_author_home_resolver_param_alignment() -> Dict[str, Any]:
+    try:
+        import inspect
+
+        from scripts.author_home.collectors.homepage_collectors import collect_xhs_author_home_raw
+
+        source = inspect.getsource(collect_xhs_author_home_raw)
+        has_share_link = '"share_link": input_value' in source
+        return {
+            "ok": has_share_link,
+            "has_share_link_param": has_share_link,
+        }
+    except Exception as error:
+        return {"ok": False, "error": f"{type(error).__name__}: {error}"}
+
+
 def run_checks() -> Dict[str, Any]:
     root = _repo_root()
     py = sys.executable
@@ -301,6 +317,10 @@ def run_checks() -> Dict[str, Any]:
     publish_time_render_check = _check_publish_time_text_render()
     checks["writers/write_benchmark_card.py::publish_time_text"] = publish_time_render_check
     all_ok = all_ok and bool(publish_time_render_check.get("ok"))
+
+    xhs_resolve_param_check = _check_xhs_author_home_resolver_param_alignment()
+    checks["author_home/collectors/homepage_collectors.py::xhs_share_link_param"] = xhs_resolve_param_check
+    all_ok = all_ok and bool(xhs_resolve_param_check.get("ok"))
 
     return {"ok": all_ok, "checks": checks}
 

@@ -141,14 +141,14 @@
 | GET | /api/u1/v1/douyin/web/fetch_douyin_web_guest_cookie | 获取抖音Web的游客Cookie/Get the guest Cookie of Douyin Web | header:authorization, query:user_agent | - | other | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_food_aweme | 美食作品推荐/Food Video | header:authorization, query:count | query:refresh_index, query:cookie | other | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_game_aweme | 游戏作品推荐/Game Video | header:authorization, query:count | query:refresh_index, query:cookie | other | Douyin-Web-API |
-| GET | /api/u1/v1/douyin/web/fetch_general_search_result | 获取指定关键词的综合搜索结果/Get comprehensive search results of specified keywords | header:authorization, query:keyword | query:offset, query:count, query:sort_type, query:publish_time, query:filter_duration, query:search_range, query:content_type, query:search_id | search | Douyin-Web-API |
+| GET | /api/u1/v1/douyin/web/fetch_general_search_result | [已弃用/Deprecated] 获取指定关键词的综合搜索结果/Get comprehensive search results of specified keywords | header:authorization, query:keyword | query:offset, query:count, query:sort_type, query:publish_time, query:filter_duration, query:search_range, query:content_type, query:search_id | search | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_home_feed | 获取首页推荐数据/Get home feed data | header:authorization | query:count, query:refresh_index | home_posts | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_hot_search_result | 获取抖音热榜数据/Get Douyin hot search results | header:authorization | - | search | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_knowledge_aweme | 知识作品推荐/Knowledge Video | header:authorization, query:count | query:refresh_index, query:cookie | other | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_live_gift_ranking | 获取直播间送礼用户排行榜/Get live room gift user ranking | header:authorization, query:room_id | query:rank_type | other | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_live_im_fetch | 抖音直播间弹幕参数获取/Douyin live room danmaku parameters | header:authorization, query:room_id, query:user_unique_id | - | other | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_live_room_product_result | 抖音直播间商品信息/Douyin live room product information | header:authorization, query:room_id, query:author_id | query:offset, query:limit | other | Douyin-Web-API |
-| GET | /api/u1/v1/douyin/web/fetch_live_search_result | 获取指定关键词的直播搜索结果/Get live search results of specified keywords | header:authorization, query:keyword | query:offset, query:count, query:search_id | search | Douyin-Web-API |
+| GET | /api/u1/v1/douyin/web/fetch_live_search_result | [已弃用/Deprecated] 获取指定关键词的直播搜索结果/Get live search results of specified keywords | header:authorization, query:keyword | query:offset, query:count, query:search_id | search | Douyin-Web-API |
 | POST | /api/u1/v1/douyin/web/fetch_multi_video | 批量获取视频信息/Batch Get Video Information | header:authorization, body | - | other | Douyin-Web-API |
 | POST | /api/u1/v1/douyin/web/fetch_multi_video_high_quality_play_url | 批量获取视频的最高画质播放链接/Batch get the highest quality play URL of videos | header:authorization | body:aweme_ids | other | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_music_aweme | 音乐作品推荐/Music Video | header:authorization, query:count | query:refresh_index, query:cookie | other | Douyin-Web-API |
@@ -163,7 +163,7 @@
 | GET | /api/u1/v1/douyin/web/fetch_product_sku_list | 获取商品SKU列表/Get product SKU list | header:authorization, query:product_id, query:author_id | - | other | Douyin-Web-API |
 | POST | /api/u1/v1/douyin/web/fetch_query_user | 查询抖音用户基本信息/Query Douyin user basic information | header:authorization | body | other | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_related_posts | 获取相关作品推荐数据/Get related posts recommendation data | header:authorization, query:aweme_id | query:refresh_index, query:count | other | Douyin-Web-API |
-| POST | /api/u1/v1/douyin/web/fetch_search_challenge | 搜索话题/Search Challenge | header:authorization | body:keyword, body:cursor, body:count, body:cookie | search | Douyin-Web-API |
+| POST | /api/u1/v1/douyin/web/fetch_search_challenge | [已弃用/Deprecated] 搜索话题/Search Challenge | header:authorization | body:keyword, body:cursor, body:count, body:cookie | search | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_series_aweme | 短剧作品/Series Video | header:authorization, query:offset, query:count, query:content_type | query:cookie | other | Douyin-Web-API |
 | POST | /api/u1/v1/douyin/web/fetch_user_collection_videos | 获取用户收藏作品数据/Get user collection video data | header:authorization, body:cookie | body:max_cursor, body:counts | other | Douyin-Web-API |
 | POST | /api/u1/v1/douyin/web/fetch_user_collects | 获取用户收藏夹/Get user collection | header:authorization, body:cookie | body:max_cursor, body:counts | other | Douyin-Web-API |
@@ -187,7 +187,7 @@
 | GET | /api/u1/v1/douyin/web/fetch_video_comment_replies | 获取指定视频的评论回复数据/Get comment replies data of specified video | header:authorization, query:item_id, query:comment_id | query:cursor, query:count | comments | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_video_comments | 获取单个视频评论数据/Get single video comments data | header:authorization, query:aweme_id | query:cursor, query:count | comments | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_video_high_quality_play_url | 获取视频的最高画质播放链接/Get the highest quality play URL of the video | header:authorization | query:aweme_id, query:share_url | other | Douyin-Web-API |
-| GET | /api/u1/v1/douyin/web/fetch_video_search_result | 获取指定关键词的视频搜索结果/Get video search results of specified keywords | header:authorization, query:keyword | query:offset, query:count, query:sort_type, query:publish_time, query:filter_duration, query:search_id | search | Douyin-Web-API |
+| GET | /api/u1/v1/douyin/web/fetch_video_search_result | [已弃用/Deprecated] 获取指定关键词的视频搜索结果/Get video search results of specified keywords | header:authorization, query:keyword | query:offset, query:count, query:sort_type, query:publish_time, query:filter_duration, query:search_id | search | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/fetch_video_search_result_v2 | 获取指定关键词的视频搜索结果 V2 （废弃，替代接口请参考下方文档）/Get video search results of specified keywords V2 (Deprecated, please refer to the following document ... | header:authorization, query:keyword | query:sort_type, query:publish_time, query:filter_duration, query:page, query:search_id | search | Douyin-Web-API |
 | POST | /api/u1/v1/douyin/web/generate_a_bogus | 使用接口网址生成A-Bogus参数/Generate A-Bogus parameter using API URL | header:authorization, body:url, body:data, body:user_agent | body:index_0, body:index_1, body:index_2 | other | Douyin-Web-API |
 | GET | /api/u1/v1/douyin/web/generate_real_msToken | 生成真实msToken/Generate real msToken | header:authorization | - | other | Douyin-Web-API |

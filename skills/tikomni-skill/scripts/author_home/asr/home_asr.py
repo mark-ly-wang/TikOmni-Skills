@@ -9,7 +9,15 @@ import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 
 from scripts.core.tikomni_common import normalize_text
-from scripts.pipeline.asr.asr_pipeline import run_u2_asr_candidates_with_timeout_retry
+from scripts.pipeline.asr.asr_pipeline import (
+    clamp_u2_batch_submit_size,
+    normalize_media_url,
+    run_u2_asr_batch_with_timeout_retry,
+    run_u2_asr_candidates_with_timeout_retry,
+)
+
+DEFAULT_BATCH_SUBMIT_SIZE = 50
+MAX_BATCH_SUBMIT_SIZE = 100
 
 
 def _clean_text(text: Any) -> str:
@@ -236,6 +244,170 @@ def _dedupe_works_by_platform_id(works: List[Dict[str, Any]]) -> Tuple[List[Dict
     return deduped, duplicates
 
 
+def _fallback_none_result(reason: str) -> Dict[str, Any]:
+    return {
+        "asr_raw": "",
+        "asr_clean": "",
+        "asr_status": "failed",
+        "asr_error_reason": normalize_text(reason) or "asr_failed",
+        "asr_source": "fallback_none",
+    }
+
+
+def _run_u2_batch_for_entries(
+    *,
+    batch_id: str,
+    entries: List[Dict[str, Any]],
+    base_url: str,
+    token: str,
+    timeout_ms: int,
+    poll_interval_sec: float,
+    max_polls: int,
+    submit_max_retries: int,
+    submit_backoff_ms: int,
+    timeout_retry_enabled: bool,
+    timeout_retry_max_retries: int,
+) -> Dict[str, Any]:
+    url_to_entries: Dict[str, List[Dict[str, Any]]] = {}
+    unique_urls: List[str] = []
+
+    for entry in entries:
+        normalized_url = normalize_media_url(entry.get("video_down_url"))
+        if not normalized_url:
+            continue
+        entry["normalized_video_url"] = normalized_url
+        if normalized_url not in url_to_entries:
+            url_to_entries[normalized_url] = []
+            unique_urls.append(normalized_url)
+        url_to_entries[normalized_url].append(entry)
+
+    if not unique_urls:
+        return {
+            "trace": [
+                {
+                    "step": "author_home.asr.batch.submitted",
+                    "batch_id": batch_id,
+                    "ok": False,
+                    "error_reason": "batch_no_valid_urls",
+                    "batch_size": len(entries),
+                }
+            ],
+            "unmapped_entries": list(entries),
+            "mapped_count": 0,
+            "task_metrics": {},
+            "submitted": False,
+            "completed": False,
+        }
+
+    bundle = run_u2_asr_batch_with_timeout_retry(
+        base_url=base_url,
+        token=token,
+        timeout_ms=timeout_ms,
+        file_urls=unique_urls,
+        submit_max_retries=submit_max_retries,
+        submit_backoff_ms=submit_backoff_ms,
+        poll_interval_sec=poll_interval_sec,
+        max_polls=max_polls,
+        timeout_retry_enabled=timeout_retry_enabled,
+        timeout_retry_max_retries=timeout_retry_max_retries,
+    )
+
+    submit_bundle = bundle.get("submit_bundle") if isinstance(bundle.get("submit_bundle"), dict) else {}
+    submit_response = submit_bundle.get("submit_response") if isinstance(submit_bundle.get("submit_response"), dict) else {}
+    poll_result = bundle.get("poll_result") if isinstance(bundle.get("poll_result"), dict) else {}
+    task_metrics = bundle.get("task_metrics") if isinstance(bundle.get("task_metrics"), dict) else {}
+
+    trace: List[Dict[str, Any]] = [
+        {
+            "step": "author_home.asr.batch.submitted",
+            "batch_id": batch_id,
+            "ok": bool(submit_response.get("ok") and submit_bundle.get("task_id")),
+            "batch_size": len(entries),
+            "batch_unique_urls": len(unique_urls),
+            "task_id": submit_bundle.get("task_id"),
+            "submit_status": submit_bundle.get("final_submit_status"),
+            "error_reason": submit_response.get("error_reason"),
+        }
+    ]
+
+    batch_progress = bundle.get("batch_progress") if isinstance(bundle.get("batch_progress"), dict) else {}
+    batch_complete = bool(bundle.get("batch_complete") or poll_result.get("batch_complete"))
+
+    trace.append(
+        {
+            "step": "author_home.asr.batch.completed",
+            "batch_id": batch_id,
+            "ok": batch_complete,
+            "task_status": poll_result.get("task_status"),
+            "error_reason": poll_result.get("error_reason"),
+            "task_metrics": task_metrics,
+            "batch_progress": batch_progress,
+            "batch_complete": batch_complete,
+        }
+    )
+
+    mapped_results = bundle.get("mapped_results") if isinstance(bundle.get("mapped_results"), dict) else {}
+    mapped_count = 0
+    unmapped_entries: List[Dict[str, Any]] = []
+
+    batch_error = normalize_text(poll_result.get("error_reason")) or "batch_result_unmapped"
+
+    for normalized_url, grouped_entries in url_to_entries.items():
+        mapped_item = mapped_results.get(normalized_url) if isinstance(mapped_results, dict) else None
+        transcript = _clean_text(mapped_item.get("transcript_text")) if isinstance(mapped_item, dict) else ""
+        mapped_status = normalize_text(mapped_item.get("task_status") if isinstance(mapped_item, dict) else "").upper()
+        mapped_error = normalize_text(mapped_item.get("error_reason") if isinstance(mapped_item, dict) else "")
+        mapped_ok = bool(mapped_item.get("ok")) if isinstance(mapped_item, dict) else False
+
+        if (mapped_ok or mapped_status in {"SUCCEEDED", "SUCCESS", "COMPLETED", "DONE"}) and transcript:
+            for entry in grouped_entries:
+                entry["work"].update(
+                    {
+                        "asr_raw": transcript,
+                        "asr_clean": transcript,
+                        "asr_status": "success",
+                        "asr_error_reason": "",
+                        "asr_source": "u2",
+                    }
+                )
+                mapped_count += 1
+        else:
+            fallback_reason = mapped_error or batch_error or ("u2_batch_incomplete" if not batch_complete else "batch_result_unmapped")
+            for entry in grouped_entries:
+                entry["fallback_reason"] = fallback_reason
+                unmapped_entries.append(entry)
+
+    trace.append(
+        {
+            "step": "author_home.asr.batch.mapped",
+            "batch_id": batch_id,
+            "mapped_count": mapped_count,
+            "mapped_urls": len([key for key in url_to_entries.keys() if isinstance(mapped_results.get(key), dict)]),
+        }
+    )
+
+    if unmapped_entries:
+        trace.append(
+            {
+                "step": "author_home.asr.batch.unmapped",
+                "batch_id": batch_id,
+                "unmapped_count": len(unmapped_entries),
+                "reason": normalize_text(unmapped_entries[0].get("fallback_reason")) if unmapped_entries else "batch_result_unmapped",
+            }
+        )
+
+    return {
+        "trace": trace,
+        "unmapped_entries": unmapped_entries,
+        "mapped_count": mapped_count,
+        "task_metrics": task_metrics,
+        "batch_progress": batch_progress,
+        "batch_complete": batch_complete,
+        "submitted": True,
+        "completed": batch_complete,
+    }
+
+
 def enrich_author_home_asr(
     *,
     platform: str,
@@ -251,7 +423,7 @@ def enrich_author_home_asr(
     xhs_submit_backoff_ms: int = 0,
     timeout_retry_enabled: bool = True,
     timeout_retry_max_retries: int = 3,
-    batch_size: int = 20,
+    batch_size: int = DEFAULT_BATCH_SUBMIT_SIZE,
     checkpoint: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     trace: List[Dict[str, Any]] = []
@@ -264,6 +436,13 @@ def enrich_author_home_asr(
         if normalize_text(item)
     }
 
+    requested_batch = int(batch_size or DEFAULT_BATCH_SUBMIT_SIZE)
+    effective_batch = clamp_u2_batch_submit_size(
+        requested_batch,
+        default=DEFAULT_BATCH_SUBMIT_SIZE,
+        hard_limit=MAX_BATCH_SUBMIT_SIZE,
+    )
+
     trace.append(
         {
             "step": "author_home.asr.init",
@@ -272,7 +451,10 @@ def enrich_author_home_asr(
             "deduped_count": len(deduped_works),
             "duplicate_count": duplicate_count,
             "resume_completed": len(completed_ids),
-            "batch_size": max(1, int(batch_size or 20)),
+            "requested_batch_size": requested_batch,
+            "batch_size": effective_batch,
+            "batch_size_clamped": requested_batch != effective_batch,
+            "batch_submit_hard_limit": MAX_BATCH_SUBMIT_SIZE,
         }
     )
 
@@ -283,168 +465,217 @@ def enrich_author_home_asr(
             continue
         queue.append(work)
 
-    failed_queue: List[Dict[str, Any]] = []
-    failed_ids: List[str] = []
+    trace.append(
+        {
+            "step": "author_home.asr.collected_works",
+            "platform": platform,
+            "queued_count": len(queue),
+        }
+    )
+
+    batch_total = (len(queue) + effective_batch - 1) // effective_batch if queue else 0
+
     success_count = 0
     fallback_none_count = 0
-
-    effective_batch = max(1, int(batch_size or 20))
-    batch_total = (len(queue) + effective_batch - 1) // effective_batch if queue else 0
+    submitted_batches = 0
+    completed_batches = 0
+    batch_mapped_count = 0
+    batch_unmapped_count = 0
+    fallback_single_count = 0
 
     for batch_index in range(batch_total):
         batch = queue[batch_index * effective_batch : (batch_index + 1) * effective_batch]
-        batch_failed = 0
-        batch_success = 0
+        batch_id = f"batch-{batch_index + 1:03d}"
+
+        batch_u2_entries: List[Dict[str, Any]] = []
 
         for work in batch:
             work_id = normalize_text(work.get("platform_work_id"))
-            asr_result: Dict[str, Any] = {}
-            asr_trace: Dict[str, Any] = {}
 
             if platform == "douyin":
-                asr_result, asr_trace = _run_u2_for_work(
-                    work=work,
-                    base_url=base_url,
-                    token=token,
-                    timeout_ms=timeout_ms,
-                    poll_interval_sec=poll_interval_sec,
-                    max_polls=max_polls,
-                    submit_max_retries=max(0, int(douyin_submit_max_retries)),
-                    submit_backoff_ms=max(0, int(douyin_submit_backoff_ms)),
-                    timeout_retry_enabled=timeout_retry_enabled,
-                    timeout_retry_max_retries=max(0, int(timeout_retry_max_retries)),
-                )
-            else:
-                subtitle_text, subtitle_source, subtitle_urls = _resolve_xhs_subtitle(work, timeout_ms=timeout_ms)
-                subtitle_invalid = _invalid_subtitle_reason(subtitle_text)
-                if subtitle_invalid is None:
-                    asr_result = {
+                video_down_url = normalize_text(work.get("video_down_url"))
+                if not video_down_url:
+                    work.update(_fallback_none_result("video_down_url_missing"))
+                    trace.append(
+                        {
+                            "step": "author_home.asr.u2.skip",
+                            "batch_id": batch_id,
+                            "platform_work_id": work_id,
+                            "ok": False,
+                            "error_reason": "video_down_url_missing",
+                        }
+                    )
+                else:
+                    batch_u2_entries.append(
+                        {
+                            "work": work,
+                            "work_id": work_id,
+                            "video_down_url": video_down_url,
+                            "fallback_reason": "batch_result_unmapped",
+                        }
+                    )
+                continue
+
+            subtitle_text, subtitle_source, subtitle_urls = _resolve_xhs_subtitle(work, timeout_ms=timeout_ms)
+            subtitle_invalid = _invalid_subtitle_reason(subtitle_text)
+            if subtitle_invalid is None:
+                work.update(
+                    {
                         "asr_raw": subtitle_text,
                         "asr_clean": subtitle_text,
                         "asr_status": "success",
                         "asr_error_reason": "",
                         "asr_source": "xhs_subtitle",
                     }
-                    asr_trace = {
+                )
+                trace.append(
+                    {
                         "step": "author_home.asr.xhs_subtitle",
+                        "batch_id": batch_id,
                         "platform_work_id": work_id,
                         "ok": True,
                         "subtitle_source": subtitle_source,
                         "subtitle_url_count": len(subtitle_urls),
                     }
-                else:
-                    asr_trace = {
+                )
+            else:
+                trace.append(
+                    {
                         "step": "author_home.asr.xhs_subtitle",
+                        "batch_id": batch_id,
                         "platform_work_id": work_id,
                         "ok": False,
                         "error_reason": subtitle_invalid,
                         "subtitle_source": subtitle_source,
                         "subtitle_url_count": len(subtitle_urls),
                     }
-                    fallback_result, u2_trace = _run_u2_for_work(
-                        work=work,
-                        base_url=base_url,
-                        token=token,
-                        timeout_ms=timeout_ms,
-                        poll_interval_sec=poll_interval_sec,
-                        max_polls=max_polls,
-                        submit_max_retries=max(0, int(xhs_submit_max_retries)),
-                        submit_backoff_ms=max(0, int(xhs_submit_backoff_ms)),
-                        timeout_retry_enabled=timeout_retry_enabled,
-                        timeout_retry_max_retries=max(0, int(timeout_retry_max_retries)),
-                    )
-                    if fallback_result.get("asr_source") == "u2":
-                        asr_result = fallback_result
-                        u2_trace["fallback_trigger_reason"] = f"xhs_subtitle_invalid:{subtitle_invalid}"
-                        trace.append(u2_trace)
-                    else:
-                        missing_video = not normalize_text(work.get("video_down_url"))
-                        asr_result = {
-                            "asr_raw": "",
-                            "asr_clean": "",
-                            "asr_status": "failed",
-                            "asr_error_reason": (
-                                f"{subtitle_invalid}_and_video_missing"
-                                if missing_video
-                                else normalize_text(fallback_result.get("asr_error_reason")) or subtitle_invalid
-                            ),
-                            "asr_source": "fallback_none",
+                )
+                video_down_url = normalize_text(work.get("video_down_url"))
+                if not video_down_url:
+                    work.update(_fallback_none_result(f"{subtitle_invalid}_and_video_missing"))
+                    trace.append(
+                        {
+                            "step": "author_home.asr.u2.skip",
+                            "batch_id": batch_id,
+                            "platform_work_id": work_id,
+                            "ok": False,
+                            "error_reason": f"{subtitle_invalid}_and_video_missing",
                         }
-                        u2_trace["fallback_trigger_reason"] = f"xhs_subtitle_invalid:{subtitle_invalid}"
-                        trace.append(u2_trace)
+                    )
+                else:
+                    batch_u2_entries.append(
+                        {
+                            "work": work,
+                            "work_id": work_id,
+                            "video_down_url": video_down_url,
+                            "fallback_reason": f"xhs_subtitle_invalid:{subtitle_invalid}",
+                        }
+                    )
 
-            work.update(asr_result)
-            trace.append(asr_trace)
+        fallback_entries: List[Dict[str, Any]] = []
+        if batch_u2_entries:
+            batch_bundle = _run_u2_batch_for_entries(
+                batch_id=batch_id,
+                entries=batch_u2_entries,
+                base_url=base_url,
+                token=token,
+                timeout_ms=timeout_ms,
+                poll_interval_sec=poll_interval_sec,
+                max_polls=max_polls,
+                submit_max_retries=max(0, int(douyin_submit_max_retries if platform == "douyin" else xhs_submit_max_retries)),
+                submit_backoff_ms=max(0, int(douyin_submit_backoff_ms if platform == "douyin" else xhs_submit_backoff_ms)),
+                timeout_retry_enabled=timeout_retry_enabled,
+                timeout_retry_max_retries=max(0, int(timeout_retry_max_retries)),
+            )
+            trace.extend(batch_bundle.get("trace") if isinstance(batch_bundle.get("trace"), list) else [])
 
+            if batch_bundle.get("submitted"):
+                submitted_batches += 1
+            if batch_bundle.get("completed"):
+                completed_batches += 1
+
+            batch_mapped_count += int(batch_bundle.get("mapped_count") or 0)
+            fallback_entries = list(batch_bundle.get("unmapped_entries") or [])
+            batch_unmapped_count += len(fallback_entries)
+
+        for fallback_entry in fallback_entries:
+            fallback_work = fallback_entry.get("work")
+            if not isinstance(fallback_work, dict):
+                continue
+
+            retry_result, retry_trace = _run_u2_for_work(
+                work=fallback_work,
+                base_url=base_url,
+                token=token,
+                timeout_ms=timeout_ms,
+                poll_interval_sec=poll_interval_sec,
+                max_polls=max_polls,
+                submit_max_retries=max(0, int(douyin_submit_max_retries if platform == "douyin" else xhs_submit_max_retries)),
+                submit_backoff_ms=max(0, int(douyin_submit_backoff_ms if platform == "douyin" else xhs_submit_backoff_ms)),
+                timeout_retry_enabled=timeout_retry_enabled,
+                timeout_retry_max_retries=max(0, int(timeout_retry_max_retries)),
+            )
+            retry_trace["step"] = "author_home.asr.batch.fallback"
+            retry_trace["batch_id"] = batch_id
+            retry_trace["fallback_trigger_reason"] = fallback_entry.get("fallback_reason")
+            trace.append(retry_trace)
+            fallback_single_count += 1
+            fallback_work.update(retry_result)
+
+        batch_success = 0
+        batch_failed = 0
+        for work in batch:
+            work_id = normalize_text(work.get("platform_work_id"))
             if work_id:
                 completed_ids.add(work_id)
 
-            if asr_result.get("asr_status") == "success":
+            if work.get("asr_status") == "success":
                 success_count += 1
                 batch_success += 1
             else:
                 fallback_none_count += 1
                 batch_failed += 1
-                if normalize_text(work.get("video_down_url")):
-                    failed_queue.append(work)
-                    if work_id:
-                        failed_ids.append(work_id)
 
         trace.append(
             {
                 "step": "author_home.asr.batch_done",
+                "batch_id": batch_id,
                 "batch_index": batch_index + 1,
                 "batch_total": batch_total,
                 "batch_size": len(batch),
                 "batch_success": batch_success,
                 "batch_failed": batch_failed,
+                "fallback_singles": fallback_single_count,
             }
         )
 
-    refill_failed_ids: List[str] = []
-    refill_queue = []
-    seen_refill = set()
-    for item in failed_queue:
-        key = normalize_text(item.get("platform_work_id"))
-        if not key or key in seen_refill:
-            continue
-        seen_refill.add(key)
-        refill_queue.append(item)
-
-    for work in refill_queue:
-        work_id = normalize_text(work.get("platform_work_id"))
-        retry_result, retry_trace = _run_u2_for_work(
-            work=work,
-            base_url=base_url,
-            token=token,
-            timeout_ms=timeout_ms,
-            poll_interval_sec=poll_interval_sec,
-            max_polls=max_polls,
-            submit_max_retries=max(0, int(douyin_submit_max_retries if platform == "douyin" else xhs_submit_max_retries)),
-            submit_backoff_ms=max(0, int(douyin_submit_backoff_ms if platform == "douyin" else xhs_submit_backoff_ms)),
-            timeout_retry_enabled=timeout_retry_enabled,
-            timeout_retry_max_retries=max(0, int(timeout_retry_max_retries)),
+    failed_work_ids = sorted(
+        list(
+            {
+                normalize_text(work.get("platform_work_id"))
+                for work in deduped_works
+                if isinstance(work, dict)
+                and normalize_text(work.get("platform_work_id"))
+                and str(work.get("asr_status") or "") != "success"
+            }
         )
-        retry_trace["step"] = "author_home.asr.refill"
-        retry_trace["refill_attempt"] = 1
-        trace.append(retry_trace)
-
-        if retry_result.get("asr_source") == "u2" and retry_result.get("asr_status") == "success":
-            work.update(retry_result)
-            continue
-
-        if work_id:
-            refill_failed_ids.append(work_id)
+    )
 
     checkpoint_out = {
         "platform": platform,
         "completed_work_ids": sorted(completed_ids),
-        "failed_work_ids": sorted(list(dict.fromkeys(refill_failed_ids or failed_ids))),
+        "failed_work_ids": failed_work_ids,
         "batch_size": effective_batch,
         "batches_total": batch_total,
+        "batches_submitted": submitted_batches,
+        "batches_completed": completed_batches,
+        "batch_mapped": batch_mapped_count,
+        "batch_unmapped": batch_unmapped_count,
+        "fallback_singles": fallback_single_count,
         "total_works": len(deduped_works),
         "processed_works": len(completed_ids),
-        "refill_attempted": len(refill_queue),
+        # backward-compatible checkpoint fields
+        "refill_attempted": fallback_single_count,
     }
 
     stats = {
@@ -452,8 +683,14 @@ def enrich_author_home_asr(
         "success": success_count,
         "fallback_none": fallback_none_count,
         "duplicates_dropped": duplicate_count,
-        "refill_attempted": len(refill_queue),
-        "refill_failed": len(refill_failed_ids),
+        "submitted_batches": submitted_batches,
+        "completed_batches": completed_batches,
+        "batch_mapped": batch_mapped_count,
+        "batch_unmapped": batch_unmapped_count,
+        "fallback_singles": fallback_single_count,
+        # backward-compatible stats fields
+        "refill_attempted": fallback_single_count,
+        "refill_failed": len(failed_work_ids),
     }
 
     return {

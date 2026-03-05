@@ -1,65 +1,68 @@
 ---
 name: tikomni-skill
-description: Use this skill when users ask to analyze a video/post, analyze an author account, do benchmark research, or fetch structured data/copy/comments from supported social platforms. Prioritize intent completion and produce traceable outputs with explicit missing_fields for unavailable data.
+description: Use this skill for social content benchmark/breakdown/extract tasks (Douyin/Xiaohongshu/TikTok/YouTube/X and other supported platforms). 当用户说“对标、拆解、提取文案、分析作品/视频/图文、账号分析（如抖音/小红书/视频号/公众号）”或 asks to analyze posts/videos/creator accounts and fetch structured data/copy/comments, trigger this skill.
 ---
 
-# Tikomni Skill
+# TikOmni Skill
 
 ## Mission
-Complete user-facing content tasks across platforms: analyze a video/post, analyze an author, build benchmark cards, and fetch structured data/copy/comments with traceable outputs (`raw + normalized + markdown`).
+Complete cross-platform content tasks with traceable outputs:
+- analyze single posts/videos/images
+- analyze creator/author accounts (homepage-level)
+- extract structured data/copy/comments
+- produce reusable markdown artifacts (cards/reports)
 
-Default behavior:
+## Scope & Boundaries
+- Use TikOmni workflows for supported platforms and return structured outputs.
+- Never fabricate unavailable data; report gaps via `missing_fields` with reasons.
+- Keep route decisions traceable via `fallback_trace` and `request_id` when available.
+- Follow Prompt-First analysis style (prompt-led output constraints, minimal format validation only).
+
+## Default Behavior
 - `--write-card` is enabled by default (disable with `--no-write-card`).
-- Unified entry JSON persistence is enabled by default for all registered workflows (disable globally with `--no-persist-output`).
+- Unified output persistence is enabled by default (disable with `--no-persist-output`).
+- Author-home defaults: latest-first + cursor pagination + hard cap `max_items<=200` (all platforms).
 
-## Script Layout (Phase A/B aligned)
-- Unified CLI entry: `scripts/cli/run_tikomni_extract.py`
-- Workflow registry (mapping): `scripts/registry/workflow_registry.py`
-- Platform handlers: `scripts/platform/douyin/run_douyin_single_video.py`, `scripts/platform/xiaohongshu/run_xiaohongshu_extract.py`
-- Shared core: `scripts/core/`
-- Shared pipeline: `scripts/pipeline/asr/`
-- Writers: `scripts/writers/`
-- Readiness check: `scripts/cli/check_tikomni_readiness.py`
-
-## Routing Boundary (Hard)
-1. Use unified entry + registry mapping: `run_tikomni_extract` parses inputs and resolves handlers through registry.
-2. Registry scope is mapping only: `(platform, content_kind) -> handler`.
-3. Routing policy source of truth: `references/capability-routing-matrix.md` + `references/routing-rules.md`.
-
-## Execution Policy
-1. **Matrix-first routing (hard rule):** Always match capability using `references/capability-routing-matrix.md` first.
-2. **Fixed capability first (hard rule):** If request matches an active fixed capability in matrix, use that route chain/playbook directly.
-3. **Fallback-only after miss (hard rule):** Only when no active fixed capability matches, use universal intent fallback route.
-4. **Policy vs execution boundary (hard rule):** Playbooks/matrix define routing policy, not execution success; execution truth comes from runtime trace/output.
-5. **No fabrication (hard rule):** Never invent unavailable fields. Missing data must be reported via `missing_fields` with reason.
-6. **Single-source rules:** Do not redefine API/output/routing rules in this file; use referenced docs as source of truth.
+## Trigger Examples / 触发示例
+- “帮我对标拆解这条抖音视频”
+- “提取这个小红书笔记文案并分析”
+- “做这个博主/自媒体账号分析（主页）”
+- “分析这个视频号/公众号账号，给我对标结论”
+- “benchmark or breakdown this TikTok/YouTube/X post”
+- “analyze this creator account and extract structured fields/comments”
 
 ## Universal Workflow
-1. Parse user intent and input constraints (platform, content type, quantity, output form).
-2. Match `references/capability-routing-matrix.md` first.
-3. If matrix has active fixed capability match, follow its route chain (entry script/playbook).
-4. If no active fixed capability match, enter universal intent fallback (`routing-rules` + `api-catalog`).
-5. Extract and normalize fields under `references/normalize-rules.md`.
-6. Validate completeness and emit:
-   - `missing_fields`: list of `{ field, reason }`
-   - `fallback_trace`: route/fallback decisions
-   - `request_id`: upstream trace id when available
-7. Deliver markdown output per `references/output-markdown.md`.
+1. Parse user intent and constraints (platform, content type, quantity, output form).
+2. Match route via capability matrix first.
+3. If fixed capability is matched, execute the fixed route chain.
+4. If fixed capability is not matched, enter Universal Fallback (agent-led routing using API capability catalog + user intent).
+5. Normalize extracted fields using shared normalization rules.
+6. Emit required trace/contract fields (`missing_fields`, `fallback_trace`, `request_id`, etc.).
+7. Produce markdown output/cards according to output rules.
 
-## Quality Bar
-- **Traceability:** Output includes source route/playbook and key decision trace.
-- **Field integrity:** Structured fields align with normalization rules; no silent field dropping.
-- **Missing-data discipline:** Any unavailable required field must be placed in `missing_fields`; do not infer or fabricate.
-- **Actionability:** Final summary is directly usable for user intent (extraction/reporting/analysis).
+## Universal Fallback Method (agent-led)
+When fixed routes are not matched, the agent should:
+1. Read capability catalog and routing references.
+2. Select candidate endpoints by intent fit + data coverage + stability.
+3. Execute a minimal-cost route chain and record selection/abandon decisions in `fallback_trace`.
+4. Return explicit `missing_fields` for unavailable data instead of fabricating.
 
-## References
-1. Capability routing matrix (first-class): `references/capability-routing-matrix.md`
-2. Routing rules: `references/routing-rules.md`
-3. Runtime config: `references/runtime-config.md`
-4. Normalize rules: `references/normalize-rules.md`
-5. API catalog entry: `references/api-catalog/index.md`
-6. Douyin homepage playbook: `references/playbooks/douyin-home-extract.md`
-7. Xiaohongshu homepage playbook: `references/playbooks/xiaohongshu-home-extract.md`
-8. Copy extraction rules: `references/playbooks/copy-extract-rules.md`
-9. Markdown output rules: `references/output-markdown.md`
-10. Prompt contracts: `references/prompt-contracts/`
+## Quality Bar (DoD)
+A run is done only when all are true:
+1. Required contract fields are present:
+   - `missing_fields`
+   - `fallback_trace`
+   - `request_id`
+   - `card_write`
+   - `output_persist`
+2. Missing data is explicit and non-fabricated.
+3. Route decisions are traceable and reproducible.
+4. Output is readable and directly reusable in downstream workflows.
+
+## References (load as needed)
+- Capability matrix: `references/capability-routing-matrix.md`
+- Routing rules: `references/routing-rules.md`
+- Normalize rules: `references/normalize-rules.md`
+- Output markdown rules: `references/output-markdown.md`
+- API catalog: `references/api-catalog/index.md`
+- Prompt contracts: `references/prompt-contracts/`

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, Mapping, MutableMapping, Optional, Tuple, TypedDict
 
+from scripts.author_home.orchestrator.run_author_analysis import run_author_home_analysis
 from scripts.platform.douyin.run_douyin_single_video import run_douyin_single_video
 from scripts.platform.xiaohongshu.run_xiaohongshu_extract import run_xiaohongshu_extract
 
@@ -17,6 +18,7 @@ class WorkflowContext(TypedDict, total=False):
     input_value: Optional[str]
     resolved_env_file: Optional[str]
     api_key_env: str
+    token: str
     base_url: Optional[str]
     timeout_ms: Optional[int]
     poll_interval_sec: float
@@ -37,6 +39,9 @@ class WorkflowContext(TypedDict, total=False):
     storage_config: Optional[Dict[str, Any]]
     allow_process_env: bool
     persist_output: bool
+    page_size: int
+    pages_max: int
+    max_items: int
 
 
 class ResultEnvelope(TypedDict, total=False):
@@ -167,12 +172,49 @@ def _run_xiaohongshu_note_workflow(ctx: WorkflowContext) -> Mapping[str, Any]:
     )
 
 
+def _run_douyin_author_home_workflow(ctx: WorkflowContext) -> Mapping[str, Any]:
+    return run_author_home_analysis(
+        platform="douyin",
+        input_value=str(ctx.get("input_value") or ""),
+        base_url=str(ctx.get("base_url") or ""),
+        token=str(ctx.get("token") or ""),
+        timeout_ms=int(ctx.get("timeout_ms") or 60000),
+        page_size=int(ctx.get("page_size", 20)),
+        pages_max=int(ctx.get("pages_max", 50)),
+        max_items=int(ctx.get("max_items", 200)),
+        write_card=bool(ctx.get("write_card", True)),
+        collect_material=bool(ctx.get("collect_material", False)),
+        card_root=ctx.get("card_root"),
+        storage_config=ctx.get("storage_config"),
+    )
+
+
+def _run_xhs_author_home_workflow(ctx: WorkflowContext) -> Mapping[str, Any]:
+    return run_author_home_analysis(
+        platform="xiaohongshu",
+        input_value=str(ctx.get("input_value") or ""),
+        base_url=str(ctx.get("base_url") or ""),
+        token=str(ctx.get("token") or ""),
+        timeout_ms=int(ctx.get("timeout_ms") or 60000),
+        page_size=int(ctx.get("page_size", 20)),
+        pages_max=int(ctx.get("pages_max", 50)),
+        max_items=int(ctx.get("max_items", 200)),
+        write_card=bool(ctx.get("write_card", True)),
+        collect_material=bool(ctx.get("collect_material", False)),
+        card_root=ctx.get("card_root"),
+        storage_config=ctx.get("storage_config"),
+    )
+
+
 def build_default_workflow_registry() -> WorkflowRegistry:
     registry = WorkflowRegistry()
     registry.register("douyin", "single_video", _run_douyin_single_video_workflow, default=True)
     registry.register("xiaohongshu", "note", _run_xiaohongshu_note_workflow, default=True)
     # Compatibility alias with existing single_video naming.
     registry.register("xiaohongshu", "single_video", _run_xiaohongshu_note_workflow, default=False)
+    # Author homepage componentized route.
+    registry.register("douyin", "author_home", _run_douyin_author_home_workflow, default=False)
+    registry.register("xiaohongshu", "author_home", _run_xhs_author_home_workflow, default=False)
     return registry
 
 

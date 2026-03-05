@@ -26,7 +26,7 @@ from typing import Any, Dict
 
 from scripts.core.config_loader import config_get, load_tikomni_config, resolve_storage_paths
 from scripts.core.extract_pipeline import detect_platform_from_input
-from scripts.core.tikomni_common import write_json_stdout
+from scripts.core.tikomni_common import resolve_runtime, write_json_stdout
 from scripts.registry.workflow_registry import DEFAULT_WORKFLOW_REGISTRY, normalize_result_envelope
 
 
@@ -196,7 +196,7 @@ def main() -> None:
     parser.add_argument("--platform", choices=["auto", "douyin", "xiaohongshu"], default="auto")
     parser.add_argument(
         "--content-kind",
-        choices=["auto", "single_video", "note"],
+        choices=["auto", "single_video", "note", "author_home"],
         default="auto",
         help="Workflow content kind. auto resolves by platform default mapping.",
     )
@@ -221,6 +221,9 @@ def main() -> None:
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
     parser.add_argument("--collect-material", action="store_true", help="Write CMAT only when explicit")
     parser.add_argument("--card-root", default=None, help="Card root (absolute); falls back to TIKOMNI_CARD_ROOT when writing cards")
+    parser.add_argument("--page-size", type=int, default=20, help="Homepage fetch page size (capped to 20)")
+    parser.add_argument("--pages-max", type=int, default=50, help="Homepage max pagination rounds")
+    parser.add_argument("--max-items", type=int, default=200, help="Homepage total item cap (hard max 200)")
     parser.add_argument("--persist-output", dest="persist_output", action="store_true", help="Persist workflow JSON artifact to TIKOMNI_OUTPUT_ROOT (default on)")
     parser.add_argument("--no-persist-output", dest="persist_output", action="store_false", help="Disable workflow artifact persistence globally")
     parser.set_defaults(persist_output=True)
@@ -279,12 +282,21 @@ def main() -> None:
 
     requested_content_kind = args.content_kind
 
+    runtime = resolve_runtime(
+        env_file=resolved_env_file,
+        api_key_env=api_key_env,
+        base_url=base_url,
+        timeout_ms=timeout_ms,
+        allow_process_env=args.allow_process_env,
+    )
+
     workflow_ctx = {
         "input_value": args.input,
         "resolved_env_file": resolved_env_file,
         "api_key_env": api_key_env,
-        "base_url": base_url,
-        "timeout_ms": timeout_ms,
+        "token": runtime.get("token"),
+        "base_url": runtime.get("base_url"),
+        "timeout_ms": int(runtime.get("timeout_ms") or 60000),
         "poll_interval_sec": float(poll_interval_sec),
         "max_polls": int(max_polls),
         "douyin_u2_submit_max_retries": int(douyin_u2_submit_max_retries),
@@ -301,6 +313,9 @@ def main() -> None:
         "storage_config": config,
         "allow_process_env": args.allow_process_env,
         "persist_output": args.persist_output,
+        "page_size": int(args.page_size),
+        "pages_max": int(args.pages_max),
+        "max_items": int(args.max_items),
     }
 
     resolved_content_kind = None

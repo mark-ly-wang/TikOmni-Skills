@@ -281,9 +281,16 @@ def _extract_author(item: Dict[str, Any]) -> Dict[str, Optional[str]]:
     if not isinstance(author, dict):
         author = {}
 
+    author_platform_id = normalize_text(author.get("uid")) or normalize_text(author.get("id")) or normalize_text(item.get("author_user_id"))
+    author_handle = normalize_text(author.get("short_id")) or normalize_text(author.get("nickname"))
+    douyin_sec_uid = normalize_text(author.get("sec_uid"))
+    douyin_aweme_author_id = normalize_text(item.get("author_user_id")) or author_platform_id
+
     return {
-        "sec_uid": normalize_text(author.get("sec_uid")) or None,
-        "unique_id": normalize_text(author.get("unique_id")) or None,
+        "author_handle": author_handle or None,
+        "author_platform_id": author_platform_id or None,
+        "douyin_sec_uid": douyin_sec_uid or None,
+        "douyin_aweme_author_id": douyin_aweme_author_id or None,
         "nickname": normalize_text(author.get("nickname")) or None,
         "signature": normalize_text(author.get("signature")) or None,
     }
@@ -429,6 +436,35 @@ def _trace_step(
     return payload
 
 
+def _build_missing_fields(
+    *,
+    title: str,
+    desc: str,
+    platform_work_id: Optional[str],
+    video_down_url: Optional[str],
+    author: Dict[str, Optional[str]],
+) -> List[Dict[str, str]]:
+    missing: List[Dict[str, str]] = []
+
+    def _append(field: str) -> None:
+        missing.append({"field": field, "reason": "missing_metadata"})
+
+    if not normalize_text(title):
+        _append("title")
+    if not normalize_text(desc):
+        _append("desc")
+    if not normalize_text(platform_work_id):
+        _append("platform_work_id")
+    if not normalize_text(video_down_url):
+        _append("video_down_url")
+
+    for key in ("author_handle", "author_platform_id", "douyin_sec_uid", "douyin_aweme_author_id"):
+        if not normalize_text(author.get(key)):
+            _append(key)
+
+    return missing
+
+
 def _build_result(
     *,
     source_input: Dict[str, Optional[str]],
@@ -482,6 +518,10 @@ def _build_result(
         "cover_image": cover_image,
         "video_down_url": video_down_url,
         "author": author,
+        "author_handle": author.get("author_handle"),
+        "author_platform_id": author.get("author_platform_id"),
+        "douyin_sec_uid": author.get("douyin_sec_uid"),
+        "douyin_aweme_author_id": author.get("douyin_aweme_author_id"),
         "digg_count": metrics.get("digg_count", 0),
         "comment_count": metrics.get("comment_count", 0),
         "collect_count": metrics.get("collect_count", 0),
@@ -496,7 +536,13 @@ def _build_result(
         "insights": insights,
         "confidence": confidence,
         "error_reason": error_reason,
-        "missing_fields": [],
+        "missing_fields": _build_missing_fields(
+            title=title,
+            desc=desc,
+            platform_work_id=platform_work_id,
+            video_down_url=video_down_url,
+            author=author,
+        ),
         "extract_trace": extract_trace,
         "fallback_trace": fallback_trace,
         "request_id": request_id,
@@ -537,7 +583,7 @@ def run_douyin_single_video(
             desc="",
             duration_ms=None,
             video_down_url=None,
-            author={"sec_uid": None, "unique_id": None, "nickname": None, "signature": None},
+            author={"author_handle": None, "author_platform_id": None, "douyin_sec_uid": None, "douyin_aweme_author_id": None, "nickname": None, "signature": None},
             metrics={
                 "digg_count": 0,
                 "comment_count": 0,
@@ -632,7 +678,7 @@ def run_douyin_single_video(
             desc="",
             duration_ms=None,
             video_down_url=None,
-            author={"sec_uid": None, "unique_id": None, "nickname": None, "signature": None},
+            author={"author_handle": None, "author_platform_id": None, "douyin_sec_uid": None, "douyin_aweme_author_id": None, "nickname": None, "signature": None},
             metrics={
                 "digg_count": 0,
                 "comment_count": 0,
@@ -684,7 +730,7 @@ def run_douyin_single_video(
             desc="",
             duration_ms=None,
             video_down_url=None,
-            author={"sec_uid": None, "unique_id": None, "nickname": None, "signature": None},
+            author={"author_handle": None, "author_platform_id": None, "douyin_sec_uid": None, "douyin_aweme_author_id": None, "nickname": None, "signature": None},
             metrics={
                 "digg_count": 0,
                 "comment_count": 0,

@@ -185,21 +185,49 @@ def _extract_author(payload: Dict[str, Any]) -> Dict[str, str]:
         or author_text
         or normalize_text(source_author.get("nickname"))
     )
-    unique_id = (
-        normalize_text(payload.get("unique_id"))
-        or normalize_text(author.get("unique_id"))
-        or normalize_text(source_author.get("unique_id"))
+
+    author_handle = (
+        normalize_text(payload.get("author_handle"))
+        or normalize_text(author.get("author_handle"))
+        or normalize_text(source_author.get("author_handle"))
+        or nickname
     )
-    sec_uid = (
-        normalize_text(payload.get("sec_uid"))
-        or normalize_text(author.get("sec_uid"))
-        or normalize_text(source_author.get("sec_uid"))
+    author_platform_id = (
+        normalize_text(payload.get("author_platform_id"))
+        or normalize_text(author.get("author_platform_id"))
+        or normalize_text(source_author.get("author_platform_id"))
+    )
+
+    xhs_user_id = (
+        normalize_text(payload.get("xhs_user_id"))
+        or normalize_text(author.get("xhs_user_id"))
+        or normalize_text(source_author.get("xhs_user_id"))
+    )
+    xhs_sec_token = (
+        normalize_text(payload.get("xhs_sec_token"))
+        or normalize_text(author.get("xhs_sec_token"))
+        or normalize_text(source_author.get("xhs_sec_token"))
+    )
+
+    douyin_sec_uid = (
+        normalize_text(payload.get("douyin_sec_uid"))
+        or normalize_text(author.get("douyin_sec_uid"))
+        or normalize_text(source_author.get("douyin_sec_uid"))
+    )
+    douyin_aweme_author_id = (
+        normalize_text(payload.get("douyin_aweme_author_id"))
+        or normalize_text(author.get("douyin_aweme_author_id"))
+        or normalize_text(source_author.get("douyin_aweme_author_id"))
     )
 
     return {
         "nickname": nickname,
-        "unique_id": unique_id,
-        "sec_uid": sec_uid,
+        "author_handle": author_handle,
+        "author_platform_id": author_platform_id,
+        "xhs_user_id": xhs_user_id,
+        "xhs_sec_token": xhs_sec_token,
+        "douyin_sec_uid": douyin_sec_uid,
+        "douyin_aweme_author_id": douyin_aweme_author_id,
     }
 
 
@@ -252,7 +280,7 @@ def _pick_author_slug(payload: Dict[str, Any], author_hint: Optional[str] = None
     base = normalize_text(author_hint)
     if not base:
         author = _extract_author(payload)
-        base = author["nickname"] or author["unique_id"] or author["sec_uid"] or "作者"
+        base = author["nickname"] or author["author_handle"] or author["author_platform_id"] or "作者"
     slug = _clip_with_min(base, min_len=2, max_len=18, fallback="作者")
     return slug if len(slug) >= 2 else "作者"
 
@@ -384,8 +412,12 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
         "platform": platform,
         "platform_work_id": platform_work_id,
         "author": author.get("nickname") or "",
-        "unique_id": author.get("unique_id") or "",
-        "sec_uid": author.get("sec_uid") or "",
+        "author_handle": author.get("author_handle") or "",
+        "author_platform_id": author.get("author_platform_id") or "",
+        "xhs_user_id": author.get("xhs_user_id") or "",
+        "xhs_sec_token": author.get("xhs_sec_token") or "",
+        "douyin_sec_uid": author.get("douyin_sec_uid") or "",
+        "douyin_aweme_author_id": author.get("douyin_aweme_author_id") or "",
         "share_url": share_url,
         "source_url": source_url,
         "cover_image": cover_image,
@@ -786,7 +818,7 @@ def _render_markdown(
     fields: Dict[str, Any],
     generated_at: str,
 ) -> str:
-    author_name = fields.get("author") or fields.get("unique_id") or fields.get("sec_uid") or "未知作者"
+    author_name = fields.get("author") or fields.get("author_handle") or fields.get("author_platform_id") or "未知作者"
     title = fields.get("title") or "（标题缺失）"
     metrics_line = (
         f"赞 {fields['digg_count']} / 评 {fields['comment_count']} / "
@@ -806,8 +838,12 @@ def _render_markdown(
         "title": fields.get("title"),
         "platform_work_id": fields.get("platform_work_id"),
         "author": fields.get("author"),
-        "unique_id": fields.get("unique_id"),
-        "sec_uid": fields.get("sec_uid"),
+        "author_handle": fields.get("author_handle"),
+        "author_platform_id": fields.get("author_platform_id"),
+        "xhs_user_id": fields.get("xhs_user_id"),
+        "xhs_sec_token": fields.get("xhs_sec_token"),
+        "douyin_sec_uid": fields.get("douyin_sec_uid"),
+        "douyin_aweme_author_id": fields.get("douyin_aweme_author_id"),
         "share_url": fields.get("share_url"),
         "source_url": fields.get("source_url"),
         "cover_image": fields.get("cover_image"),

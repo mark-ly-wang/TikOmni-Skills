@@ -34,7 +34,14 @@ def _author_hint(payload: Dict[str, Any], fallback: str) -> str:
         return fallback
     author = payload.get("author")
     if isinstance(author, dict):
-        for key in ("nickname", "unique_id", "sec_uid"):
+        for key in (
+            "nickname",
+            "author_handle",
+            "author_platform_id",
+            "xhs_user_id",
+            "douyin_aweme_author_id",
+            "douyin_sec_uid",
+        ):
             text = normalize_text(author.get(key))
             if text:
                 return text

@@ -50,6 +50,101 @@ def _check_import(module_name: str) -> Dict[str, Any]:
         return {"ok": False, "error": f"{type(error).__name__}: {error}"}
 
 
+def _check_card_frontmatter_generic_keys() -> Dict[str, Any]:
+    try:
+        from scripts.writers.write_benchmark_card import _extract_required_fields, _render_markdown
+
+        payload = {
+            "title": "测试标题",
+            "author": {"nickname": "测试作者"},
+            "share_url": "https://example.com/share",
+            "xhs_user_id": "xhs_uid_123",
+            "xhs_sec_token": "xhs_sec_123",
+            "douyin_sec_uid": "dy_sec_123",
+            "douyin_aweme_author_id": "dy_author_123",
+        }
+        fields = _extract_required_fields(payload, platform="xiaohongshu")
+        markdown = _render_markdown(
+            card_id="smoke-card",
+            card_type="work",
+            fields=fields,
+            generated_at="2026-03-05T00:00:00",
+        )
+
+        frontmatter = ""
+        parts = markdown.split("---")
+        if len(parts) >= 3:
+            frontmatter = parts[1]
+
+        hidden_keys = [
+            "xhs_user_id",
+            "xhs_sec_token",
+            "douyin_sec_uid",
+            "douyin_aweme_author_id",
+        ]
+        leaked_keys = [key for key in hidden_keys if f"\n{key}:" in f"\n{frontmatter}"]
+        payload_keys_kept = [key for key in hidden_keys if bool(fields.get(key))]
+
+        ok = (not leaked_keys) and (len(payload_keys_kept) == len(hidden_keys))
+        return {
+            "ok": ok,
+            "leaked_frontmatter_keys": leaked_keys,
+            "required_fields_keys_kept": payload_keys_kept,
+        }
+    except Exception as error:
+        return {"ok": False, "error": f"{type(error).__name__}: {error}"}
+
+
+def _check_xhs_create_time_sec_parsing() -> Dict[str, Any]:
+    try:
+        from scripts.platform.xiaohongshu.run_xiaohongshu_extract import _extract_xhs_metadata
+
+        cases = [
+            ({"create_time_sec": 1700000000}, 1700000000, "root_sec"),
+            ({"create_time": 1700000000123}, 1700000000, "root_ms"),
+            ({"note": {"time": "1700000001"}}, 1700000001, "note_time_str"),
+            ({"note_list": [{"publish_time": 1700000000456}]}, 1700000000, "note_list_publish_ms"),
+        ]
+
+        case_results: List[Dict[str, Any]] = []
+        all_ok = True
+        for payload, expected, label in cases:
+            metadata = _extract_xhs_metadata(
+                payload=payload,
+                source_input={"share_text": None, "note_id": None},
+                selected_video_url=None,
+                selected_image_urls=[],
+            )
+            actual = metadata.get("create_time_sec")
+            ok = actual == expected
+            all_ok = all_ok and ok
+            case_results.append({"label": label, "expected": expected, "actual": actual, "ok": ok})
+
+        return {"ok": all_ok, "cases": case_results}
+    except Exception as error:
+        return {"ok": False, "error": f"{type(error).__name__}: {error}"}
+
+
+def _check_publish_time_text_render() -> Dict[str, Any]:
+    try:
+        from scripts.writers.write_benchmark_card import _extract_required_fields
+
+        fields = _extract_required_fields(
+            {
+                "title": "publish_time test",
+                "create_time_sec": 1700000000,
+                "publish_time": 1700000000,
+            },
+            platform="douyin",
+        )
+        text = str(fields.get("publish_time_text") or "")
+        source = str(fields.get("publish_time_source") or "")
+        ok = bool(text and text != "未知" and source)
+        return {"ok": ok, "publish_time_text": text, "publish_time_source": source}
+    except Exception as error:
+        return {"ok": False, "error": f"{type(error).__name__}: {error}"}
+
+
 def run_checks() -> Dict[str, Any]:
     root = _repo_root()
     py = sys.executable
@@ -194,6 +289,18 @@ def run_checks() -> Dict[str, Any]:
         "semantic_validation": {"ok": semantic_ok, **semantic_detail},
     }
     all_ok = all_ok and bool(schema_import.get("ok") and semantic_ok)
+
+    card_frontmatter_check = _check_card_frontmatter_generic_keys()
+    checks["writers/write_benchmark_card.py::frontmatter_generic_keys"] = card_frontmatter_check
+    all_ok = all_ok and bool(card_frontmatter_check.get("ok"))
+
+    xhs_time_check = _check_xhs_create_time_sec_parsing()
+    checks["platform/xiaohongshu/run_xiaohongshu_extract.py::create_time_sec"] = xhs_time_check
+    all_ok = all_ok and bool(xhs_time_check.get("ok"))
+
+    publish_time_render_check = _check_publish_time_text_render()
+    checks["writers/write_benchmark_card.py::publish_time_text"] = publish_time_render_check
+    all_ok = all_ok and bool(publish_time_render_check.get("ok"))
 
     return {"ok": all_ok, "checks": checks}
 

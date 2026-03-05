@@ -8,6 +8,24 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
+
+def _coerce_unix_sec(value: Any) -> int:
+    try:
+        if value is None:
+            return 0
+        if isinstance(value, (int, float)):
+            parsed = int(value)
+        else:
+            text = str(value).strip()
+            if not text:
+                return 0
+            parsed = int(float(text))
+        if parsed > 1_000_000_000_000:
+            parsed //= 1000
+        return parsed if parsed > 0 else 0
+    except Exception:
+        return 0
+
 from scripts.writers.write_benchmark_card import write_benchmark_card
 
 
@@ -15,9 +33,11 @@ def _work_payload(work: Dict[str, Any], profile: Dict[str, Any], analysis_text: 
     metrics = work.get("metrics") if isinstance(work.get("metrics"), dict) else {}
     author = {
         "nickname": profile.get("nickname"),
-        "author_platform_id": profile.get("platform_author_id"),
-        "author_handle": profile.get("nickname") or profile.get("platform_author_id"),
+        "author_platform_id": profile.get("author_platform_id") or profile.get("platform_author_id"),
+        "author_handle": profile.get("author_handle") or "",
     }
+    publish_time = work.get("publish_time")
+    create_time_sec = _coerce_unix_sec(publish_time)
     return {
         "content_kind": "author_home",
         "platform_work_id": work.get("platform_work_id"),
@@ -29,6 +49,9 @@ def _work_payload(work: Dict[str, Any], profile: Dict[str, Any], analysis_text: 
         "author": author,
         "author_handle": author.get("author_handle"),
         "author_platform_id": author.get("author_platform_id"),
+        "publish_time": publish_time,
+        "publish_time_source": "author_home.work.publish_time",
+        "create_time_sec": create_time_sec,
         "digg_count": int(metrics.get("like", 0) or 0),
         "comment_count": int(metrics.get("comment", 0) or 0),
         "collect_count": int(metrics.get("collect", 0) or 0),
@@ -98,11 +121,11 @@ def build_author_card(
         ],
         "author": {
             "nickname": profile.get("nickname"),
-            "author_platform_id": profile.get("platform_author_id"),
-            "author_handle": profile.get("nickname") or profile.get("platform_author_id"),
+            "author_platform_id": profile.get("author_platform_id") or profile.get("platform_author_id"),
+            "author_handle": profile.get("author_handle") or "",
         },
-        "author_handle": profile.get("nickname") or profile.get("platform_author_id"),
-        "author_platform_id": profile.get("platform_author_id"),
+        "author_handle": profile.get("author_handle") or "",
+        "author_platform_id": profile.get("author_platform_id") or profile.get("platform_author_id"),
         "digg_count": int(profile.get("liked_count", 0) or 0),
         "collect_count": int(profile.get("collected_count", 0) or 0),
         "play_count": 0,

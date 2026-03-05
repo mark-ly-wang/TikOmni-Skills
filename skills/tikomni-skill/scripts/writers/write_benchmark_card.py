@@ -21,6 +21,11 @@ import unicodedata
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+try:
+    from zoneinfo import ZoneInfo
+except Exception:  # pragma: no cover - py<3.9 fallback
+    ZoneInfo = None
+
 from scripts.core.analysis_pipeline import DEFAULT_MODULE_SECTIONS, build_analysis_sections
 from scripts.core.storage_router import build_card_output_path, normalize_card_type, resolve_effective_card_type
 from scripts.core.tikomni_common import normalize_text, read_json_file, write_json_stdout
@@ -67,6 +72,60 @@ def _safe_int(value: Any, default: int = 0) -> int:
         if text.isdigit() or (text.startswith("-") and text[1:].isdigit()):
             return int(text)
     return default
+
+
+def _to_unix_sec(value: Any) -> int:
+    if value is None:
+        return 0
+    parsed = _safe_int(value, default=0)
+    if parsed <= 0:
+        return 0
+    if parsed > 1_000_000_000_000:
+        parsed //= 1000
+    return parsed
+
+
+def _format_shanghai_datetime(value: Any) -> str:
+    ts = _to_unix_sec(value)
+    if ts <= 0:
+        return ""
+    try:
+        if ZoneInfo is not None:
+            dt_obj = dt.datetime.fromtimestamp(ts, tz=ZoneInfo("Asia/Shanghai"))
+        else:
+            dt_obj = dt.datetime.fromtimestamp(ts, tz=dt.timezone(dt.timedelta(hours=8)))
+        return dt_obj.strftime("%Y-%m-%d %H:%M:%S")
+    except Exception:
+        return ""
+
+
+def _resolve_publish_time(payload: Dict[str, Any], create_time_sec: int) -> Dict[str, str]:
+    publish_time_text = normalize_text(payload.get("publish_time_text"))
+    if publish_time_text:
+        return {"publish_time_text": publish_time_text, "publish_time_source": "payload.publish_time_text"}
+
+    source = _source_dict(payload)
+    candidates = [
+        ("payload.publish_time", payload.get("publish_time")),
+        ("payload.create_time", payload.get("create_time")),
+        ("source.publish_time", source.get("publish_time")),
+        ("source.create_time", source.get("create_time")),
+        ("source.time", source.get("time")),
+    ]
+    for source_key, raw in candidates:
+        text = normalize_text(raw)
+        if not text:
+            continue
+        ts_text = _format_shanghai_datetime(raw)
+        if ts_text:
+            return {"publish_time_text": ts_text, "publish_time_source": source_key}
+        return {"publish_time_text": text, "publish_time_source": source_key}
+
+    fallback_text = _format_shanghai_datetime(create_time_sec)
+    if fallback_text:
+        return {"publish_time_text": fallback_text, "publish_time_source": "create_time_sec"}
+
+    return {"publish_time_text": "未知", "publish_time_source": "unknown"}
 
 
 def _source_dict(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -372,11 +431,11 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
         ["video_down_url", "selected_video_url", "original_video_url", "video_url", "download_url"],
     )
 
-    create_time_sec = _safe_int(payload.get("create_time_sec"), default=0)
+    create_time_sec = _to_unix_sec(payload.get("create_time_sec"))
     if create_time_sec <= 0:
-        create_time_sec = _safe_int(payload.get("create_time"), default=0)
+        create_time_sec = _to_unix_sec(payload.get("create_time"))
     if create_time_sec <= 0:
-        create_time_sec = _safe_int(_source_dict(payload).get("create_time"), default=0)
+        create_time_sec = _to_unix_sec(_source_dict(payload).get("create_time"))
 
     digg_count = _safe_int(payload.get("digg_count"), default=0)
     comment_count = _safe_int(payload.get("comment_count"), default=0)
@@ -407,6 +466,8 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
     if not caption_status:
         caption_status = "missing" if not raw_content else "ready"
 
+    publish_time_info = _resolve_publish_time(payload, create_time_sec)
+
     return {
         "title": title,
         "platform": platform,
@@ -423,6 +484,8 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
         "cover_image": cover_image,
         "video_down_url": video_down_url,
         "create_time_sec": create_time_sec,
+        "publish_time_text": publish_time_info.get("publish_time_text", "未知"),
+        "publish_time_source": publish_time_info.get("publish_time_source", "unknown"),
         "duration_ms": duration_ms,
         "digg_count": digg_count,
         "comment_count": comment_count,
@@ -446,13 +509,12 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
 
 
 def _format_create_time(create_time_sec: int) -> str:
+    text = _format_shanghai_datetime(create_time_sec)
+    if text:
+        return text
     if create_time_sec <= 0:
         return "未知"
-    try:
-        ts = dt.datetime.fromtimestamp(create_time_sec)
-        return ts.strftime("%Y-%m-%d %H:%M:%S")
-    except Exception:
-        return str(create_time_sec)
+    return str(create_time_sec)
 
 
 def _format_duration(duration_ms: int) -> str:
@@ -840,15 +902,13 @@ def _render_markdown(
         "author": fields.get("author"),
         "author_handle": fields.get("author_handle"),
         "author_platform_id": fields.get("author_platform_id"),
-        "xhs_user_id": fields.get("xhs_user_id"),
-        "xhs_sec_token": fields.get("xhs_sec_token"),
-        "douyin_sec_uid": fields.get("douyin_sec_uid"),
-        "douyin_aweme_author_id": fields.get("douyin_aweme_author_id"),
         "share_url": fields.get("share_url"),
         "source_url": fields.get("source_url"),
         "cover_image": fields.get("cover_image"),
         "video_down_url": fields.get("video_down_url"),
         "create_time_sec": fields.get("create_time_sec"),
+        "publish_time_text": fields.get("publish_time_text"),
+        "publish_time_source": fields.get("publish_time_source"),
         "duration_ms": fields.get("duration_ms"),
         "digg_count": fields.get("digg_count"),
         "comment_count": fields.get("comment_count"),
@@ -871,7 +931,7 @@ def _render_markdown(
         "## 基础信息",
         f"- 作者：{author_name}",
         f"- 标题：{title}",
-        f"- 发布时间：{_format_create_time(fields.get('create_time_sec', 0))}",
+        f"- 发布时间：{fields.get('publish_time_text') or _format_create_time(fields.get('create_time_sec', 0))}",
         f"- 视频时长：{_format_duration(fields.get('duration_ms', 0))}",
         f"- 互动：{metrics_line}",
         f"- 链接：{fields.get('share_url') or '（未提供）'}",

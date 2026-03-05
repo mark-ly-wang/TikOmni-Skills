@@ -1,6 +1,6 @@
 # bilibili API Catalog
 
-- operation_count: 38
+- operation_count: 41
 
 | Method | Path | Summary | Required Params | Optional Params | Suggested Intent | Tags |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -20,6 +20,8 @@
 | GET | /api/u1/v1/bilibili/web/fetch_collect_folders | 获取用户所有收藏夹信息/Get user collection folders | header:authorization, query:uid | - | other | Bilibili-Web-API |
 | GET | /api/u1/v1/bilibili/web/fetch_com_popular | 获取综合热门视频信息/Get comprehensive popular video information | header:authorization | query:pn | other | Bilibili-Web-API |
 | GET | /api/u1/v1/bilibili/web/fetch_comment_reply | 获取视频下指定评论的回复/Get reply to the specified comment | header:authorization, query:bv_id, query:rpid | query:pn | comments | Bilibili-Web-API |
+| GET | /api/u1/v1/bilibili/web/fetch_dynamic_detail | 获取动态详情/Get dynamic detail | header:authorization, query:dynamic_id | - | single_post | Bilibili-Web-API |
+| GET | /api/u1/v1/bilibili/web/fetch_dynamic_detail_v2 | 获取动态详情v2/Get dynamic detail v2 | header:authorization, query:dynamic_id | - | single_post | Bilibili-Web-API |
 | GET | /api/u1/v1/bilibili/web/fetch_general_search | 获取综合搜索信息/Get general search data | header:authorization, query:keyword, query:order, query:page, query:page_size | query:duration, query:pubtime_begin_s, query:pubtime_end_s | search | Bilibili-Web-API |
 | GET | /api/u1/v1/bilibili/web/fetch_get_user_id | 提取用户ID/Extract user ID | header:authorization, query:share_link | - | other | Bilibili-Web-API |
 | GET | /api/u1/v1/bilibili/web/fetch_hot_search | 获取热门搜索信息/Get hot search data | header:authorization, query:limit | - | search | Bilibili-Web-API |
@@ -41,5 +43,6 @@
 | GET | /api/u1/v1/bilibili/web/fetch_video_parts | 通过bv号获得视频分p信息/Get Video Parts By bvid | header:authorization, query:bv_id | - | other | Bilibili-Web-API |
 | GET | /api/u1/v1/bilibili/web/fetch_video_play_info | 获取单个视频播放信息/Get single video play info | header:authorization, query:url | - | other | Bilibili-Web-API |
 | GET | /api/u1/v1/bilibili/web/fetch_video_playurl | 获取视频流地址/Get video playurl | header:authorization, query:bv_id, query:cid | - | other | Bilibili-Web-API |
+| GET | /api/u1/v1/bilibili/web/fetch_video_subtitle | 获取视频字幕信息/Get video subtitle info | header:authorization, query:a_id, query:c_id | - | asr_transcription | Bilibili-Web-API |
 | POST | /api/u1/v1/bilibili/web/fetch_vip_video_playurl | 获取大会员清晰度视频流地址/Get VIP video playurl | header:authorization, body:bv_id, body:cid, body:cookie | - | other | Bilibili-Web-API |
 

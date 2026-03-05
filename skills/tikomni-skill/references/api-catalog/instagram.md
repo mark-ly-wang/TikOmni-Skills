@@ -1,6 +1,6 @@
 # instagram API Catalog
 
-- operation_count: 56
+- operation_count: 82
 
 | Method | Path | Summary | Required Params | Optional Params | Suggested Intent | Tags |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -60,4 +60,30 @@
 | GET | /api/u1/v1/instagram/v2/search_users | 搜索用户/Search users | header:authorization, query:keyword | - | search | Instagram-V2-API |
 | GET | /api/u1/v1/instagram/v2/shortcode_to_media_id | Shortcode转Media ID/Convert shortcode to media ID | header:authorization, query:shortcode | - | other | Instagram-V2-API |
 | GET | /api/u1/v1/instagram/v2/user_id_to_username | 用户ID转用户信息/Get user info by user ID | header:authorization, query:user_id | - | other | Instagram-V2-API |
+| GET | /api/u1/v1/instagram/v3/bulk_translate_comments | 批量翻译评论/Bulk translate comments | header:authorization, query:comment_ids | - | comments | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/general_search | 综合搜索（支持分页）/General search (with pagination) | header:authorization, query:query | query:next_max_id, query:rank_token, query:enable_metadata | search | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_comment_replies | 获取评论的子评论/回复/Get comment replies | header:authorization, query:comment_id | query:media_id, query:code, query:url, query:min_id | comments | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_explore | 获取探索页推荐帖子/Get explore feed | header:authorization | query:max_id | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_highlight_stories | 获取Highlight精选详情/Get highlight stories | header:authorization, query:highlight_id | query:reel_ids | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_location_info | 获取地点详情/Get location info | header:authorization, query:location_id | query:show_nearby | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_location_posts | 获取地点相关帖子/Get location posts | header:authorization, query:location_id | query:tab, query:page_size_override | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_post_comments | 获取帖子评论/Get post comments | header:authorization | query:media_id, query:code, query:url, query:min_id, query:sort_order | comments | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_post_info | 获取帖子详情/Get post info (media_id or URL) | header:authorization | query:media_id, query:url | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_post_info_by_code | 获取帖子详情(code)/Get post info by shortcode | header:authorization | query:code, query:url | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_post_oembed | 获取帖子oEmbed内嵌信息/Get post oEmbed info | header:authorization, query:url | query:hidecaption, query:maxwidth | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_recommended_reels | 获取Reels推荐列表/Get recommended Reels feed | header:authorization | query:first, query:after | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_user_about | 获取用户账户简介/Get user about info | header:authorization | query:user_id, query:username | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_user_brief | 获取用户短详情/Get user brief info | header:authorization, query:user_id, query:username | - | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_user_followers | 获取用户粉丝列表/Get user followers list | header:authorization | query:user_id, query:username, query:count, query:max_id | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_user_following | 获取用户关注列表/Get user following list | header:authorization | query:user_id, query:username, query:count, query:max_id | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_user_highlights | 获取用户精选Highlights列表/Get user highlights | header:authorization | query:user_id, query:username, query:first, query:after | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_user_posts | 获取用户帖子列表/Get user posts | header:authorization | query:username, query:user_id, query:first, query:after | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_user_profile | 获取用户信息/Get user profile | header:authorization | query:user_id, query:username | author_profile | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_user_reels | 获取用户Reels列表/Get user reels | header:authorization | query:user_id, query:username, query:first, query:after | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_user_stories | 获取用户Stories（快拍）/Get user stories | header:authorization | query:user_id, query:username, query:reel_ids | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/get_user_tagged_posts | 获取用户被标记的帖子/Get user tagged posts | header:authorization | query:user_id, query:username, query:first, query:after | other | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/search_hashtags | 搜索话题标签/Search hashtags | header:authorization, query:query | - | search | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/search_places | 搜索地点/Search places | header:authorization, query:query | - | search | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/search_users | 搜索用户/Search users | header:authorization, query:query | - | search | Instagram-V3-API |
+| GET | /api/u1/v1/instagram/v3/translate_comment | 翻译评论/帖子文本/Translate comment or caption | header:authorization, query:comment_id | - | comments | Instagram-V3-API |
 

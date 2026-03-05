@@ -349,7 +349,7 @@ def collect_xhs_author_home_raw(
             token=token,
             method="GET",
             timeout_ms=timeout_ms,
-            params={"share_url": input_value, "url": input_value},
+            params={"share_link": input_value, "share_url": input_value, "url": input_value},
         )
         trace.append(
             build_api_trace(

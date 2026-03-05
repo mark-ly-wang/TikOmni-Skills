@@ -89,6 +89,11 @@ def validate_author_profile(payload: Dict[str, Any]) -> List[Dict[str, str]]:
             missing.append({"field": key, "reason": "type_error:bool"})
         elif expected is str and not isinstance(value, str):
             missing.append({"field": key, "reason": "type_error:str"})
+
+    for key in ("platform", "platform_author_id", "nickname"):
+        value = payload.get(key)
+        if isinstance(value, str) and not value.strip():
+            missing.append({"field": key, "reason": "empty_value"})
     return missing
 
 
@@ -116,7 +121,20 @@ def validate_work_item(payload: Dict[str, Any]) -> List[Dict[str, str]]:
             continue
         if not isinstance(payload.get(key), expected):
             missing.append({"field": key, "reason": f"type_error:{expected.__name__}"})
+
+    for key in ("platform", "platform_work_id", "platform_author_id", "title"):
+        value = payload.get(key)
+        if isinstance(value, str) and not value.strip():
+            missing.append({"field": key, "reason": "empty_value"})
     return missing
+
+
+def validate_works_collection(works: Any) -> List[Dict[str, str]]:
+    if not isinstance(works, list):
+        return [{"field": "works", "reason": "type_error:list"}]
+    if not works:
+        return [{"field": "works", "reason": "empty_collection"}]
+    return []
 
 
 def build_author_profile(**kwargs: Any) -> Dict[str, Any]:

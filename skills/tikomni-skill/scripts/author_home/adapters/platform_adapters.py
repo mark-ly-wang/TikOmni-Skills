@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
-from scripts.author_home.schema import build_author_profile, build_work_item, validate_author_profile, validate_work_item
+from scripts.author_home.schema import build_author_profile, build_work_item, validate_author_profile, validate_work_item, validate_works_collection
 from scripts.core.tikomni_common import deep_find_first
 
 
@@ -84,6 +84,7 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
         missing.extend(validate_work_item(work))
         works.append(work)
 
+    missing.extend(validate_works_collection(works))
     return profile, works, missing
 
 
@@ -140,4 +141,5 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
         missing.extend(validate_work_item(work))
         works.append(work)
 
+    missing.extend(validate_works_collection(works))
     return profile, works, missing

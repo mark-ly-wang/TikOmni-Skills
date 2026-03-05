@@ -127,17 +127,103 @@ def _mock_xhs_collector(**_: Any) -> Dict[str, Any]:
     }
 
 
-def _assert_result(name: str, result: Dict[str, Any]) -> Dict[str, Any]:
+def _mock_douyin_empty_collector(**_: Any) -> Dict[str, Any]:
+    return {
+        "platform": "douyin",
+        "resolved_author_id": "",
+        "profile_response": {
+            "ok": True,
+            "request_id": "mock-empty-request",
+            "data": {
+                "nickname": "",
+                "sec_user_id": "",
+                "ip_location": "",
+                "follower_count": 0,
+                "total_favorited": 0,
+                "collect_count": 0,
+                "signature": "",
+                "avatar_url": "",
+                "aweme_count": 0,
+                "verified": False,
+            },
+        },
+        "works": [],
+        "pagination": {
+            "sort": "latest",
+            "sort_type": 0,
+            "cursor_mode": "max_cursor",
+            "pages": [{"page": 1, "cursor_in": 0, "cursor_out": 0, "has_more": 0, "items": 0}],
+            "total_collected": 0,
+            "max_items": 200,
+        },
+        "extract_trace": [
+            {"step": "mock.douyin.collect.error", "ok": False, "request_id": "mock-empty-request", "error_reason": "resolve_failed"}
+        ],
+        "request_id": "mock-empty-request",
+    }
+
+
+def _has_reason(missing_fields: List[Dict[str, Any]], *, reason: str, field: str = "") -> bool:
+    for item in missing_fields:
+        if not isinstance(item, dict):
+            continue
+        if item.get("reason") != reason:
+            continue
+        if field and item.get("field") != field:
+            continue
+        return True
+    return False
+
+
+def _assert_result(name: str, result: Dict[str, Any], expected_request_id: str) -> Dict[str, Any]:
     works = result.get("works") if isinstance(result.get("works"), list) else []
     checkpoint = result.get("checkpoint") if isinstance(result.get("checkpoint"), dict) else {}
-    ok = len(works) == 200 and int(checkpoint.get("max_items") or 0) == 200
+    missing_fields = result.get("missing_fields") if isinstance(result.get("missing_fields"), list) else []
+    fallback_trace = result.get("fallback_trace") if isinstance(result.get("fallback_trace"), list) else []
+    ok = (
+        len(works) == 200
+        and int(checkpoint.get("max_items") or 0) == 200
+        and result.get("request_id") == expected_request_id
+        and not _has_reason(missing_fields, reason="empty_collection", field="works")
+        and isinstance(fallback_trace, list)
+    )
     return {
         "name": name,
         "ok": ok,
         "works": len(works),
         "max_items": checkpoint.get("max_items"),
         "cursor_mode": checkpoint.get("cursor_mode"),
+        "request_id": result.get("request_id"),
+        "fallback_steps": len(fallback_trace),
         "summary": result.get("summary"),
+    }
+
+
+def _assert_semantic_empty_result(name: str, result: Dict[str, Any], expected_request_id: str) -> Dict[str, Any]:
+    works = result.get("works") if isinstance(result.get("works"), list) else []
+    missing_fields = result.get("missing_fields") if isinstance(result.get("missing_fields"), list) else []
+    fallback_trace = result.get("fallback_trace") if isinstance(result.get("fallback_trace"), list) else []
+    has_empty_collection = _has_reason(missing_fields, reason="empty_collection", field="works")
+    has_empty_author_id = _has_reason(missing_fields, reason="empty_value", field="platform_author_id")
+    has_empty_nickname = _has_reason(missing_fields, reason="empty_value", field="nickname")
+    fallback_has_failure = any(isinstance(step, dict) and not step.get("ok", True) for step in fallback_trace)
+    ok = (
+        len(works) == 0
+        and has_empty_collection
+        and has_empty_author_id
+        and has_empty_nickname
+        and fallback_has_failure
+        and result.get("request_id") == expected_request_id
+    )
+    return {
+        "name": name,
+        "ok": ok,
+        "works": len(works),
+        "request_id": result.get("request_id"),
+        "fallback_steps": len(fallback_trace),
+        "has_empty_collection": has_empty_collection,
+        "has_empty_author_id": has_empty_author_id,
+        "has_empty_nickname": has_empty_nickname,
     }
 
 
@@ -160,8 +246,21 @@ def main() -> None:
         write_card=False,
         collector_override=_mock_xhs_collector,
     )
+    dy_empty = run_author_home_analysis(
+        platform="douyin",
+        input_value="mock://douyin-empty",
+        base_url="https://api.tikomni.com",
+        token="mock-token",
+        timeout_ms=1000,
+        write_card=False,
+        collector_override=_mock_douyin_empty_collector,
+    )
 
-    checks = [_assert_result("douyin", dy), _assert_result("xiaohongshu", xhs)]
+    checks = [
+        _assert_result("douyin", dy, "mock-dy-request"),
+        _assert_result("xiaohongshu", xhs, "mock-xhs-request"),
+        _assert_semantic_empty_result("douyin-empty", dy_empty, "mock-empty-request"),
+    ]
     output = {
         "ok": all(item.get("ok") for item in checks),
         "checks": checks,

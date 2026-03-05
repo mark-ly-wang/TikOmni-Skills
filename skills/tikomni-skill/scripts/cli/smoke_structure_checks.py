@@ -130,6 +130,71 @@ def run_checks() -> Dict[str, Any]:
         "resolve": {"ok": resolve_ok, **resolve_detail},
     }
 
+    schema_import = _check_import("scripts.author_home.schema")
+    semantic_ok = False
+    semantic_detail: Dict[str, Any] = {}
+    if schema_import.get("ok"):
+        from scripts.author_home.schema import validate_author_profile, validate_work_item, validate_works_collection
+
+        profile_errors = validate_author_profile(
+            {
+                "platform": "douyin",
+                "platform_author_id": "",
+                "nickname": "",
+                "ip_location": "",
+                "fans_count": 0,
+                "liked_count": 0,
+                "collected_count": 0,
+                "signature": "",
+                "avatar_url": "",
+                "works_count": 0,
+                "verified": False,
+                "snapshot_at": "2026-03-05T00:00:00",
+            }
+        )
+        work_errors = validate_work_item(
+            {
+                "platform": "douyin",
+                "platform_work_id": "",
+                "platform_author_id": "",
+                "title": "",
+                "desc": "",
+                "publish_time": "",
+                "content_type": "video",
+                "duration_ms": 0,
+                "tags": [],
+                "metrics": {},
+                "cover_image": "",
+                "source_url": "",
+                "share_url": "",
+                "raw_ref": {},
+            }
+        )
+        collection_errors = validate_works_collection([])
+
+        has_profile_empty = any(
+            isinstance(item, dict) and item.get("field") == "platform_author_id" and item.get("reason") == "empty_value" for item in profile_errors
+        )
+        has_work_empty = any(
+            isinstance(item, dict) and item.get("field") == "platform_work_id" and item.get("reason") == "empty_value" for item in work_errors
+        )
+        has_empty_collection = any(
+            isinstance(item, dict) and item.get("field") == "works" and item.get("reason") == "empty_collection" for item in collection_errors
+        )
+        semantic_ok = bool(has_profile_empty and has_work_empty and has_empty_collection)
+        semantic_detail = {
+            "profile_empty_value": has_profile_empty,
+            "work_empty_value": has_work_empty,
+            "works_empty_collection": has_empty_collection,
+        }
+
+    checks["author_home/schema.py"] = {
+        "ok": bool(schema_import.get("ok") and semantic_ok),
+        "import": schema_import,
+        "semantic_validation": {"ok": semantic_ok, **semantic_detail},
+    }
+    all_ok = all_ok and bool(schema_import.get("ok") and semantic_ok)
+
     return {"ok": all_ok, "checks": checks}
 
 

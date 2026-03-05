@@ -224,7 +224,7 @@ def main() -> None:
     parser.add_argument("--page-size", type=int, default=20, help="Homepage fetch page size (capped to 20)")
     parser.add_argument("--pages-max", type=int, default=50, help="Homepage max pagination rounds")
     parser.add_argument("--max-items", type=int, default=200, help="Homepage total item cap (hard max 200)")
-    parser.add_argument("--asr-batch-size", type=int, default=20, help="Author-home ASR batch size")
+    parser.add_argument("--asr-batch-size", type=int, default=None, help="Author-home ASR batch submit size (default from config, hard max 100)")
     parser.add_argument("--checkpoint-json", default=None, help="Author-home checkpoint JSON for resume")
     parser.add_argument("--persist-output", dest="persist_output", action="store_true", help="Persist workflow JSON artifact to TIKOMNI_OUTPUT_ROOT (default on)")
     parser.add_argument("--no-persist-output", dest="persist_output", action="store_false", help="Disable workflow artifact persistence globally")
@@ -277,6 +277,11 @@ def main() -> None:
         if args.xhs_u2_submit_backoff_ms is not None
         else config_get(config, "asr_strategy.submit_retry.xiaohongshu_note.backoff_ms", 0)
     )
+    asr_batch_size = (
+        args.asr_batch_size
+        if args.asr_batch_size is not None
+        else config_get(config, "asr_strategy.author_home.batch_submit_size", 50)
+    )
 
     platform = args.platform
     if platform == "auto":
@@ -327,7 +332,7 @@ def main() -> None:
         "page_size": int(args.page_size),
         "pages_max": int(args.pages_max),
         "max_items": int(args.max_items),
-        "asr_batch_size": int(args.asr_batch_size),
+        "asr_batch_size": int(asr_batch_size),
         "checkpoint": checkpoint_payload,
     }
 

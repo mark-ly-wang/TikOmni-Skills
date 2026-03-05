@@ -80,6 +80,8 @@ asr_strategy:
   u2_timeout_retry:
     enabled: true
     max_retries: 3
+  author_home:
+    batch_submit_size: 50
 
 prompt_contracts:
   asr_clean: prompt-contracts/asr-clean.md@v1

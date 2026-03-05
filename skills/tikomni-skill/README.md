@@ -33,7 +33,9 @@
 - Author-home ASR supports:
   - checkpoint resume (`checkpoint.completed_work_ids`)
   - idempotent dedupe by `platform_work_id`
-  - batch refill for failed U2 items
+  - U2 batch submit (`file_urls`) with configurable size (default 50, hard max 100)
+  - batch submit/poll mapping by `file_url`, with single-item fallback for unmapped/failed results
+  - batch-level trace events (`submitted/completed/mapped/unmapped/fallback`)
 
 ## Entry
 Use `scripts/cli/run_tikomni_extract.py` with `--content-kind author_home` for homepage flows.

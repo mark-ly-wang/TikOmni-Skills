@@ -70,6 +70,9 @@ BUILTIN_DEFAULT_CONFIG: Dict[str, Any] = {
             "enabled": True,
             "max_retries": 3,
         },
+        "author_home": {
+            "batch_submit_size": 50,
+        },
     },
 }
 

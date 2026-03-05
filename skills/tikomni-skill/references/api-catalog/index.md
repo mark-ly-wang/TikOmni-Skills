@@ -1,7 +1,7 @@
 # Tikomni API Catalog Index
 
 - generated_at: 2026-03-05T09:25:38.034Z
-- source_openapi: `tikomni-openapi.latest.json`
+- source_openapi: `https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
 - total_operations: 989
 
 ## Platforms

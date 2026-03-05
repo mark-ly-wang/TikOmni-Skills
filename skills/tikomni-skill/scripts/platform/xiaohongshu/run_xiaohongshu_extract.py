@@ -257,20 +257,97 @@ def _pick_text_from_paths(payload: Any, paths: List[List[str]]) -> str:
     return ""
 
 
-def _pick_int_from_paths(payload: Any, paths: List[List[str]]) -> Optional[int]:
-    for path in paths:
-        value = deep_find_first(payload, path)
-        if isinstance(value, bool):
-            return int(value)
-        if isinstance(value, int):
-            return value
-        if isinstance(value, float):
-            return int(value)
-        if isinstance(value, str):
-            text = value.strip()
-            if text.isdigit() or (text.startswith("-") and text[1:].isdigit()):
-                return int(text)
+def _to_int(value: Any) -> Optional[int]:
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if text.isdigit() or (text.startswith("-") and text[1:].isdigit()):
+            return int(text)
     return None
+
+
+def _extract_value_by_path(payload: Any, path: List[str]) -> Optional[Any]:
+    if not path:
+        return None
+
+    def _walk(node: Any, idx: int) -> Optional[Any]:
+        if idx >= len(path):
+            if node in (None, "", [], {}):
+                return None
+            return node
+
+        key = path[idx]
+        if isinstance(node, dict):
+            if key in node:
+                hit = _walk(node.get(key), idx + 1)
+                if hit is not None:
+                    return hit
+            for value in node.values():
+                hit = _walk(value, idx)
+                if hit is not None:
+                    return hit
+            return None
+
+        if isinstance(node, list):
+            for item in node:
+                hit = _walk(item, idx)
+                if hit is not None:
+                    return hit
+            return None
+
+        return None
+
+    return _walk(payload, 0)
+
+
+def _normalize_unix_sec(value: int) -> int:
+    # 13-digit timestamps are milliseconds.
+    if value > 1_000_000_000_000:
+        return value // 1000
+    return value
+
+
+def _pick_int_with_source_from_paths(
+    payload: Any,
+    paths: List[List[str]],
+    *,
+    prefer_positive: bool = False,
+    normalize_unix_sec: bool = False,
+) -> Tuple[Optional[int], str]:
+    for path in paths:
+        value = _extract_value_by_path(payload, path)
+        if value is None:
+            value = deep_find_first(payload, path)
+        parsed = _to_int(value)
+        if parsed is None:
+            continue
+        if normalize_unix_sec:
+            parsed = _normalize_unix_sec(parsed)
+        if prefer_positive and parsed <= 0:
+            continue
+        return parsed, ".".join(path)
+    return None, ""
+
+
+def _pick_int_from_paths(
+    payload: Any,
+    paths: List[List[str]],
+    *,
+    prefer_positive: bool = False,
+    normalize_unix_sec: bool = False,
+) -> Optional[int]:
+    value, _ = _pick_int_with_source_from_paths(
+        payload,
+        paths,
+        prefer_positive=prefer_positive,
+        normalize_unix_sec=normalize_unix_sec,
+    )
+    return value
 
 
 def _dedupe_keep_order(values: List[str]) -> List[str]:
@@ -371,9 +448,45 @@ def _extract_xhs_metadata(
         ],
     )
 
-    create_time_sec = _pick_int_from_paths(
+    create_time_paths = [
+        ["create_time_sec"],
+        ["create_time"],
+        ["publish_time_sec"],
+        ["publish_time"],
+        ["time"],
+        ["timestamp"],
+        ["createTime"],
+        ["publishTime"],
+        ["note", "create_time_sec"],
+        ["note", "create_time"],
+        ["note", "createTime"],
+        ["note", "publish_time_sec"],
+        ["note", "publish_time"],
+        ["note", "publishTime"],
+        ["note", "time"],
+        ["note", "timestamp"],
+        ["note_list", "create_time_sec"],
+        ["note_list", "create_time"],
+        ["note_list", "createTime"],
+        ["note_list", "publish_time_sec"],
+        ["note_list", "publish_time"],
+        ["note_list", "publishTime"],
+        ["note_list", "time"],
+        ["note_list", "timestamp"],
+        ["noteList", "create_time_sec"],
+        ["noteList", "create_time"],
+        ["noteList", "createTime"],
+        ["noteList", "publish_time_sec"],
+        ["noteList", "publish_time"],
+        ["noteList", "publishTime"],
+        ["noteList", "time"],
+        ["noteList", "timestamp"],
+    ]
+    create_time_sec, create_time_source = _pick_int_with_source_from_paths(
         payload,
-        [["create_time_sec"], ["create_time"], ["publish_time"], ["publish_time_sec"], ["note", "time"]],
+        create_time_paths,
+        prefer_positive=True,
+        normalize_unix_sec=True,
     )
     duration_ms = _pick_int_from_paths(
         payload,
@@ -441,6 +554,8 @@ def _extract_xhs_metadata(
         "xhs_user_id": xhs_user_id,
         "xhs_sec_token": normalize_text(xhs_sec_token),
         "create_time_sec": create_time_sec,
+        "publish_time": create_time_sec,
+        "publish_time_source": create_time_source or "unknown",
         "duration_ms": duration_ms,
         "tags": _extract_xhs_tags(payload),
         "digg_count": _pick_int_from_paths(payload, [["digg_count"], ["liked_count"], ["like_count"], ["likes"]]),
@@ -1037,6 +1152,8 @@ def _build_result(
         "title": metadata.get("title"),
         "author": metadata.get("author"),
         "create_time_sec": metadata.get("create_time_sec"),
+        "publish_time": metadata.get("publish_time"),
+        "publish_time_source": metadata.get("publish_time_source"),
         "duration_ms": metadata.get("duration_ms"),
         "tags": metadata.get("tags", []),
         "digg_count": metadata.get("digg_count"),

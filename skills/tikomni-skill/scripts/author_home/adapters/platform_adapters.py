@@ -36,7 +36,11 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
     missing: List[Dict[str, str]] = []
     profile_data = raw.get("profile_response", {}).get("data")
 
-    author_id = _t(_first(profile_data, ["sec_user_id", "sec_uid", "uid", "user_id"], raw.get("resolved_author_id")))
+    internal_author_id = _t(_first(profile_data, ["sec_user_id", "sec_uid"], raw.get("resolved_author_id")))
+    stable_author_id = _t(_first(profile_data, ["uid", "user_id", "id"]))
+    author_handle = _t(_first(profile_data, ["short_id", "unique_id", "douyin_id", "display_id"]))
+
+    author_id = internal_author_id or stable_author_id
     profile = build_author_profile(
         platform="douyin",
         platform_author_id=author_id,
@@ -51,6 +55,9 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
         verified=bool(_first(profile_data, ["verification_type", "verified"], 0) not in (0, None, "", "false", False)),
         snapshot_at=datetime.now().isoformat(timespec="seconds"),
     )
+    profile["author_platform_id"] = stable_author_id or author_id
+    profile["author_handle"] = author_handle
+
     missing.extend(validate_author_profile(profile))
 
     works: List[Dict[str, Any]] = []
@@ -81,6 +88,9 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
             share_url=_t(_first(item, ["share_url", "share_link"])),
             raw_ref={"aweme_id": aweme_id},
         )
+        work["author_platform_id"] = stable_author_id or author_id
+        work["author_handle"] = author_handle
+
         missing.extend(validate_work_item(work))
         works.append(work)
 
@@ -93,6 +103,7 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
     profile_data = raw.get("profile_response", {}).get("data")
 
     author_id = _t(_first(profile_data, ["user_id", "userid", "id"], raw.get("resolved_author_id")))
+    author_handle = _t(_first(profile_data, ["red_id", "redid", "display_id", "username"]))
     profile = build_author_profile(
         platform="xiaohongshu",
         platform_author_id=author_id,
@@ -107,6 +118,9 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
         verified=bool(_first(profile_data, ["official_verified", "verified"], False)),
         snapshot_at=datetime.now().isoformat(timespec="seconds"),
     )
+    profile["author_platform_id"] = author_id
+    profile["author_handle"] = author_handle
+
     missing.extend(validate_author_profile(profile))
 
     works: List[Dict[str, Any]] = []
@@ -138,6 +152,9 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
             share_url=_t(_first(item, ["share_url", "url"])),
             raw_ref={"note_id": note_id},
         )
+        work["author_platform_id"] = author_id
+        work["author_handle"] = author_handle
+
         missing.extend(validate_work_item(work))
         works.append(work)
 

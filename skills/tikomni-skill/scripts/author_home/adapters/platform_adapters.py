@@ -186,6 +186,7 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
         )
         work["author_platform_id"] = stable_author_id or author_id
         work["author_handle"] = author_handle
+        work["is_video"] = True
 
         missing.extend(validate_work_item(work))
         works.append(work)
@@ -267,6 +268,7 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
         )
         work["author_platform_id"] = author_id
         work["author_handle"] = author_handle
+        work["is_video"] = content_type in {"video", "mixed", "mix"} or bool(video_down_url)
 
         missing.extend(validate_work_item(work))
         works.append(work)

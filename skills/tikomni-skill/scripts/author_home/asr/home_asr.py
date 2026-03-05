@@ -18,6 +18,92 @@ from scripts.pipeline.asr.asr_pipeline import (
 
 DEFAULT_BATCH_SUBMIT_SIZE = 50
 MAX_BATCH_SUBMIT_SIZE = 100
+U2_GATE_MIN_DURATION_MS = 13000
+U2_GATE_MAX_DURATION_MS = 1800000
+U2_GATE_RULE = "is_video && 13000<duration_ms<=1800000 && video_down_url_present"
+
+
+def _to_int_or_none(value: Any) -> Optional[int]:
+    try:
+        if isinstance(value, bool):
+            return int(value)
+        if isinstance(value, (int, float)):
+            parsed = int(value)
+            return parsed if parsed > 0 else None
+        text = normalize_text(value)
+        if not text:
+            return None
+        parsed = int(float(text.replace(",", "")))
+        return parsed if parsed > 0 else None
+    except Exception:
+        return None
+
+
+def _to_bool(value: Any) -> Optional[bool]:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(int(value))
+    text = normalize_text(value).lower()
+    if not text:
+        return None
+    if text in {"1", "true", "yes", "y", "video"}:
+        return True
+    if text in {"0", "false", "no", "n", "image", "photo", "note"}:
+        return False
+    return None
+
+
+def _resolve_is_video(work: Dict[str, Any], *, platform: str) -> bool:
+    explicit = _to_bool(work.get("is_video"))
+    if explicit is not None:
+        return explicit
+
+    content_type = normalize_text(work.get("content_type")).lower()
+    if content_type in {"video", "mixed", "mix", "video_note", "note_video"}:
+        return True
+    if content_type in {"image", "photo", "album", "note", "text"}:
+        return False
+
+    if platform == "douyin":
+        return True
+
+    raw_ref = work.get("raw_ref") if isinstance(work.get("raw_ref"), dict) else {}
+    xhs_type_hint = normalize_text(raw_ref.get("type") or raw_ref.get("note_type")).lower()
+    if xhs_type_hint in {"video", "0", "normal", "mixed", "mix"}:
+        return True
+    if xhs_type_hint in {"image", "1", "note", "photo"}:
+        return False
+
+    return False
+
+
+def _evaluate_u2_gate(work: Dict[str, Any], *, platform: str) -> Dict[str, Any]:
+    is_video = _resolve_is_video(work, platform=platform)
+    duration_ms = _to_int_or_none(work.get("duration_ms"))
+    video_down_url = normalize_text(work.get("video_down_url"))
+
+    if not is_video:
+        gate_reason = "skip:not_video"
+    elif duration_ms is None:
+        gate_reason = "skip:duration_missing"
+    elif duration_ms <= U2_GATE_MIN_DURATION_MS:
+        gate_reason = "skip:duration_too_short"
+    elif duration_ms > U2_GATE_MAX_DURATION_MS:
+        gate_reason = "skip:duration_too_long"
+    elif not video_down_url:
+        gate_reason = "skip:video_down_url_missing"
+    else:
+        gate_reason = "pass"
+
+    return {
+        "can_u2": gate_reason == "pass",
+        "gate_reason": gate_reason,
+        "is_video": is_video,
+        "duration_ms": duration_ms,
+        "video_down_url": video_down_url,
+        "video_down_url_present": bool(video_down_url),
+    }
 
 
 def _clean_text(text: Any) -> str:
@@ -140,6 +226,7 @@ def _invalid_subtitle_reason(text: str) -> Optional[str]:
 
 def _run_u2_for_work(
     *,
+    platform: str,
     work: Dict[str, Any],
     base_url: str,
     token: str,
@@ -151,20 +238,22 @@ def _run_u2_for_work(
     timeout_retry_enabled: bool,
     timeout_retry_max_retries: int,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-    video_down_url = normalize_text(work.get("video_down_url"))
-    if not video_down_url:
-        return {
-            "asr_raw": "",
-            "asr_clean": "",
-            "asr_status": "failed",
-            "asr_error_reason": "video_down_url_missing",
-            "asr_source": "fallback_none",
-        }, {
-            "step": "author_home.asr.u2.skip",
+    gate = _evaluate_u2_gate(work, platform=platform)
+    if not gate.get("can_u2"):
+        gate_reason = normalize_text(gate.get("gate_reason")) or "skip:unknown"
+        return _fallback_none_result(gate_reason), {
+            "step": "author_home.asr.u2_gate",
             "platform_work_id": work.get("platform_work_id"),
             "ok": False,
-            "error_reason": "video_down_url_missing",
+            "can_u2": False,
+            "gate_reason": gate_reason,
+            "rule": U2_GATE_RULE,
+            "is_video": gate.get("is_video"),
+            "duration_ms": gate.get("duration_ms"),
+            "video_down_url_present": gate.get("video_down_url_present"),
         }
+
+    video_down_url = normalize_text(gate.get("video_down_url"))
 
     bundle = run_u2_asr_candidates_with_timeout_retry(
         base_url=base_url,
@@ -191,6 +280,8 @@ def _run_u2_for_work(
         "rounds": bundle.get("rounds", []),
         "candidate_attempts": bundle.get("candidate_attempts", []),
         "timeout_retry": bundle.get("timeout_retry", {}),
+        "gate_reason": "pass",
+        "rule": U2_GATE_RULE,
     }
 
     if transcript:
@@ -493,24 +584,30 @@ def enrich_author_home_asr(
             work_id = normalize_text(work.get("platform_work_id"))
 
             if platform == "douyin":
-                video_down_url = normalize_text(work.get("video_down_url"))
-                if not video_down_url:
-                    work.update(_fallback_none_result("video_down_url_missing"))
-                    trace.append(
-                        {
-                            "step": "author_home.asr.u2.skip",
-                            "batch_id": batch_id,
-                            "platform_work_id": work_id,
-                            "ok": False,
-                            "error_reason": "video_down_url_missing",
-                        }
-                    )
+                gate = _evaluate_u2_gate(work, platform=platform)
+                trace.append(
+                    {
+                        "step": "author_home.asr.u2_gate",
+                        "batch_id": batch_id,
+                        "platform_work_id": work_id,
+                        "ok": bool(gate.get("can_u2")),
+                        "can_u2": bool(gate.get("can_u2")),
+                        "gate_reason": gate.get("gate_reason"),
+                        "rule": U2_GATE_RULE,
+                        "is_video": gate.get("is_video"),
+                        "duration_ms": gate.get("duration_ms"),
+                        "video_down_url_present": gate.get("video_down_url_present"),
+                    }
+                )
+
+                if not gate.get("can_u2"):
+                    work.update(_fallback_none_result(str(gate.get("gate_reason") or "skip:unknown")))
                 else:
                     batch_u2_entries.append(
                         {
                             "work": work,
                             "work_id": work_id,
-                            "video_down_url": video_down_url,
+                            "video_down_url": gate.get("video_down_url"),
                             "fallback_reason": "batch_result_unmapped",
                         }
                     )
@@ -550,24 +647,32 @@ def enrich_author_home_asr(
                         "subtitle_url_count": len(subtitle_urls),
                     }
                 )
-                video_down_url = normalize_text(work.get("video_down_url"))
-                if not video_down_url:
-                    work.update(_fallback_none_result(f"{subtitle_invalid}_and_video_missing"))
-                    trace.append(
-                        {
-                            "step": "author_home.asr.u2.skip",
-                            "batch_id": batch_id,
-                            "platform_work_id": work_id,
-                            "ok": False,
-                            "error_reason": f"{subtitle_invalid}_and_video_missing",
-                        }
-                    )
+
+                gate = _evaluate_u2_gate(work, platform=platform)
+                trace.append(
+                    {
+                        "step": "author_home.asr.u2_gate",
+                        "batch_id": batch_id,
+                        "platform_work_id": work_id,
+                        "ok": bool(gate.get("can_u2")),
+                        "can_u2": bool(gate.get("can_u2")),
+                        "gate_reason": gate.get("gate_reason"),
+                        "rule": U2_GATE_RULE,
+                        "is_video": gate.get("is_video"),
+                        "duration_ms": gate.get("duration_ms"),
+                        "video_down_url_present": gate.get("video_down_url_present"),
+                        "subtitle_invalid": subtitle_invalid,
+                    }
+                )
+
+                if not gate.get("can_u2"):
+                    work.update(_fallback_none_result(str(gate.get("gate_reason") or "skip:unknown")))
                 else:
                     batch_u2_entries.append(
                         {
                             "work": work,
                             "work_id": work_id,
-                            "video_down_url": video_down_url,
+                            "video_down_url": gate.get("video_down_url"),
                             "fallback_reason": f"xhs_subtitle_invalid:{subtitle_invalid}",
                         }
                     )
@@ -604,6 +709,7 @@ def enrich_author_home_asr(
                 continue
 
             retry_result, retry_trace = _run_u2_for_work(
+                platform=platform,
                 work=fallback_work,
                 base_url=base_url,
                 token=token,

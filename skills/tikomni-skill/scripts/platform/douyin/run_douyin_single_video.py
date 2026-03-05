@@ -897,13 +897,13 @@ def run_douyin_single_video(
     can_u2 = can_u2 and bool(video_down_url)
 
     if not video_type_info.get("is_video"):
-        gate_reason = f"skip:not_video({video_type_info.get('video_type_reason')})"
+        gate_reason = "skip:not_video"
     elif not duration_ms:
         gate_reason = "skip:duration_missing"
     elif duration_ms <= 13000:
-        gate_reason = f"skip:duration_too_short({duration_ms})"
+        gate_reason = "skip:duration_too_short"
     elif duration_ms > 1800000:
-        gate_reason = f"skip:duration_too_long({duration_ms})"
+        gate_reason = "skip:duration_too_long"
     elif not video_down_url:
         gate_reason = "skip:video_down_url_missing"
     else:
@@ -915,6 +915,10 @@ def run_douyin_single_video(
             "can_u2": can_u2,
             "gate_reason": gate_reason,
             "rule": "is_video && 13000<duration_ms<=1800000 && video_down_url_present",
+            "is_video": bool(video_type_info.get("is_video")),
+            "video_type_reason": video_type_info.get("video_type_reason"),
+            "duration_ms": duration_ms,
+            "video_down_url_present": bool(video_down_url),
         }
     )
 

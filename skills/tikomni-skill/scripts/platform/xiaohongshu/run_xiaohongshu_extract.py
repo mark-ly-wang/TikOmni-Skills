@@ -44,6 +44,54 @@ APP_ENDPOINT = "/api/u1/v1/xiaohongshu/app/get_note_info"
 WEB_V2_V2_ENDPOINT = "/api/u1/v1/xiaohongshu/web_v2/fetch_feed_notes_v2"
 WEB_V2_V3_ENDPOINT = "/api/u1/v1/xiaohongshu/web_v2/fetch_feed_notes_v3"
 WEB_ENDPOINT = "/api/u1/v1/xiaohongshu/web/get_note_info_v7"
+U2_GATE_MIN_DURATION_MS = 13000
+U2_GATE_MAX_DURATION_MS = 1800000
+U2_GATE_RULE = "is_video && 13000<duration_ms<=1800000 && video_down_url_present"
+
+
+def _to_int_or_none(value: Any) -> Optional[int]:
+    try:
+        if isinstance(value, bool):
+            return int(value)
+        if isinstance(value, (int, float)):
+            parsed = int(value)
+            return parsed if parsed > 0 else None
+        text = normalize_text(value)
+        if not text:
+            return None
+        parsed = int(float(text.replace(",", "")))
+        return parsed if parsed > 0 else None
+    except Exception:
+        return None
+
+
+def _evaluate_u2_gate_for_xhs(*, note_content_type: str, duration_ms: Any, video_down_url: Optional[str]) -> Dict[str, Any]:
+    content_type = normalize_text(note_content_type).lower()
+    is_video = content_type in {"video", "mixed"}
+    normalized_duration = _to_int_or_none(duration_ms)
+    normalized_video_down_url = normalize_text(video_down_url)
+
+    if not is_video:
+        gate_reason = "skip:not_video"
+    elif normalized_duration is None:
+        gate_reason = "skip:duration_missing"
+    elif normalized_duration <= U2_GATE_MIN_DURATION_MS:
+        gate_reason = "skip:duration_too_short"
+    elif normalized_duration > U2_GATE_MAX_DURATION_MS:
+        gate_reason = "skip:duration_too_long"
+    elif not normalized_video_down_url:
+        gate_reason = "skip:video_down_url_missing"
+    else:
+        gate_reason = "pass"
+
+    return {
+        "can_u2": gate_reason == "pass",
+        "gate_reason": gate_reason,
+        "is_video": is_video,
+        "duration_ms": normalized_duration,
+        "video_down_url": normalized_video_down_url,
+        "video_down_url_present": bool(normalized_video_down_url),
+    }
 
 
 def _safe_slug(value: Optional[str], fallback: str = "unknown") -> str:
@@ -1452,6 +1500,23 @@ def run_xiaohongshu_extract(
         }
     )
 
+    u2_gate = _evaluate_u2_gate_for_xhs(
+        note_content_type=note_content_type,
+        duration_ms=metadata_fields.get("duration_ms"),
+        video_down_url=metadata_fields.get("video_down_url") or selected_video_url,
+    )
+    trace.append(
+        {
+            "step": "u2_gate",
+            "can_u2": bool(u2_gate.get("can_u2")),
+            "gate_reason": u2_gate.get("gate_reason"),
+            "rule": U2_GATE_RULE,
+            "is_video": u2_gate.get("is_video"),
+            "duration_ms": u2_gate.get("duration_ms"),
+            "video_down_url_present": u2_gate.get("video_down_url_present"),
+        }
+    )
+
     # Video-note path: aligned with douyin single-video pipeline (subtitle-first difference retained).
     if note_content_type in {"video", "mixed"}:
         if subtitle_text:
@@ -1501,29 +1566,39 @@ def run_xiaohongshu_extract(
                 persist_output=persist_output,
             )
 
-        if not selected_video_url:
-            missing_fields.append({"field": "selected_video_url", "reason": "video_note_but_no_video_url"})
+        if not u2_gate.get("can_u2"):
+            gate_reason = normalize_text(u2_gate.get("gate_reason")) or "skip:unknown"
+            if gate_reason == "skip:duration_missing":
+                missing_fields.append({"field": "duration_ms", "reason": gate_reason})
+            elif gate_reason in {"skip:duration_too_short", "skip:duration_too_long"}:
+                missing_fields.append({"field": "duration_ms", "reason": gate_reason})
+            elif gate_reason == "skip:video_down_url_missing":
+                missing_fields.append({"field": "video_down_url", "reason": gate_reason})
+            elif gate_reason == "skip:not_video":
+                missing_fields.append({"field": "note_content_type", "reason": gate_reason})
+
             error_ctx = resolve_trace_error_context(
                 responses=[note_response],
                 extract_trace=trace,
-                default_error_reason="subtitle_missing_and_no_video_url_for_u2",
+                default_error_reason=gate_reason,
             )
+            fallback_text = caption_text
             result = _build_result(
                 source_input=source_input,
-                raw_content="",
-                confidence="low",
-                error_reason=error_ctx.get("error_reason"),
+                raw_content=fallback_text,
+                confidence="medium" if fallback_text else "low",
+                error_reason=None if fallback_text else error_ctx.get("error_reason"),
                 extract_trace=trace,
                 fallback_trace=error_ctx.get("fallback_trace", []),
                 request_id=error_ctx.get("request_id"),
-                text_source="none",
+                text_source="caption_fallback" if fallback_text else "none",
                 note_id=str(resolved_note_id) if resolved_note_id else source_input.get("note_id"),
                 subtitle_hit=False,
                 u2_task_id=None,
-                u2_task_status="UNKNOWN",
+                u2_task_status="SKIPPED",
                 note_content_type=note_content_type,
                 analysis_mode="video_full",
-                selected_video_url=None,
+                selected_video_url=u2_gate.get("video_down_url") or selected_video_url,
                 selected_video_candidates=video_candidates,
                 selected_image_urls=image_candidates,
                 downloaded_assets=[],
@@ -1548,11 +1623,12 @@ def run_xiaohongshu_extract(
                 persist_output=persist_output,
             )
 
+        u2_candidates = _dedupe_keep_order([u2_gate.get("video_down_url")] + list(video_candidates))
         u2_bundle = run_u2_asr_candidates_with_timeout_retry(
             base_url=runtime["base_url"],
             token=runtime["token"],
             timeout_ms=runtime["timeout_ms"],
-            candidates=video_candidates,
+            candidates=u2_candidates,
             submit_max_retries=u2_submit_max_retries,
             submit_backoff_ms=u2_submit_backoff_ms,
             poll_interval_sec=poll_interval_sec,
@@ -1573,7 +1649,7 @@ def run_xiaohongshu_extract(
                 "step": "u2_asr_timeout_retry",
                 "endpoint": "/api/u2/v1/services/audio/asr/transcription + /api/u2/v1/tasks/{task_id}",
                 "selected_video_url": selected_video_url,
-                "selected_video_candidates": video_candidates,
+                "selected_video_candidates": u2_candidates,
                 "candidate_attempts": u2_bundle.get("candidate_attempts", []),
                 "submit_retries_config": {
                     "u2_submit_max_retries": max(0, int(u2_submit_max_retries)),
@@ -1621,7 +1697,7 @@ def run_xiaohongshu_extract(
                 note_content_type=note_content_type,
                 analysis_mode="video_full",
                 selected_video_url=selected_video_url,
-                selected_video_candidates=video_candidates,
+                selected_video_candidates=u2_candidates,
                 selected_image_urls=image_candidates,
                 downloaded_assets=[],
                 missing_fields=missing_fields,
@@ -1668,7 +1744,7 @@ def run_xiaohongshu_extract(
             note_content_type=note_content_type,
             analysis_mode="video_full",
             selected_video_url=selected_video_url,
-            selected_video_candidates=video_candidates,
+            selected_video_candidates=u2_candidates,
             selected_image_urls=image_candidates,
             downloaded_assets=[],
             missing_fields=missing_fields,

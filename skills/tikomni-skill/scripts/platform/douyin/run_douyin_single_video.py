@@ -34,6 +34,7 @@ from scripts.pipeline.asr.poll_u2_task import poll_u2_task
 from scripts.platform.douyin.select_low_quality_video_url import select_low_quality_video_url
 from scripts.core.tikomni_common import (
     call_json_api,
+    deep_find_all,
     normalize_text,
     resolve_runtime,
     summarize_content,
@@ -379,6 +380,79 @@ def _extract_cover_image(item: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+def _clean_tag_text(value: Any) -> str:
+    text = normalize_text(value)
+    if not text:
+        return ""
+    text = text.strip().strip("#")
+    return text
+
+
+def _append_tag(raw: Any, output: List[str], seen: set) -> None:
+    tag = _clean_tag_text(raw)
+    if not tag or tag in seen:
+        return
+    seen.add(tag)
+    output.append(tag)
+
+
+def _extract_tags_from_container(value: Any, output: List[str], seen: set) -> None:
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return
+        if text.startswith("{") or text.startswith("["):
+            try:
+                parsed = json.loads(text)
+                _extract_tags_from_container(parsed, output, seen)
+                return
+            except Exception:
+                pass
+        for part in re.split(r"[,，\s]+", text):
+            _append_tag(part, output, seen)
+        return
+
+    if isinstance(value, list):
+        for item in value:
+            _extract_tags_from_container(item, output, seen)
+        return
+
+    if isinstance(value, dict):
+        for key in ("hashtag_name", "cha_name", "name", "tag_name", "topic_name", "hashtag"):
+            _append_tag(value.get(key), output, seen)
+
+
+def _extract_douyin_tags(item: Dict[str, Any]) -> List[str]:
+    tags: List[str] = []
+    seen: set = set()
+
+    for value in deep_find_all(item, ["text_extra"]):
+        _extract_tags_from_container(value, tags, seen)
+
+    for value in deep_find_all(item, ["cha_list"]):
+        _extract_tags_from_container(value, tags, seen)
+
+    for value in deep_find_all(item, ["hashtag"]):
+        _extract_tags_from_container(value, tags, seen)
+
+    for common_flags in deep_find_all(item, ["common_flags"]):
+        if not isinstance(common_flags, str):
+            continue
+        try:
+            parsed = json.loads(common_flags)
+        except Exception:
+            continue
+        _extract_tags_from_container(parsed.get("hashtag"), tags, seen)
+
+    for text_field in (normalize_text(item.get("caption")), normalize_text(item.get("desc"))):
+        if not text_field:
+            continue
+        for match in re.findall(r"#([^#\s]+)", text_field):
+            _append_tag(match, tags, seen)
+
+    return tags
+
+
 def _u1_fetch_one_video(
     *,
     base_url: str,
@@ -475,6 +549,7 @@ def _build_result(
     video_down_url: Optional[str],
     author: Dict[str, Optional[str]],
     metrics: Dict[str, int],
+    tags: List[str],
     is_video: bool,
     video_type_reason: str,
     raw_content: str,
@@ -527,6 +602,7 @@ def _build_result(
         "collect_count": metrics.get("collect_count", 0),
         "share_count": metrics.get("share_count", 0),
         "play_count": metrics.get("play_count", 0),
+        "tags": tags or [],
         "is_video": is_video,
         "video_type_reason": video_type_reason,
         "u2_task_id": u2_task_id,
@@ -591,6 +667,7 @@ def run_douyin_single_video(
                 "share_count": 0,
                 "play_count": 0,
             },
+            tags=[],
             is_video=False,
             video_type_reason="missing_share_url",
             raw_content="",
@@ -686,6 +763,7 @@ def run_douyin_single_video(
                 "share_count": 0,
                 "play_count": 0,
             },
+            tags=[],
             is_video=False,
             video_type_reason="u1_failed",
             raw_content="",
@@ -738,6 +816,7 @@ def run_douyin_single_video(
                 "share_count": 0,
                 "play_count": 0,
             },
+            tags=[],
             is_video=False,
             video_type_reason="aweme_detail_missing",
             raw_content="",
@@ -775,6 +854,7 @@ def run_douyin_single_video(
     desc = _pick_desc(aweme_detail)
     author = _extract_author(aweme_detail)
     metrics = _extract_metrics(aweme_detail)
+    tags = _extract_douyin_tags(aweme_detail)
     create_time_sec = _extract_create_time_sec(aweme_detail)
     cover_image = _extract_cover_image(aweme_detail)
 
@@ -930,6 +1010,7 @@ def run_douyin_single_video(
         video_down_url=video_down_url,
         author=author,
         metrics=metrics,
+        tags=tags,
         is_video=bool(video_type_info.get("is_video")),
         video_type_reason=str(video_type_info.get("video_type_reason") or ""),
         raw_content=raw_content,

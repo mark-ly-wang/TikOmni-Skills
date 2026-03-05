@@ -284,6 +284,61 @@ def _dedupe_keep_order(values: List[str]) -> List[str]:
     return output
 
 
+def _clean_tag_text(value: Any) -> str:
+    text = normalize_text(value)
+    if not text:
+        return ""
+    text = text.strip().strip("#")
+    text = re.sub(r"\[话题\]$", "", text)
+    text = text.strip().strip("#")
+    return text
+
+
+def _append_tag(raw: Any, output: List[str], seen: set) -> None:
+    tag = _clean_tag_text(raw)
+    if not tag or tag in seen:
+        return
+    seen.add(tag)
+    output.append(tag)
+
+
+def _extract_tags_from_container(value: Any, output: List[str], seen: set) -> None:
+    if isinstance(value, str):
+        _append_tag(value, output, seen)
+        return
+    if isinstance(value, list):
+        for item in value:
+            _extract_tags_from_container(item, output, seen)
+        return
+    if isinstance(value, dict):
+        for key in ("name", "tag_name", "topic_name", "hashtag_name"):
+            _append_tag(value.get(key), output, seen)
+
+
+def _extract_xhs_tags(payload: Any) -> List[str]:
+    primary_tags: List[str] = []
+    primary_seen: set = set()
+    for key in ("tagList", "taglist", "tag_list"):
+        for value in deep_find_all(payload, [key]):
+            _extract_tags_from_container(value, primary_tags, primary_seen)
+    if primary_tags:
+        return primary_tags
+
+    tags: List[str] = []
+    seen: set = set()
+    for key in ("topics", "hash_tag", "hashTag", "head_tags", "foot_tags"):
+        for value in deep_find_all(payload, [key]):
+            _extract_tags_from_container(value, tags, seen)
+
+    for desc in deep_find_all(payload, ["desc", "content"]):
+        if not isinstance(desc, str):
+            continue
+        for match in re.findall(r"#([^#\n\r]+?)#", desc):
+            _append_tag(match, tags, seen)
+
+    return tags
+
+
 def _build_candidate_merge_sources(*, app_candidates: List[str], enrich_candidates: List[str], app_label: str) -> List[str]:
     sources: List[str] = []
     if app_candidates:
@@ -387,6 +442,7 @@ def _extract_xhs_metadata(
         "xhs_sec_token": normalize_text(xhs_sec_token),
         "create_time_sec": create_time_sec,
         "duration_ms": duration_ms,
+        "tags": _extract_xhs_tags(payload),
         "digg_count": _pick_int_from_paths(payload, [["digg_count"], ["liked_count"], ["like_count"], ["likes"]]),
         "comment_count": _pick_int_from_paths(payload, [["comment_count"], ["comments_count"], ["comments"]]),
         "collect_count": _pick_int_from_paths(payload, [["collect_count"], ["collected_count"], ["favorite_count"]]),
@@ -982,6 +1038,7 @@ def _build_result(
         "author": metadata.get("author"),
         "create_time_sec": metadata.get("create_time_sec"),
         "duration_ms": metadata.get("duration_ms"),
+        "tags": metadata.get("tags", []),
         "digg_count": metadata.get("digg_count"),
         "comment_count": metadata.get("comment_count"),
         "collect_count": metadata.get("collect_count"),

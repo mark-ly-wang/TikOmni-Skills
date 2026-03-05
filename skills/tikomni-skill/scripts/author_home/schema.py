@@ -59,6 +59,12 @@ class WorkItemNormalized:
     cover_image: str = ""
     source_url: str = ""
     share_url: str = ""
+    video_down_url: str = ""
+    asr_raw: str = ""
+    asr_clean: str = ""
+    asr_status: str = "pending"
+    asr_error_reason: str = ""
+    asr_source: str = "fallback_none"
     raw_ref: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -112,6 +118,12 @@ def validate_work_item(payload: Dict[str, Any]) -> List[Dict[str, str]]:
         "cover_image": str,
         "source_url": str,
         "share_url": str,
+        "video_down_url": str,
+        "asr_raw": str,
+        "asr_clean": str,
+        "asr_status": str,
+        "asr_error_reason": str,
+        "asr_source": str,
         "raw_ref": dict,
     }
     missing: List[Dict[str, str]] = []
@@ -126,6 +138,10 @@ def validate_work_item(payload: Dict[str, Any]) -> List[Dict[str, str]]:
         value = payload.get(key)
         if isinstance(value, str) and not value.strip():
             missing.append({"field": key, "reason": "empty_value"})
+
+    asr_source = payload.get("asr_source")
+    if isinstance(asr_source, str) and asr_source not in {"xhs_subtitle", "u2", "fallback_none"}:
+        missing.append({"field": "asr_source", "reason": "invalid_enum"})
     return missing
 
 
@@ -170,6 +186,12 @@ def build_work_item(**kwargs: Any) -> Dict[str, Any]:
         cover_image=_to_text(kwargs.get("cover_image")),
         source_url=_to_text(kwargs.get("source_url")),
         share_url=_to_text(kwargs.get("share_url")) or _to_text(kwargs.get("source_url")),
+        video_down_url=_to_text(kwargs.get("video_down_url")),
+        asr_raw=_to_text(kwargs.get("asr_raw")),
+        asr_clean=_to_text(kwargs.get("asr_clean")),
+        asr_status=_to_text(kwargs.get("asr_status")) or "pending",
+        asr_error_reason=_to_text(kwargs.get("asr_error_reason")),
+        asr_source=_to_text(kwargs.get("asr_source")) or "fallback_none",
         raw_ref=dict(kwargs.get("raw_ref") or {}),
     )
     return asdict(item)

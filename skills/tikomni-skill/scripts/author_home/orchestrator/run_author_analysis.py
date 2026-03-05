@@ -16,6 +16,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 from scripts.author_home.adapters.platform_adapters import adapt_douyin_author_home, adapt_xhs_author_home
 from scripts.author_home.analyzers.prompt_first_analyzers import run_prompt_first_author_analysis
+from scripts.author_home.asr.home_asr import enrich_author_home_asr
 from scripts.author_home.builders.home_builders import build_author_card, build_work_cards
 from scripts.author_home.collectors.homepage_collectors import collect_douyin_author_home_raw, collect_xhs_author_home_raw
 
@@ -48,6 +49,16 @@ def run_author_home_analysis(
     page_size: int = 20,
     pages_max: int = 50,
     max_items: int = 200,
+    poll_interval_sec: float = 3.0,
+    max_polls: int = 30,
+    douyin_u2_submit_max_retries: int = 2,
+    douyin_u2_submit_backoff_ms: int = 1500,
+    xhs_u2_submit_max_retries: int = 0,
+    xhs_u2_submit_backoff_ms: int = 0,
+    u2_timeout_retry_enabled: bool = True,
+    u2_timeout_retry_max_retries: int = 3,
+    asr_batch_size: int = 20,
+    checkpoint: Optional[Dict[str, Any]] = None,
     write_card: bool = True,
     collect_material: bool = False,
     card_root: Optional[str] = None,
@@ -88,6 +99,25 @@ def run_author_home_analysis(
     # Defensive cap enforcement at orchestrator layer.
     works = works[:capped_max_items]
 
+    asr_bundle = enrich_author_home_asr(
+        platform=platform,
+        works=works,
+        base_url=base_url,
+        token=token,
+        timeout_ms=timeout_ms,
+        poll_interval_sec=poll_interval_sec,
+        max_polls=max_polls,
+        douyin_submit_max_retries=douyin_u2_submit_max_retries,
+        douyin_submit_backoff_ms=douyin_u2_submit_backoff_ms,
+        xhs_submit_max_retries=xhs_u2_submit_max_retries,
+        xhs_submit_backoff_ms=xhs_u2_submit_backoff_ms,
+        timeout_retry_enabled=u2_timeout_retry_enabled,
+        timeout_retry_max_retries=u2_timeout_retry_max_retries,
+        batch_size=asr_batch_size,
+        checkpoint=checkpoint,
+    )
+    works = list(asr_bundle.get("works") or [])[:capped_max_items]
+
     analysis, analysis_missing, analysis_trace = run_prompt_first_author_analysis(profile, works)
 
     work_card_write = build_work_cards(
@@ -110,13 +140,36 @@ def run_author_home_analysis(
         write_card=write_card,
     )
 
+    asr_trace = list(asr_bundle.get("trace") or [])
+    all_extract_trace = list(raw.get("extract_trace") or []) + asr_trace + analysis_trace
+
     fallback_trace: List[Dict[str, Any]] = []
-    for step in raw.get("extract_trace", []):
+    for step in all_extract_trace:
         if not isinstance(step, dict):
             continue
         name = str(step.get("step") or "")
-        if "fallback" in name or not step.get("ok", True):
+        try:
+            has_retry = int(step.get("retry_attempt") or 0) > 0
+        except Exception:
+            has_retry = False
+        if "fallback" in name or not step.get("ok", True) or step.get("fallback_trigger_reason") or has_retry:
             fallback_trace.append(step)
+
+    asr_missing: List[Dict[str, str]] = []
+    for item in works:
+        if not isinstance(item, dict):
+            continue
+        if str(item.get("asr_status") or "") == "success":
+            continue
+        asr_missing.append(
+            {
+                "field": f"works[{item.get('platform_work_id') or 'unknown'}].asr",
+                "reason": str(item.get("asr_error_reason") or "asr_failed"),
+            }
+        )
+
+    asr_stats = asr_bundle.get("stats") if isinstance(asr_bundle.get("stats"), dict) else {}
+    asr_checkpoint = asr_bundle.get("checkpoint") if isinstance(asr_bundle.get("checkpoint"), dict) else {}
 
     result = {
         "platform": platform,
@@ -128,12 +181,13 @@ def run_author_home_analysis(
             f"works_count={len(works)}",
             f"business_score={analysis.get('business_score', 0)}",
             f"benchmark_gap_score={analysis.get('benchmark_gap_score', 0)}",
+            f"asr_success={asr_stats.get('success', 0)}",
             "analysis_strategy=prompt_first",
         ],
         "confidence": "medium" if not analysis_missing else "low",
         "error_reason": None,
-        "missing_fields": adapter_missing + analysis_missing,
-        "extract_trace": list(raw.get("extract_trace") or []) + analysis_trace,
+        "missing_fields": adapter_missing + analysis_missing + asr_missing,
+        "extract_trace": all_extract_trace,
         "fallback_trace": fallback_trace,
         "request_id": raw.get("request_id"),
         "author_profile": profile,
@@ -144,6 +198,7 @@ def run_author_home_analysis(
             "max_items": capped_max_items,
         },
         "analysis_output": analysis,
+        "asr_stats": asr_stats,
         "card_write": {
             "author": author_card_write,
             "works": work_card_write,
@@ -155,6 +210,7 @@ def run_author_home_analysis(
             "max_items": capped_max_items,
             "sort": "latest",
             "cursor_mode": (raw.get("pagination") or {}).get("cursor_mode", "cursor"),
+            "asr": asr_checkpoint,
         },
     }
     return result

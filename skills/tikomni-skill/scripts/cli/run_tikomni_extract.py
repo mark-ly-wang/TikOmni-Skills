@@ -224,6 +224,8 @@ def main() -> None:
     parser.add_argument("--page-size", type=int, default=20, help="Homepage fetch page size (capped to 20)")
     parser.add_argument("--pages-max", type=int, default=50, help="Homepage max pagination rounds")
     parser.add_argument("--max-items", type=int, default=200, help="Homepage total item cap (hard max 200)")
+    parser.add_argument("--asr-batch-size", type=int, default=20, help="Author-home ASR batch size")
+    parser.add_argument("--checkpoint-json", default=None, help="Author-home checkpoint JSON for resume")
     parser.add_argument("--persist-output", dest="persist_output", action="store_true", help="Persist workflow JSON artifact to TIKOMNI_OUTPUT_ROOT (default on)")
     parser.add_argument("--no-persist-output", dest="persist_output", action="store_false", help="Disable workflow artifact persistence globally")
     parser.set_defaults(persist_output=True)
@@ -290,6 +292,15 @@ def main() -> None:
         allow_process_env=args.allow_process_env,
     )
 
+    checkpoint_payload: Dict[str, Any] = {}
+    if isinstance(args.checkpoint_json, str) and args.checkpoint_json.strip():
+        try:
+            checkpoint_payload = json.loads(args.checkpoint_json)
+            if not isinstance(checkpoint_payload, dict):
+                checkpoint_payload = {}
+        except Exception:
+            checkpoint_payload = {}
+
     workflow_ctx = {
         "input_value": args.input,
         "resolved_env_file": resolved_env_file,
@@ -316,6 +327,8 @@ def main() -> None:
         "page_size": int(args.page_size),
         "pages_max": int(args.pages_max),
         "max_items": int(args.max_items),
+        "asr_batch_size": int(args.asr_batch_size),
+        "checkpoint": checkpoint_payload,
     }
 
     resolved_content_kind = None

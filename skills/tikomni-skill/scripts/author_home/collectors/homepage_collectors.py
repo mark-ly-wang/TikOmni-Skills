@@ -6,7 +6,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import parse_qs, urlparse
 
-from scripts.core.extract_pipeline import build_api_trace
+from scripts.core.extract_pipeline import build_api_trace, request_with_optional_fallback
 from scripts.core.tikomni_common import call_json_api, deep_find_first
 
 
@@ -364,29 +364,41 @@ def collect_xhs_author_home_raw(
         if not xsec_token:
             xsec_token = _pick_text(data, ["xsec_token", "xsecToken"])
 
-    profile_resp = call_json_api(
+    profile_resp = request_with_optional_fallback(
         base_url=base_url,
-        path="/api/u1/v1/xiaohongshu/web_v2/fetch_user_info_app",
         token=token,
-        method="GET",
         timeout_ms=timeout_ms,
+        method="GET",
         params={"user_id": user_id, "xsec_token": xsec_token or None},
+        primary_path="/api/u1/v1/xiaohongshu/web_v2/fetch_user_info_app",
+        fallback_path="/api/u1/v1/xiaohongshu/app/get_user_info",
     )
-    trace.append(build_api_trace(step="xhs.profile.primary", endpoint="/api/u1/v1/xiaohongshu/web_v2/fetch_user_info_app", response=profile_resp))
-    request_id_candidates.append(profile_resp)
-
-    if not profile_resp.get("ok"):
-        fallback_profile = call_json_api(
-            base_url=base_url,
-            path="/api/u1/v1/xiaohongshu/app/get_user_info",
-            token=token,
-            method="GET",
-            timeout_ms=timeout_ms,
-            params={"user_id": user_id},
+    primary_profile = profile_resp.get("_primary_failed") if isinstance(profile_resp.get("_primary_failed"), dict) else None
+    if primary_profile is not None:
+        trace.append(
+            build_api_trace(
+                step="xhs.profile.primary",
+                endpoint="/api/u1/v1/xiaohongshu/web_v2/fetch_user_info_app",
+                response=primary_profile,
+            )
         )
-        trace.append(build_api_trace(step="xhs.profile.fallback", endpoint="/api/u1/v1/xiaohongshu/app/get_user_info", response=fallback_profile))
-        profile_resp = fallback_profile
-        request_id_candidates.append(fallback_profile)
+        request_id_candidates.append(primary_profile)
+        trace.append(
+            build_api_trace(
+                step="xhs.profile.fallback",
+                endpoint="/api/u1/v1/xiaohongshu/app/get_user_info",
+                response=profile_resp,
+            )
+        )
+    else:
+        trace.append(
+            build_api_trace(
+                step="xhs.profile.primary",
+                endpoint="/api/u1/v1/xiaohongshu/web_v2/fetch_user_info_app",
+                response=profile_resp,
+            )
+        )
+    request_id_candidates.append(profile_resp)
 
     works: List[Dict[str, Any]] = []
     seen_ids = set()
@@ -397,34 +409,49 @@ def collect_xhs_author_home_raw(
 
     while has_more and page < max(pages_max, 1) and len(works) < max_items:
         page += 1
-        posts_resp = call_json_api(
+        posts_resp = request_with_optional_fallback(
             base_url=base_url,
-            path="/api/u1/v1/xiaohongshu/web_v2/fetch_home_notes_app",
             token=token,
-            method="GET",
             timeout_ms=timeout_ms,
+            method="GET",
             params={
                 "user_id": user_id,
                 "cursor": cursor or None,
                 "num": min(max(page_size, 1), 20),
                 "xsec_token": xsec_token or None,
             },
+            primary_path="/api/u1/v1/xiaohongshu/web_v2/fetch_home_notes_app",
+            fallback_path="/api/u1/v1/xiaohongshu/app/get_user_notes",
         )
-        trace.append(build_api_trace(step="xhs.posts.primary", endpoint="/api/u1/v1/xiaohongshu/web_v2/fetch_home_notes_app", response=posts_resp, extra={"page": page, "cursor": cursor}))
-        request_id_candidates.append(posts_resp)
-
-        if not posts_resp.get("ok"):
-            fallback_posts = call_json_api(
-                base_url=base_url,
-                path="/api/u1/v1/xiaohongshu/app/get_user_notes",
-                token=token,
-                method="GET",
-                timeout_ms=timeout_ms,
-                params={"user_id": user_id, "cursor": cursor or None, "num": min(max(page_size, 1), 20)},
+        primary_posts = posts_resp.get("_primary_failed") if isinstance(posts_resp.get("_primary_failed"), dict) else None
+        if primary_posts is not None:
+            trace.append(
+                build_api_trace(
+                    step="xhs.posts.primary",
+                    endpoint="/api/u1/v1/xiaohongshu/web_v2/fetch_home_notes_app",
+                    response=primary_posts,
+                    extra={"page": page, "cursor": cursor},
+                )
             )
-            trace.append(build_api_trace(step="xhs.posts.fallback", endpoint="/api/u1/v1/xiaohongshu/app/get_user_notes", response=fallback_posts, extra={"page": page, "cursor": cursor}))
-            posts_resp = fallback_posts
-            request_id_candidates.append(fallback_posts)
+            request_id_candidates.append(primary_posts)
+            trace.append(
+                build_api_trace(
+                    step="xhs.posts.fallback",
+                    endpoint="/api/u1/v1/xiaohongshu/app/get_user_notes",
+                    response=posts_resp,
+                    extra={"page": page, "cursor": cursor},
+                )
+            )
+        else:
+            trace.append(
+                build_api_trace(
+                    step="xhs.posts.primary",
+                    endpoint="/api/u1/v1/xiaohongshu/web_v2/fetch_home_notes_app",
+                    response=posts_resp,
+                    extra={"page": page, "cursor": cursor},
+                )
+            )
+        request_id_candidates.append(posts_resp)
 
         data = posts_resp.get("data")
         page_items = _pick_list(data, ["notes", "note_list", "items", "list"])

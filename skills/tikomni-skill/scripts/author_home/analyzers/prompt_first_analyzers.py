@@ -8,6 +8,8 @@ import re
 import subprocess
 from typing import Any, Dict, List, Tuple
 
+from scripts.core.analysis_pipeline import load_contract_prompt
+
 
 REQUIRED_ANALYSIS_KEYS = {
     "author_portrait": str,
@@ -20,34 +22,43 @@ REQUIRED_ANALYSIS_KEYS = {
     "recommendations": list,
 }
 
+AUTHOR_ANALYSIS_PROMPT_FILE = "author-analysis.md"
+
+
+def _build_works_input(works: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    compact: List[Dict[str, Any]] = []
+    for item in works[:30]:
+        if not isinstance(item, dict):
+            continue
+        compact.append(
+            {
+                "id": item.get("platform_work_id"),
+                "title": item.get("title"),
+                "desc": item.get("desc"),
+                "asr_clean": item.get("asr_clean"),
+                "asr_source": item.get("asr_source"),
+                "metrics": item.get("metrics"),
+                "tags": item.get("tags"),
+                "content_type": item.get("content_type"),
+            }
+        )
+    return compact
+
 
 def _build_prompt(profile: Dict[str, Any], works: List[Dict[str, Any]]) -> str:
-    compact_works = [
-        {
-            "id": item.get("platform_work_id"),
-            "title": item.get("title"),
-            "desc": item.get("desc"),
-            "metrics": item.get("metrics"),
-            "tags": item.get("tags"),
-        }
-        for item in works[:30]
-    ]
+    contract_prompt = load_contract_prompt(AUTHOR_ANALYSIS_PROMPT_FILE)
+    payload = {
+        "author_profile": profile,
+        "works": _build_works_input(works),
+    }
     return (
-        "你是内容商业分析师。请基于作者主页样本，输出严格 JSON（不要 markdown，不要解释）。\n"
-        "字段必须完整，类型必须正确：\n"
-        "{\n"
-        '  "author_portrait": "string",\n'
-        '  "business_analysis": "string",\n'
-        '  "benchmark_analysis": "string",\n'
-        '  "business_score": 0,\n'
-        '  "benchmark_gap_score": 0,\n'
-        '  "style_radar": {"选题":0,"表达":0,"结构":0,"节奏":0,"人设":0,"转化":0,"差异化":0,"稳定性":0},\n'
-        '  "core_contradictions": ["string"],\n'
-        '  "recommendations": ["string"]\n'
-        "}\n"
-        "评分范围 0-100；文本请中文简洁。\n"
-        f"作者画像输入: {json.dumps(profile, ensure_ascii=False)}\n"
-        f"作品样本输入(最多30条): {json.dumps(compact_works, ensure_ascii=False)}\n"
+        "请严格根据以下提示词原文输出，结果必须是 JSON 对象，且只输出 JSON。\n"
+        "不得输出 markdown，不得输出解释。\n\n"
+        "=== 提示词原文开始 ===\n"
+        f"{contract_prompt}\n"
+        "=== 提示词原文结束 ===\n\n"
+        "=== 输入数据(JSON) ===\n"
+        f"{json.dumps(payload, ensure_ascii=False)}"
     )
 
 
@@ -84,6 +95,12 @@ def _validate_min_schema(payload: Dict[str, Any]) -> List[Dict[str, str]]:
             errors.append({"field": key, "reason": "type_error:list"})
         elif expected is dict and not isinstance(value, dict):
             errors.append({"field": key, "reason": "type_error:dict"})
+
+    if isinstance(payload.get("style_radar"), dict):
+        for required in ("选题", "表达", "结构", "节奏", "人设", "转化", "差异化", "稳定性"):
+            if required not in payload["style_radar"]:
+                errors.append({"field": f"style_radar.{required}", "reason": "missing"})
+
     return errors
 
 
@@ -102,7 +119,13 @@ def _fallback_analysis() -> Dict[str, Any]:
 
 def run_prompt_first_author_analysis(profile: Dict[str, Any], works: List[Dict[str, Any]]) -> Tuple[Dict[str, Any], List[Dict[str, str]], List[Dict[str, Any]]]:
     prompt = _build_prompt(profile, works)
-    trace: List[Dict[str, Any]] = [{"step": "analysis.prompt_built", "works_used": min(len(works), 30)}]
+    trace: List[Dict[str, Any]] = [
+        {
+            "step": "analysis.prompt_built",
+            "works_used": min(len(works), 30),
+            "prompt_contract": f"prompt-contracts/{AUTHOR_ANALYSIS_PROMPT_FILE}@v1",
+        }
+    ]
 
     response_text = ""
     try:
@@ -128,6 +151,8 @@ def run_prompt_first_author_analysis(profile: Dict[str, Any], works: List[Dict[s
     if schema_errors:
         fallback = _fallback_analysis()
         fallback["schema_validation_failed"] = True
+        trace.append({"step": "analysis.schema_validation_failed", "error_count": len(schema_errors)})
         return fallback, schema_errors, trace
 
+    trace.append({"step": "analysis.schema_validation_passed"})
     return analysis, [], trace

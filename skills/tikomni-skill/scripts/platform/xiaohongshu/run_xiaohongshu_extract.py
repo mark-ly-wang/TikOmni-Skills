@@ -660,7 +660,7 @@ def _fetch_note_info(*, base_url: str, token: str, timeout_ms: int, source_input
     share_text = source_input.get("share_text")
     note_id = source_input.get("note_id") or _extract_note_id_from_share(share_text)
 
-    def _call(path: str, params: Dict[str, Any], label: str) -> Dict[str, Any]:
+    def _call(path: str, params: Dict[str, Any], label: str, fallback_reason: Optional[str] = None) -> Dict[str, Any]:
         response = call_json_api(
             base_url=base_url,
             path=path,
@@ -671,6 +671,8 @@ def _fetch_note_info(*, base_url: str, token: str, timeout_ms: int, source_input
         )
         response["_endpoint"] = path
         response["_route_label"] = label
+        if fallback_reason:
+            response["fallback_trigger_reason"] = fallback_reason
         attempts.append({"label": label, "endpoint": path, "response": response})
         return response
 
@@ -685,16 +687,29 @@ def _fetch_note_info(*, base_url: str, token: str, timeout_ms: int, source_input
         app_response["_attempts"] = attempts
         return app_response
 
+    app_fallback_reason = (
+        "primary_timeout_retry_exhausted" if app_response.get("timeout_retry_exhausted") else "primary_non_timeout_failure"
+    )
     is_short = _is_short_share_url(share_text)
 
     if is_short and share_text:
-        v3_response = _call(WEB_V2_V3_ENDPOINT, {"short_url": share_text}, "web_v2_v3_short")
+        v3_response = _call(
+            WEB_V2_V3_ENDPOINT,
+            {"short_url": share_text},
+            "web_v2_v3_short",
+            fallback_reason=app_fallback_reason,
+        )
         if v3_response.get("ok"):
             v3_response["_attempts"] = attempts
             return v3_response
 
     if note_id:
-        v2_response = _call(WEB_V2_V2_ENDPOINT, {"note_id": note_id}, "web_v2_v2_note_id")
+        v2_response = _call(
+            WEB_V2_V2_ENDPOINT,
+            {"note_id": note_id},
+            "web_v2_v2_note_id",
+            fallback_reason=app_fallback_reason,
+        )
         if v2_response.get("ok"):
             v2_response["_attempts"] = attempts
             return v2_response
@@ -705,7 +720,7 @@ def _fetch_note_info(*, base_url: str, token: str, timeout_ms: int, source_input
     if note_id:
         web_params["note_id"] = note_id
 
-    web_response = _call(WEB_ENDPOINT, web_params, "web_v7")
+    web_response = _call(WEB_ENDPOINT, web_params, "web_v7", fallback_reason=app_fallback_reason)
     web_response["_attempts"] = attempts
     return web_response
 
@@ -1126,6 +1141,7 @@ def _build_result(
     downloaded_assets: List[Dict[str, Any]],
     missing_fields: Optional[List[Dict[str, str]]] = None,
     metadata_fields: Optional[Dict[str, Any]] = None,
+    asr_source: Optional[str] = None,
 ) -> Dict[str, Any]:
     metadata = metadata_fields or {}
     summary_block = summarize_content(raw_content, source=f"xiaohongshu:{text_source}")
@@ -1135,6 +1151,16 @@ def _build_result(
         f"analysis_mode={analysis_mode}",
         f"selected_image_count={len(selected_image_urls)}",
     ])
+
+    resolved_asr_source = normalize_text(asr_source)
+    if not resolved_asr_source:
+        if text_source == "subtitle":
+            resolved_asr_source = "xhs_subtitle"
+        elif text_source == "u2":
+            resolved_asr_source = "u2"
+        else:
+            resolved_asr_source = "fallback_none"
+
     return {
         "platform": "xiaohongshu",
         "content_kind": "note",
@@ -1144,6 +1170,7 @@ def _build_result(
         "analysis_mode": analysis_mode,
         "subtitle_hit": subtitle_hit,
         "text_source": text_source,
+        "asr_source": resolved_asr_source,
         "u2_task_id": u2_task_id,
         "u2_task_status": u2_task_status,
         "selected_video_url": selected_video_url,

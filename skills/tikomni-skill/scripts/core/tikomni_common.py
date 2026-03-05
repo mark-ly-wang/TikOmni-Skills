@@ -5,6 +5,8 @@ import json
 import os
 import re
 import socket
+import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -19,6 +21,13 @@ DEFAULT_USER_AGENT = (
 )
 
 TERMINAL_TASK_STATUS = {"SUCCEEDED", "FAILED", "CANCELED", "CANCELLED"}
+
+DEFAULT_GLOBAL_QPS = 5.0
+DEFAULT_TIMEOUT_RETRY_MAX = 3
+DEFAULT_TIMEOUT_RETRY_BACKOFF_MS = 300
+
+_RATE_LIMIT_LOCK = threading.Lock()
+_NEXT_ALLOWED_TS = 0.0
 
 
 def _parse_env_file(env_file: Optional[str]) -> Dict[str, str]:
@@ -205,6 +214,113 @@ def _build_url(base_url: str, path: str, params: Optional[Dict[str, Any]]) -> st
     return url
 
 
+def _resolve_global_qps() -> float:
+    raw = str(os.getenv("TIKOMNI_GLOBAL_QPS", DEFAULT_GLOBAL_QPS)).strip()
+    try:
+        qps = float(raw)
+    except Exception:
+        qps = DEFAULT_GLOBAL_QPS
+    return max(0.1, qps)
+
+
+def _resolve_timeout_retry_max() -> int:
+    raw = str(os.getenv("TIKOMNI_TIMEOUT_RETRY_MAX", DEFAULT_TIMEOUT_RETRY_MAX)).strip()
+    try:
+        retries = int(raw)
+    except Exception:
+        retries = DEFAULT_TIMEOUT_RETRY_MAX
+    return max(0, min(retries, 8))
+
+
+def _resolve_timeout_retry_backoff_ms() -> int:
+    raw = str(os.getenv("TIKOMNI_TIMEOUT_RETRY_BACKOFF_MS", DEFAULT_TIMEOUT_RETRY_BACKOFF_MS)).strip()
+    try:
+        backoff = int(raw)
+    except Exception:
+        backoff = DEFAULT_TIMEOUT_RETRY_BACKOFF_MS
+    return max(0, min(backoff, 5000))
+
+
+def _wait_rate_limit_slot(qps: float) -> int:
+    global _NEXT_ALLOWED_TS
+    interval_sec = 1.0 / max(qps, 0.1)
+    now = time.monotonic()
+    with _RATE_LIMIT_LOCK:
+        scheduled = max(now, _NEXT_ALLOWED_TS)
+        wait_sec = max(0.0, scheduled - now)
+        _NEXT_ALLOWED_TS = scheduled + interval_sec
+
+    if wait_sec > 0:
+        time.sleep(wait_sec)
+    return int(wait_sec * 1000)
+
+
+def _is_timeout_like_failure(status_code: Optional[int], error_reason: Optional[str]) -> bool:
+    if isinstance(status_code, (int, float)) and int(status_code) in {408, 429, 502, 503, 504}:
+        return True
+
+    reason = str(error_reason or "").strip().upper()
+    if not reason:
+        return False
+    timeout_tokens = ["TIMEOUT", "TIMED_OUT", "UPSTREAM_TIMEOUT", "DEADLINE_EXCEEDED"]
+    return any(token in reason for token in timeout_tokens)
+
+
+def _execute_json_request(request: urllib.request.Request, timeout_ms: int, url: str) -> Tuple[Dict[str, Any], bool]:
+    status_code: Optional[int] = None
+    raw_text = ""
+    payload: Any = {}
+
+    try:
+        with urllib.request.urlopen(request, timeout=max(timeout_ms / 1000.0, 1.0)) as response:
+            status_code = response.getcode()
+            raw_text = response.read().decode("utf-8", errors="replace")
+            payload = safe_json_loads(raw_text)
+    except urllib.error.HTTPError as error:
+        status_code = error.code
+        raw_text = error.read().decode("utf-8", errors="replace")
+        payload = safe_json_loads(raw_text)
+    except urllib.error.URLError as error:
+        reason_obj = getattr(error, "reason", error)
+        reason_text = normalize_text(reason_obj)
+        timeout_like = isinstance(reason_obj, socket.timeout) or "timeout" in reason_text.lower()
+        error_reason = "network_error:timeout" if timeout_like else f"network_error:{reason_text or 'unknown'}"
+        return {
+            "ok": False,
+            "status_code": None,
+            "data": {},
+            "request_id": None,
+            "error_reason": error_reason,
+            "raw_text": str(error),
+            "url": url,
+        }, timeout_like
+    except (TimeoutError, socket.timeout) as error:
+        return {
+            "ok": False,
+            "status_code": None,
+            "data": {},
+            "request_id": None,
+            "error_reason": "network_error:timeout",
+            "raw_text": str(error),
+            "url": url,
+        }, True
+
+    request_id = extract_request_id(payload)
+    ok = bool(status_code is not None and 200 <= status_code < 300)
+    error_reason = None if ok else extract_error_reason(payload, status_code)
+    timeout_like = _is_timeout_like_failure(status_code, error_reason)
+
+    return {
+        "ok": ok,
+        "status_code": status_code,
+        "data": payload,
+        "request_id": request_id,
+        "error_reason": error_reason,
+        "raw_text": raw_text,
+        "url": url,
+    }, timeout_like
+
+
 def call_json_api(
     *,
     base_url: str,
@@ -233,53 +349,47 @@ def call_json_api(
 
     request = urllib.request.Request(url=url, data=data, headers=headers, method=method.upper())
 
-    status_code: Optional[int] = None
-    raw_text = ""
-    payload: Any = {}
+    qps = _resolve_global_qps()
+    timeout_retry_max = _resolve_timeout_retry_max()
+    retry_backoff_ms = _resolve_timeout_retry_backoff_ms()
 
-    try:
-        with urllib.request.urlopen(request, timeout=max(timeout_ms / 1000.0, 1.0)) as response:
-            status_code = response.getcode()
-            raw_text = response.read().decode("utf-8", errors="replace")
-            payload = safe_json_loads(raw_text)
-    except urllib.error.HTTPError as error:
-        status_code = error.code
-        raw_text = error.read().decode("utf-8", errors="replace")
-        payload = safe_json_loads(raw_text)
-    except urllib.error.URLError as error:
-        return {
-            "ok": False,
-            "status_code": None,
-            "data": {},
-            "request_id": None,
-            "error_reason": f"network_error:{error.reason}",
-            "raw_text": str(error),
-            "url": url,
-        }
-    except (TimeoutError, socket.timeout) as error:
-        return {
-            "ok": False,
-            "status_code": None,
-            "data": {},
-            "request_id": None,
-            "error_reason": "network_error:timeout",
-            "raw_text": str(error),
-            "url": url,
-        }
-
-    request_id = extract_request_id(payload)
-    ok = bool(status_code is not None and 200 <= status_code < 300)
-    error_reason = None if ok else extract_error_reason(payload, status_code)
-
-    return {
-        "ok": ok,
-        "status_code": status_code,
-        "data": payload,
-        "request_id": request_id,
-        "error_reason": error_reason,
-        "raw_text": raw_text,
+    cumulative_wait_ms = 0
+    last_result: Dict[str, Any] = {
+        "ok": False,
+        "status_code": None,
+        "data": {},
+        "request_id": None,
+        "error_reason": "unknown_error",
+        "raw_text": "",
         "url": url,
     }
+
+    max_attempts = 1 + timeout_retry_max
+    for attempt in range(1, max_attempts + 1):
+        if attempt > 1 and retry_backoff_ms > 0:
+            sleep_ms = retry_backoff_ms * (2 ** (attempt - 2))
+            time.sleep(sleep_ms / 1000.0)
+
+        cumulative_wait_ms += _wait_rate_limit_slot(qps)
+        response, timeout_like = _execute_json_request(request=request, timeout_ms=timeout_ms, url=url)
+        response["rate_limit_wait_ms"] = cumulative_wait_ms
+        response["retry_attempt"] = max(0, attempt - 1)
+        response["fallback_trigger_reason"] = None
+        response["timeout_retry_max"] = timeout_retry_max
+
+        if response.get("ok"):
+            response["timeout_retry_exhausted"] = False
+            return response
+
+        last_result = response
+        if timeout_like and attempt < max_attempts:
+            continue
+
+        response["timeout_retry_exhausted"] = bool(timeout_like and attempt >= max_attempts)
+        return response
+
+    last_result["timeout_retry_exhausted"] = True
+    return last_result
 
 
 def deep_find_first(payload: Any, keys: Iterable[str]) -> Optional[Any]:

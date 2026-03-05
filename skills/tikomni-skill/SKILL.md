@@ -21,7 +21,15 @@ Complete cross-platform content tasks with traceable outputs:
 ## Default Behavior
 - `--write-card` is enabled by default (disable with `--no-write-card`).
 - Unified output persistence is enabled by default (disable with `--no-persist-output`).
+- Global API governance defaults:
+  - QPS=5
+  - timeout retry=3
+  - trace fields: `rate_limit_wait_ms/retry_attempt/fallback_trigger_reason`
 - Author-home defaults: latest-first + cursor pagination + hard cap `max_items<=200` (all platforms).
+- Author-home ASR defaults:
+  - Douyin: U2-first
+  - Xiaohongshu: subtitle-first, invalid subtitle fallback U2
+  - `asr_source`: `xhs_subtitle | u2 | fallback_none`
 
 ## Trigger Examples / 触发示例
 - “帮我对标拆解这条抖音视频”
@@ -65,4 +73,4 @@ A run is done only when all are true:
 - Normalize rules: `references/normalize-rules.md`
 - Output markdown rules: `references/output-markdown.md`
 - API catalog: `references/api-catalog/index.md`
-- Prompt contracts: `references/prompt-contracts/`
+- Prompt contracts: `references/prompt-contracts/` (including `author-analysis.md`)

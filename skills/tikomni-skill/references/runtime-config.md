@@ -54,13 +54,13 @@ Default behavior:
 - Unified entry (`run_tikomni_extract`) persists JSON by default for all registered workflows.
 - success -> `<runs_dir>/<results_dir>/<YYYYMMDD>/<timestamp>-<platform>-<id>.json`
 - error -> `<errors_dir>/<YYYYMMDD>/<timestamp>-<platform>-<id>.json`
-- disable per run with `--no-persist-output` (global for workflow outputs).
+- fixed pipelines do not expose a per-run persistence disable switch.
 
-Card markdown written by `--write-card` is routed by `TIKOMNI_CARD_ROOT` + card routes.
+Card markdown is routed by `TIKOMNI_CARD_ROOT` + card routes.
 
 Default behavior:
-- `scripts/cli/run_tikomni_extract.py` enables `--write-card` by default.
-- Platform handlers (Douyin/XHS) inherit this default unless `--no-write-card` is set explicitly.
+- Fixed pipelines always write cards and workflow JSON artifacts.
+- Unified entry + fixed platform handlers hard-reject attempts to skip card writing or output persistence.
 - Do not assume card files are always under output root.
 
 ```yaml
@@ -136,8 +136,8 @@ Notes:
    - In local CLI/CUI runs: workspace `.env`.
    - In CI runs: CI secrets or private env file loaded at runtime.
 2. Which root controls what?
-   - `TIKOMNI_OUTPUT_ROOT`: runner output files (`_runs/results/_errors`); unified-entry workflow JSON persistence is enabled by default for all workflows and can be disabled with `--no-persist-output`.
-   - `TIKOMNI_CARD_ROOT`: markdown cards; card writing is enabled by default and can be disabled with `--no-write-card`.
+   - `TIKOMNI_OUTPUT_ROOT`: runner output files (`_runs/results/_errors`); fixed pipelines always persist workflow JSON artifacts and do not expose a disable switch.
+   - `TIKOMNI_CARD_ROOT`: markdown cards; fixed pipelines always write cards and do not expose a disable switch.
 3. How to verify which source provided the key?
    - Run `python3 scripts/cli/check_tikomni_readiness.py`.
    - It prints `key_source` and `source_chain` only (no secret value).

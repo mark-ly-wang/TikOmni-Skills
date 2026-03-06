@@ -661,6 +661,11 @@ def run_douyin_single_video(
     persist_output: bool = True,
     progress: Optional[ProgressReporter] = None,
 ) -> Dict[str, Any]:
+    if not write_card or not persist_output:
+        raise ValueError(
+            f"fixed_pipeline_requires_full_persistence:douyin:{content_kind}:write_card={bool(write_card)}:persist_output={bool(persist_output)}"
+        )
+
     source_input = _normalize_input(input_value, share_url)
     if progress is not None:
         progress.started(stage="single_video.workflow", message="douyin single_video workflow started")
@@ -1124,16 +1129,10 @@ def main() -> None:
         default=1500,
         help="Base backoff ms for retriable U2 submit failures (exponential)",
     )
-    parser.add_argument("--write-card", dest="write_card", action="store_true", help="Write benchmark card to card root (default on)")
-    parser.add_argument("--no-write-card", dest="write_card", action="store_false", help="Disable benchmark card writing")
-    parser.set_defaults(write_card=True)
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
     parser.add_argument("--content-kind", default="single_video", help="Routing kind, e.g. single_video/author_home/author_analysis")
     parser.add_argument("--collect-material", action="store_true", help="Write extra CMAT card")
     parser.add_argument("--card-root", default=None, help="Card root (absolute); falls back to TIKOMNI_CARD_ROOT when writing cards")
-    parser.add_argument("--persist-output", dest="persist_output", action="store_true", help="Persist JSON artifact to TIKOMNI_OUTPUT_ROOT (default on)")
-    parser.add_argument("--no-persist-output", dest="persist_output", action="store_false", help="Disable output artifact persistence")
-    parser.set_defaults(persist_output=True)
     args = parser.parse_args()
 
     config, _ = load_tikomni_config(
@@ -1160,14 +1159,14 @@ def main() -> None:
             max_polls=args.max_polls,
             u2_submit_max_retries=args.u2_submit_max_retries,
             u2_submit_backoff_ms=args.u2_submit_backoff_ms,
-            write_card=args.write_card,
+            write_card=True,
             card_type=args.card_type,
             collect_material=args.collect_material,
             card_root=args.card_root,
             content_kind=args.content_kind,
             storage_config=config,
             allow_process_env=args.allow_process_env,
-            persist_output=args.persist_output,
+            persist_output=True,
         )
     except ValueError as error:
         result = {

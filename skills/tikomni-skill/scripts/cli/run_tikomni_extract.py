@@ -31,6 +31,14 @@ from scripts.core.tikomni_common import resolve_runtime, write_json_stdout
 from scripts.registry.workflow_registry import DEFAULT_WORKFLOW_REGISTRY, normalize_result_envelope
 
 
+FIXED_PIPELINE_WORKFLOWS = {
+    ("douyin", "single_video"),
+    ("douyin", "author_home"),
+    ("xiaohongshu", "note"),
+    ("xiaohongshu", "author_home"),
+}
+
+
 def _build_unsupported_result(*, input_value: str, platform: str, content_kind: str) -> Dict[str, Any]:
     return {
         "platform": platform or "unknown",
@@ -74,6 +82,50 @@ def _build_runtime_not_ready_result(*, platform: str, content_kind: str, error_r
         "missing_fields": [],
         "extract_trace": [],
         "fallback_trace": [],
+        "request_id": None,
+    }
+
+
+def _is_fixed_pipeline(platform: str, content_kind: str) -> bool:
+    return ((platform or "").strip().lower(), (content_kind or "").strip().lower()) in FIXED_PIPELINE_WORKFLOWS
+
+
+def _build_fixed_pipeline_guard_result(*, platform: str, content_kind: str, write_card: bool, persist_output: bool) -> Dict[str, Any]:
+    error_reason = "fixed_pipeline_requires_full_persistence"
+    return {
+        "platform": platform,
+        "content_kind": content_kind,
+        "raw_content": "",
+        "summary": "",
+        "insights": ["source=runner", "fixed_pipeline_guard_rejected"],
+        "confidence": "low",
+        "error_reason": error_reason,
+        "missing_fields": [
+            {"field": "write_card", "reason": "fixed_pipeline_requires_true"},
+            {"field": "persist_output", "reason": "fixed_pipeline_requires_true"},
+        ],
+        "extract_trace": [
+            {
+                "step": "fixed_pipeline_guard",
+                "platform": platform,
+                "content_kind": content_kind,
+                "write_card": bool(write_card),
+                "persist_output": bool(persist_output),
+                "ok": False,
+                "error_reason": error_reason,
+            }
+        ],
+        "fallback_trace": [
+            {
+                "step": "fixed_pipeline_guard",
+                "platform": platform,
+                "content_kind": content_kind,
+                "write_card": bool(write_card),
+                "persist_output": bool(persist_output),
+                "ok": False,
+                "error_reason": error_reason,
+            }
+        ],
         "request_id": None,
     }
 
@@ -216,9 +268,6 @@ def main() -> None:
     parser.add_argument("--xhs-u2-submit-max-retries", type=int, default=None, help="Xiaohongshu U2 submit max retries")
     parser.add_argument("--xhs-u2-submit-backoff-ms", type=int, default=None, help="Xiaohongshu U2 submit base backoff ms")
     parser.add_argument("--force-u2-fallback", action="store_true", help="XHS only: force subtitle miss for fallback test")
-    parser.add_argument("--write-card", dest="write_card", action="store_true", help="Write markdown card (default on)")
-    parser.add_argument("--no-write-card", dest="write_card", action="store_false", help="Disable markdown card writing")
-    parser.set_defaults(write_card=True)
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
     parser.add_argument("--collect-material", action="store_true", help="Write CMAT only when explicit")
     parser.add_argument("--card-root", default=None, help="Card root (absolute); falls back to TIKOMNI_CARD_ROOT when writing cards")
@@ -227,9 +276,6 @@ def main() -> None:
     parser.add_argument("--max-items", type=int, default=200, help="Homepage total item cap (hard max 200)")
     parser.add_argument("--asr-batch-size", type=int, default=None, help="Author-home ASR batch submit size (default from config, hard max 100)")
     parser.add_argument("--checkpoint-json", default=None, help="Author-home checkpoint JSON for resume")
-    parser.add_argument("--persist-output", dest="persist_output", action="store_true", help="Persist workflow JSON artifact to TIKOMNI_OUTPUT_ROOT (default on)")
-    parser.add_argument("--no-persist-output", dest="persist_output", action="store_false", help="Disable workflow artifact persistence globally")
-    parser.set_defaults(persist_output=True)
     args = parser.parse_args()
 
     config, _ = load_tikomni_config(
@@ -290,10 +336,16 @@ def main() -> None:
 
     requested_content_kind = args.content_kind
 
+    pre_resolved_handler, pre_resolved_content_kind = DEFAULT_WORKFLOW_REGISTRY.resolve(
+        platform=platform,
+        content_kind=requested_content_kind,
+    )
+    effective_content_kind = pre_resolved_content_kind or requested_content_kind
+
     progress = build_progress_reporter(
         workflow="run_tikomni_extract",
         platform=platform,
-        content_kind=requested_content_kind,
+        content_kind=effective_content_kind,
         input_value=args.input,
     )
     progress.started(
@@ -301,18 +353,19 @@ def main() -> None:
         message="workflow started",
         data={
             "requested_content_kind": requested_content_kind,
-            "write_card": bool(args.write_card),
-            "persist_output": bool(args.persist_output),
+            "resolved_content_kind": pre_resolved_content_kind,
+            "write_card": True,
+            "persist_output": True,
         },
     )
-    if not args.write_card or not args.persist_output:
+    if pre_resolved_handler is not None and pre_resolved_content_kind and _is_fixed_pipeline(platform, pre_resolved_content_kind):
         progress.progress(
-            stage="workflow.debug_opt_out",
-            message="debug opt-out flags active",
+            stage="workflow.fixed_pipeline_guard",
+            message="fixed pipeline hard-lock enabled",
             data={
-                "write_card": bool(args.write_card),
-                "persist_output": bool(args.persist_output),
-                "warning": "--no-write-card/--no-persist-output are debug-only opt-outs for standard runs",
+                "resolved_content_kind": pre_resolved_content_kind,
+                "write_card": True,
+                "persist_output": True,
             },
         )
 
@@ -349,13 +402,13 @@ def main() -> None:
         "u2_timeout_retry_enabled": bool(u2_timeout_retry_enabled),
         "u2_timeout_retry_max_retries": int(u2_timeout_retry_max_retries),
         "force_u2_fallback": args.force_u2_fallback,
-        "write_card": args.write_card,
+        "write_card": True,
         "card_type": args.card_type,
         "collect_material": args.collect_material,
         "card_root": args.card_root,
         "storage_config": config,
         "allow_process_env": args.allow_process_env,
-        "persist_output": args.persist_output,
+        "persist_output": True,
         "page_size": int(args.page_size),
         "pages_max": int(args.pages_max),
         "max_items": int(args.max_items),
@@ -415,13 +468,13 @@ def main() -> None:
     progress.progress(
         stage="workflow.persist",
         message="ensuring output artifact",
-        data={"persist_output": bool(args.persist_output)},
+        data={"persist_output": True},
     )
     result = _ensure_output_persist(
         result=result,
         input_value=args.input,
         storage_config=config,
-        persist_output=bool(args.persist_output),
+        persist_output=True,
     )
 
     if result.get("error_reason"):

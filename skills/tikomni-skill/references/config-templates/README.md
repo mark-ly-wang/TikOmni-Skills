@@ -26,9 +26,9 @@ This folder contains runtime config templates used by local scripts.
 
 ## Default Runtime Behavior
 
-- `run_tikomni_extract.py` enables card writing by default (`--write-card`).
-- Unified entry (`run_tikomni_extract.py`) enables JSON persistence by default for all registered workflows (`--persist-output`).
-- Disable per run with `--no-write-card` / `--no-persist-output` (global switch for workflow output persistence).
+- Fixed pipelines always write cards.
+- Fixed pipelines always persist workflow JSON artifacts.
+- Unified entry and fixed platform handlers do not expose per-run disable switches for card writing or output persistence.
 
 Example:
 

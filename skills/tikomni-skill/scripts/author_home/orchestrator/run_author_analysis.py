@@ -12,7 +12,13 @@ if __package__ in {None, ""}:
 
 """Componentized author-home orchestrator."""
 
+import hashlib
+import json
+from datetime import datetime
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
+
+from scripts.core.config_loader import resolve_storage_paths
 
 from scripts.author_home.adapters.platform_adapters import adapt_douyin_author_home, adapt_xhs_author_home
 from scripts.author_home.orchestrator.work_analysis_artifacts import orchestrate_work_analysis_artifacts
@@ -41,6 +47,109 @@ def _unsupported(platform: str) -> Dict[str, Any]:
     }
 
 
+def _enforce_fixed_pipeline_persistence(*, platform: str, content_kind: str, write_card: bool, persist_output: bool) -> None:
+    if write_card and persist_output:
+        return
+    raise ValueError(
+        f"fixed_pipeline_requires_full_persistence:{platform}:{content_kind}:write_card={bool(write_card)}:persist_output={bool(persist_output)}"
+    )
+
+
+def _safe_slug(value: Any, fallback: str = "unknown") -> str:
+    text = str(value or "").strip().lower()
+    if not text:
+        return fallback
+    filtered = "".join(ch if ch.isalnum() or ch in {"-", "_"} else "-" for ch in text).strip("-")
+    return filtered[:64] or fallback
+
+
+def _resolve_identifier(input_value: str, result: Dict[str, Any]) -> str:
+    for key in ("platform_work_id", "note_id", "request_id"):
+        hit = _safe_slug(result.get(key), fallback="")
+        if hit:
+            return hit
+
+    source = result.get("source")
+    if isinstance(source, dict):
+        for key in ("share_url", "share_text", "note_id"):
+            candidate = str(source.get(key) or "").strip()
+            if candidate:
+                return f"url-{hashlib.sha1(candidate.encode('utf-8')).hexdigest()[:10]}"
+
+    fallback = str(input_value or "").strip()
+    if fallback:
+        return f"url-{hashlib.sha1(fallback.encode('utf-8')).hexdigest()[:10]}"
+    return "missing_input"
+
+
+def _build_persist_payload(*, result: Dict[str, Any], status: str, written_at: datetime, identifier: str) -> Dict[str, Any]:
+    platform = str(result.get("platform") or "unknown")
+    content_kind = str(result.get("content_kind") or "unknown")
+    summary = {
+        "summary": result.get("summary", ""),
+        "insights": result.get("insights", []),
+        "confidence": result.get("confidence"),
+        "error_reason": result.get("error_reason"),
+    }
+    normalized = {
+        "platform": platform,
+        "content_kind": content_kind,
+        "platform_work_id": result.get("platform_work_id") or result.get("note_id"),
+        "request_id": result.get("request_id"),
+        "source": result.get("source") if isinstance(result.get("source"), dict) else {},
+    }
+    return {
+        "meta": {
+            "written_at": written_at.isoformat(timespec="seconds"),
+            "status": status,
+            "platform": platform,
+            "identifier": identifier,
+        },
+        "summary": summary,
+        "normalized": normalized,
+        "raw": result,
+    }
+
+
+def _persist_output_artifact(*, result: Dict[str, Any], input_value: str, storage_config: Dict[str, Any], persist_output: bool) -> Dict[str, Any]:
+    if not persist_output:
+        return {"enabled": False, "skipped": True, "reason": "disabled_by_flag"}
+
+    try:
+        paths = resolve_storage_paths(storage_config or {})
+    except Exception as error:
+        return {"enabled": True, "ok": False, "error": f"resolve_storage_paths_failed:{error}"}
+
+    now = datetime.now()
+    date_key = now.strftime("%Y%m%d")
+    timestamp = now.strftime("%Y%m%dT%H%M%S")
+    platform = _safe_slug(result.get("platform"), fallback="unknown")
+    identifier = _resolve_identifier(input_value, result)
+    has_error = bool(result.get("error_reason"))
+    status = "error" if has_error else "success"
+
+    if has_error:
+        target_dir = Path(paths.get("errors_dir", "")) / date_key
+    else:
+        target_dir = Path(paths.get("runs_dir", "")) / str(paths.get("results_dir", "results")) / date_key
+
+    target_dir.mkdir(parents=True, exist_ok=True)
+    file_path = target_dir / f"{timestamp}-{platform}-{identifier}.json"
+    payload = _build_persist_payload(
+        result=result,
+        status=status,
+        written_at=now,
+        identifier=identifier,
+    )
+    file_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {
+        "enabled": True,
+        "ok": True,
+        "status": status,
+        "path": str(file_path),
+    }
+
+
 def run_author_home_analysis(
     *,
     platform: str,
@@ -62,12 +171,20 @@ def run_author_home_analysis(
     asr_batch_size: int = 20,
     checkpoint: Optional[Dict[str, Any]] = None,
     write_card: bool = True,
+    persist_output: bool = True,
     collect_material: bool = False,
     card_root: Optional[str] = None,
     storage_config: Optional[Dict[str, Any]] = None,
     collector_override: Optional[CollectorFn] = None,
     progress: Optional[ProgressReporter] = None,
 ) -> Dict[str, Any]:
+    _enforce_fixed_pipeline_persistence(
+        platform=platform,
+        content_kind="author_home",
+        write_card=bool(write_card),
+        persist_output=bool(persist_output),
+    )
+
     # hard default policy: latest + cursor loop + max 200 across all platforms
     capped_max_items = min(max(max_items, 1), 200)
     capped_page_size = min(max(page_size, 1), 20)
@@ -332,6 +449,12 @@ def run_author_home_analysis(
             },
         },
     }
+    result["output_persist"] = _persist_output_artifact(
+        result=result,
+        input_value=input_value,
+        storage_config=storage_config or {},
+        persist_output=bool(persist_output),
+    )
     if progress is not None:
         final_event = progress.failed if result.get("error_reason") else progress.done
         final_event(
@@ -345,6 +468,7 @@ def run_author_home_analysis(
                 "cache_hit_count": work_analysis_stats.get("cache_hit_count", 0),
                 "queued_count": work_analysis_stats.get("queued_count", 0),
                 "failed_count": work_analysis_stats.get("failed_count", 0),
+                "output_persist_ok": bool((result.get("output_persist") or {}).get("ok")),
             },
         )
     return result

@@ -186,6 +186,42 @@ def _check_xhs_author_home_resolver_param_alignment() -> Dict[str, Any]:
         return {"ok": False, "error": f"{type(error).__name__}: {error}"}
 
 
+def _check_xhs_app_v2_route_priority_strings() -> Dict[str, Any]:
+    try:
+        import inspect
+
+        from scripts.author_home.collectors import homepage_collectors
+        from scripts.platform.xiaohongshu import run_xiaohongshu_extract
+
+        note_source = inspect.getsource(run_xiaohongshu_extract._fetch_note_info)
+        home_source = inspect.getsource(homepage_collectors.collect_xhs_author_home_raw)
+        note_has_app_v2 = all(
+            token in note_source
+            for token in (
+                "APP_V2_VIDEO_ENDPOINT",
+                "APP_V2_IMAGE_ENDPOINT",
+                "APP_V2_MIXED_ENDPOINT",
+                'APP_V1_ENDPOINT',
+            )
+        )
+        home_has_app_v2 = all(
+            token in home_source
+            for token in (
+                "/api/u1/v1/xiaohongshu/app_v2/get_user_info",
+                "/api/u1/v1/xiaohongshu/app_v2/get_user_posted_notes",
+                "/api/u1/v1/xiaohongshu/web_v2/fetch_user_info_app",
+                "/api/u1/v1/xiaohongshu/web_v2/fetch_home_notes_app",
+            )
+        )
+        return {
+            "ok": bool(note_has_app_v2 and home_has_app_v2),
+            "note_has_app_v2_priority": note_has_app_v2,
+            "home_has_app_v2_priority": home_has_app_v2,
+        }
+    except Exception as error:
+        return {"ok": False, "error": f"{type(error).__name__}: {error}"}
+
+
 def run_checks() -> Dict[str, Any]:
     root = _repo_root()
     py = sys.executable
@@ -346,6 +382,10 @@ def run_checks() -> Dict[str, Any]:
     xhs_resolve_param_check = _check_xhs_author_home_resolver_param_alignment()
     checks["author_home/collectors/homepage_collectors.py::xhs_share_link_param"] = xhs_resolve_param_check
     all_ok = all_ok and bool(xhs_resolve_param_check.get("ok"))
+
+    xhs_app_v2_priority_check = _check_xhs_app_v2_route_priority_strings()
+    checks["xiaohongshu::app_v2_route_priority"] = xhs_app_v2_priority_check
+    all_ok = all_ok and bool(xhs_app_v2_priority_check.get("ok"))
 
     return {"ok": all_ok, "checks": checks}
 

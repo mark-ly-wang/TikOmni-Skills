@@ -506,6 +506,7 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
         "confidence": normalize_text(payload.get("confidence")) or "low",
         "error_reason": payload.get("error_reason"),
         "extract_trace": payload.get("extract_trace", []),
+        "analysis_sections": payload.get("analysis_sections") if isinstance(payload.get("analysis_sections"), dict) else {},
         "analysis_output": payload.get("analysis_output") if isinstance(payload.get("analysis_output"), dict) else {},
         "business_score": _safe_int(payload.get("business_score"), default=0),
         "benchmark_gap_score": _safe_int(payload.get("benchmark_gap_score"), default=0),
@@ -846,6 +847,60 @@ def _insight_metric_snapshot(fields: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _build_local_analysis_sections(fields: Dict[str, Any]) -> Dict[str, Any]:
+    topic = _analyze_topic(fields)
+    style = _analyze_style(fields)
+    hook = _analyze_hook(fields)
+    structure = _analyze_structure(fields)
+    cta = _analyze_cta(fields)
+    summary = _build_summary_module(
+        {
+            "选题": topic,
+            "文风": style,
+            "Hook": hook,
+            "结构": structure,
+            "CTA": cta,
+        }
+    )
+    metrics = _insight_metric_snapshot(fields)
+    insight_lines = list(summary.get("lines") or [])
+    insight_lines.extend(
+        [
+            f"- 互动折算值：{metrics.get('interaction', 0)}。",
+            f"- 粗略互动率：{metrics.get('interaction_rate', 0.0):.4f}。",
+        ]
+    )
+    return {
+        "modules": {
+            "选题": topic.get("lines", ["数据不足"]),
+            "文风": style.get("lines", ["数据不足"]),
+            "Hook": hook.get("lines", ["数据不足"]),
+            "结构": structure.get("lines", ["数据不足"]),
+        },
+        "insight": insight_lines or ["数据不足"],
+    }
+
+
+def build_card_analysis_artifact(
+    *,
+    payload: Dict[str, Any],
+    platform: str,
+    card_type: str,
+) -> Dict[str, Any]:
+    fields = _extract_required_fields(payload, platform=platform)
+    precomputed = fields.get("analysis_sections") if isinstance(fields.get("analysis_sections"), dict) else {}
+    if precomputed:
+        analysis_sections = precomputed
+    elif card_type == "author":
+        analysis_sections = {}
+    else:
+        analysis_sections = build_analysis_sections(fields)
+    fields["analysis_sections"] = analysis_sections
+    return {
+        "fields": fields,
+        "analysis_sections": analysis_sections,
+    }
+
 
 def _build_output_path(
     *,
@@ -1002,7 +1057,11 @@ def _render_markdown(
         f"赞 {fields['digg_count']} / 评 {fields['comment_count']} / "
         f"藏 {fields['collect_count']} / 转 {fields['share_count']}"
     )
-    analysis_sections = build_analysis_sections(fields)
+    precomputed_sections = fields.get("analysis_sections") if isinstance(fields.get("analysis_sections"), dict) else {}
+    if precomputed_sections:
+        analysis_sections = precomputed_sections
+    else:
+        analysis_sections = {} if card_type == "author_sample_work" else build_analysis_sections(fields)
     creative_modules = analysis_sections.get("modules", {})
     insight_lines = analysis_sections.get("insight", ["数据不足"])
     extract_trace_json = json.dumps(fields.get("extract_trace", []), ensure_ascii=False, indent=2)

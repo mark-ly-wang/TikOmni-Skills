@@ -8,6 +8,7 @@ import re
 import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 
+from scripts.core.progress_report import ProgressReporter
 from scripts.core.tikomni_common import normalize_text
 from scripts.pipeline.asr.asr_pipeline import (
     clamp_u2_batch_submit_size,
@@ -517,6 +518,7 @@ def enrich_author_home_asr(
     timeout_retry_max_retries: int = 3,
     batch_size: int = DEFAULT_BATCH_SUBMIT_SIZE,
     checkpoint: Optional[Dict[str, Any]] = None,
+    progress: Optional[ProgressReporter] = None,
 ) -> Dict[str, Any]:
     trace: List[Dict[str, Any]] = []
     deduped_works, duplicate_count = _dedupe_works_by_platform_id(works)
@@ -549,6 +551,17 @@ def enrich_author_home_asr(
             "batch_submit_hard_limit": MAX_BATCH_SUBMIT_SIZE,
         }
     )
+    if progress is not None:
+        progress.started(
+            stage="author_home.asr",
+            message="author_home asr enrichment started",
+            data={
+                "input_count": len(works),
+                "deduped_count": len(deduped_works),
+                "resume_completed": len(completed_ids),
+                "batch_size": effective_batch,
+            },
+        )
 
     queue: List[Dict[str, Any]] = []
     for work in deduped_works:
@@ -566,6 +579,12 @@ def enrich_author_home_asr(
     )
 
     batch_total = (len(queue) + effective_batch - 1) // effective_batch if queue else 0
+    if progress is not None:
+        progress.progress(
+            stage="author_home.asr.queue",
+            message="author_home asr queue prepared",
+            data={"queued_count": len(queue), "batch_total": batch_total},
+        )
 
     success_count = 0
     fallback_none_count = 0
@@ -578,6 +597,12 @@ def enrich_author_home_asr(
     for batch_index in range(batch_total):
         batch = queue[batch_index * effective_batch : (batch_index + 1) * effective_batch]
         batch_id = f"batch-{batch_index + 1:03d}"
+        if progress is not None:
+            progress.progress(
+                stage="author_home.asr.batch",
+                message="processing author_home asr batch",
+                data={"batch_id": batch_id, "batch_index": batch_index + 1, "batch_total": batch_total, "batch_size": len(batch)},
+            )
 
         batch_u2_entries: List[Dict[str, Any]] = []
 
@@ -755,6 +780,18 @@ def enrich_author_home_asr(
                 "fallback_singles": fallback_single_count,
             }
         )
+        if progress is not None:
+            progress.progress(
+                stage="author_home.asr.batch",
+                message="author_home asr batch finished",
+                data={
+                    "batch_id": batch_id,
+                    "batch_index": batch_index + 1,
+                    "batch_total": batch_total,
+                    "batch_success": batch_success,
+                    "batch_failed": batch_failed,
+                },
+            )
 
     failed_work_ids = sorted(
         list(
@@ -799,6 +836,19 @@ def enrich_author_home_asr(
         "refill_attempted": fallback_single_count,
         "refill_failed": len(failed_work_ids),
     }
+
+    if progress is not None:
+        progress.done(
+            stage="author_home.asr",
+            message="author_home asr enrichment finished",
+            data={
+                "total": len(deduped_works),
+                "success": success_count,
+                "fallback_none": fallback_none_count,
+                "submitted_batches": submitted_batches,
+                "completed_batches": completed_batches,
+            },
+        )
 
     return {
         "works": deduped_works,

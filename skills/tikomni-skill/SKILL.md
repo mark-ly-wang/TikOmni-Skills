@@ -1,81 +1,50 @@
 ---
 name: tikomni-skill
-description: Use this skill for social content benchmark/breakdown/extract tasks (Douyin/Xiaohongshu/TikTok/YouTube/X and other supported platforms). 当用户说“对标、拆解、提取文案、分析作品/视频/图文、账号分析（如抖音/小红书/视频号/公众号）”或 asks to analyze posts/videos/creator accounts and fetch structured data/copy/comments, trigger this skill.
+description: Use this skill for cross-platform social content extraction, benchmarking, breakdown, copy/comment retrieval, and creator/account analysis across Douyin, Xiaohongshu, TikTok, YouTube, X and other supported platforms. 当用户说“对标、拆解、提取文案、分析作品/视频/图文、账号分析（如抖音/小红书/视频号/公众号）”或 asks for structured data or analysis for posts, videos, notes, comments, or creator homepages, trigger this skill.
 ---
 
 # TikOmni Skill
 
-## Mission
-Complete cross-platform content tasks with traceable outputs:
-- analyze single posts/videos/images
-- analyze creator/author accounts (homepage-level)
-- extract structured data/copy/comments
-- produce reusable markdown artifacts (cards/reports)
+Use TikOmni as a **general social-platform capability skill**, not as a narrow set of hardcoded routes.
 
-## Scope & Boundaries
-- Use TikOmni workflows for supported platforms and return structured outputs.
-- Never fabricate unavailable data; report gaps via `missing_fields` with reasons.
-- Keep route decisions traceable via `fallback_trace` and `request_id` when available.
-- Follow Prompt-First analysis style (prompt-led output constraints, minimal format validation only).
+## Do
+- Parse the user intent first: platform, target object, quantity, fields needed, and desired output.
+- Match fixed capabilities first via `references/capability-routing-matrix.md`.
+- When fixed capabilities do not fit, use universal fallback with the API catalog and normalization rules.
+- Return explicit `missing_fields`, `fallback_trace`, and `request_id` when available.
+- Prefer reusable structured outputs/cards over loose prose.
+- Read platform-specific references only when the task needs platform-specific route or field guidance.
+
+## Do not
+- Fabricate unavailable fields.
+- Treat the current fixed capability list as the full boundary of TikOmni.
+- Explain internal governance history or implementation backstory to the agent.
 
 ## Default Behavior
-- `--write-card` is enabled by default (disable with `--no-write-card`).
-- Unified output persistence is enabled by default (disable with `--no-persist-output`).
-- Global API governance defaults:
-  - QPS=5
-  - timeout retry=3
-  - trace fields: `rate_limit_wait_ms/retry_attempt/fallback_trigger_reason`
-- Author-home defaults: latest-first + cursor pagination + hard cap `max_items<=200` (all platforms).
-- Author-home ASR defaults:
-  - Apply the same ASR decision policy across all supported platforms.
-  - Prefer subtitle when route-level subtitle data is available and valid; otherwise fallback to U2.
-  - `asr_source` should reflect source class semantics (`subtitle | u2 | fallback_none`), while exact enum names can be route-defined.
-- Video copy default policy:
-  - Once a usable video media URL is resolved, default to ASR for transcript extraction.
-  - For multi-video tasks, prefer one batch submit before many concurrent single submits.
-  - Query completion/partial/failure judgment follows `references/playbooks/copy-extract-rules.md`.
-
-## Trigger Examples / 触发示例
-- “帮我对标拆解这条抖音视频”
-- “提取这个小红书笔记文案并分析”
-- “做这个博主/自媒体账号分析（主页）”
-- “分析这个视频号/公众号账号，给我对标结论”
-- “benchmark or breakdown this TikTok/YouTube/X post”
-- “analyze this creator account and extract structured fields/comments”
+- Match fixed capabilities first; if none fits, use universal fallback.
+- Prefer the minimal-cost route that can satisfy the user intent.
+- Prefer app routes over web routes; prefer higher-version routes over lower-version routes within the same family.
+- Respect the global TikOmni rate-limit and bounded-retry policy before preferring aggressive parallelism.
+- Keep route decisions traceable with `fallback_trace` and `request_id` when available.
+- Report unavailable data explicitly through `missing_fields`.
+- Prefer structured, reusable outputs over loose prose.
+- Read platform references only when the task needs platform-specific route or field guidance.
 
 ## Universal Workflow
-1. Parse user intent and constraints (platform, content type, quantity, output form).
-2. Match route via capability matrix first.
-3. If fixed capability is matched, execute the fixed route chain.
-4. If fixed capability is not matched, enter Universal Fallback (agent-led routing using API capability catalog + user intent).
-5. Normalize extracted fields using shared normalization rules.
-6. Emit required trace/contract fields (`missing_fields`, `fallback_trace`, `request_id`, etc.).
-7. Produce markdown output/cards according to output rules.
-
-## Universal Fallback Method (agent-led)
-When fixed routes are not matched, the agent should:
-1. Read capability catalog and routing references.
-2. Select candidate endpoints by intent fit + data coverage + stability.
-3. Execute a minimal-cost route chain and record selection/abandon decisions in `fallback_trace`.
-4. Return explicit `missing_fields` for unavailable data instead of fabricating.
-
-## Quality Bar (DoD)
-A run is done only when all are true:
-1. Required contract fields are present:
-   - `missing_fields`
-   - `fallback_trace`
-   - `request_id`
-   - `card_write`
-   - `output_persist`
-2. Missing data is explicit and non-fabricated.
-3. Route decisions are traceable and reproducible.
-4. Output is readable and directly reusable in downstream workflows.
+1. Parse the user intent: platform, object type, quantity, fields needed, and target output.
+2. Read `references/capability-routing-matrix.md` and check whether a fixed capability fits.
+3. If a fixed capability fits, execute that route chain.
+4. If not, read `references/routing-rules.md` and `references/api-catalog/index.md`, then select the minimal-cost route that satisfies the task.
+5. Apply `references/normalize-rules.md` to normalize extracted fields.
+6. Apply `references/output-markdown.md` to shape the final output/card/report.
+7. If the task is platform-sensitive, read the relevant platform reference under `references/platforms/`.
 
 ## References (load as needed)
 - Capability matrix: `references/capability-routing-matrix.md`
-- Routing rules: `references/routing-rules.md`
+- Global routing policy: `references/routing-rules.md`
+- Platform specifics: `references/platforms/xiaohongshu.md`, `references/platforms/douyin.md` (when needed)
 - Normalize rules: `references/normalize-rules.md`
 - Output markdown rules: `references/output-markdown.md`
 - Copy/ASR playbook: `references/playbooks/copy-extract-rules.md`
 - API catalog: `references/api-catalog/index.md`
-- Prompt contracts: `references/prompt-contracts/` (including `author-analysis.md`)
+- Prompt contracts: `references/prompt-contracts/`

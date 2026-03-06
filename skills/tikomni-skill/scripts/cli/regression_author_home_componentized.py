@@ -15,10 +15,19 @@ if __package__ in {None, ""}:
 Uses mock collectors to validate cursor loop + hard cap 200 logic for both platforms.
 """
 
+import contextlib
+import importlib
+import io
 import json
+import tempfile
+from pathlib import Path
 from typing import Any, Dict, List
 
 from scripts.author_home.orchestrator.run_author_analysis import run_author_home_analysis
+from scripts.cli.run_tikomni_extract import _ensure_output_persist
+from scripts.core.progress_report import build_progress_reporter
+
+WORK_ANALYSIS_BUILD_CALLS = {"count": 0}
 
 
 def _mock_douyin_collector(**_: Any) -> Dict[str, Any]:
@@ -163,6 +172,45 @@ def _mock_douyin_empty_collector(**_: Any) -> Dict[str, Any]:
     }
 
 
+def _fake_analysis(_: Dict[str, Any], works: List[Dict[str, Any]]):
+    return (
+        {
+            "author_portrait": "mock portrait",
+            "business_analysis": "mock business analysis",
+            "benchmark_analysis": "mock benchmark analysis",
+            "business_score": 78,
+            "benchmark_gap_score": 66,
+            "style_radar": {"选题": 80, "表达": 77, "结构": 75, "节奏": 74, "人设": 73, "转化": 70, "差异化": 71, "稳定性": 79},
+            "core_contradictions": ["mock contradiction"],
+            "recommendations": ["mock recommendation"],
+        },
+        [],
+        [{"step": "analysis.mock", "works_used": min(len(works), 30), "ok": True}],
+    )
+
+
+def _fake_work_card_analysis(payload: Dict[str, Any], platform: str, card_type: str) -> Dict[str, Any]:
+    WORK_ANALYSIS_BUILD_CALLS["count"] += 1
+    title = str(payload.get("title") or "作品标题")
+    platform_work_id = str(payload.get("platform_work_id") or "unknown")
+    return {
+        "fields": {
+            "title": title,
+            "platform": platform,
+            "platform_work_id": platform_work_id,
+        },
+        "analysis_sections": {
+            "modules": {
+                "选题": [f"{title} 选题分析"],
+                "文风": [f"{title} 文风分析"],
+                "Hook": [f"{title} Hook 分析"],
+                "结构": [f"{title} 结构分析"],
+            },
+            "insight": [f"{platform}/{card_type}/{platform_work_id} cached insight"],
+        },
+    }
+
+
 def _has_reason(missing_fields: List[Dict[str, Any]], *, reason: str, field: str = "") -> bool:
     for item in missing_fields:
         if not isinstance(item, dict):
@@ -199,6 +247,61 @@ def _assert_result(name: str, result: Dict[str, Any], expected_request_id: str) 
     }
 
 
+def _assert_standard_run_contract(name: str, result: Dict[str, Any], progress_events: List[Dict[str, Any]]) -> Dict[str, Any]:
+    card_write = result.get("card_write") if isinstance(result.get("card_write"), dict) else {}
+    author_card = card_write.get("author") if isinstance(card_write.get("author"), dict) else {}
+    works_card = card_write.get("works") if isinstance(card_write.get("works"), dict) else {}
+    output_persist = result.get("output_persist") if isinstance(result.get("output_persist"), dict) else {}
+    required_fields_present = all(key in result for key in ("missing_fields", "fallback_trace", "request_id", "card_write", "output_persist"))
+    event_kinds = {str(item.get("event") or "") for item in progress_events if isinstance(item, dict)}
+    ok = (
+        bool(author_card.get("ok"))
+        and int(works_card.get("count") or 0) > 0
+        and bool(output_persist.get("ok"))
+        and required_fields_present
+        and {"started", "progress", "done"}.issubset(event_kinds)
+    )
+    return {
+        "name": name,
+        "ok": ok,
+        "author_card_ok": bool(author_card.get("ok")),
+        "work_cards_count": int(works_card.get("count") or 0),
+        "output_persist_ok": bool(output_persist.get("ok")),
+        "required_fields_present": required_fields_present,
+        "progress_events": sorted(event_kinds),
+    }
+
+
+def _assert_work_analysis_cache_reuse(
+    name: str,
+    first_result: Dict[str, Any],
+    second_result: Dict[str, Any],
+    build_calls_before_second: int,
+    build_calls_after_second: int,
+) -> Dict[str, Any]:
+    first_bundle = first_result.get("work_analysis") if isinstance(first_result.get("work_analysis"), dict) else {}
+    second_bundle = second_result.get("work_analysis") if isinstance(second_result.get("work_analysis"), dict) else {}
+    first_stats = first_bundle.get("stats") if isinstance(first_bundle.get("stats"), dict) else {}
+    second_stats = second_bundle.get("stats") if isinstance(second_bundle.get("stats"), dict) else {}
+    ok = (
+        int(first_stats.get("queued_count") or 0) > 0
+        and int(first_stats.get("cache_hit_count") or 0) == 0
+        and int(second_stats.get("cache_hit_count") or 0) > 0
+        and int(second_stats.get("queued_count") or 0) == 0
+        and build_calls_before_second == build_calls_after_second
+    )
+    return {
+        "name": name,
+        "ok": ok,
+        "first_queued": first_stats.get("queued_count"),
+        "first_cache_hit": first_stats.get("cache_hit_count"),
+        "second_queued": second_stats.get("queued_count"),
+        "second_cache_hit": second_stats.get("cache_hit_count"),
+        "build_calls_before_second": build_calls_before_second,
+        "build_calls_after_second": build_calls_after_second,
+    }
+
+
 def _assert_semantic_empty_result(name: str, result: Dict[str, Any], expected_request_id: str) -> Dict[str, Any]:
     works = result.get("works") if isinstance(result.get("works"), list) else []
     missing_fields = result.get("missing_fields") if isinstance(result.get("missing_fields"), list) else []
@@ -228,43 +331,135 @@ def _assert_semantic_empty_result(name: str, result: Dict[str, Any], expected_re
 
 
 def main() -> None:
-    dy = run_author_home_analysis(
-        platform="douyin",
-        input_value="mock://douyin",
-        base_url="https://api.tikomni.com",
-        token="mock-token",
-        timeout_ms=1000,
-        write_card=False,
-        collector_override=_mock_douyin_collector,
-    )
-    xhs = run_author_home_analysis(
-        platform="xiaohongshu",
-        input_value="mock://xhs",
-        base_url="https://api.tikomni.com",
-        token="mock-token",
-        timeout_ms=1000,
-        write_card=False,
-        collector_override=_mock_xhs_collector,
-    )
-    dy_empty = run_author_home_analysis(
-        platform="douyin",
-        input_value="mock://douyin-empty",
-        base_url="https://api.tikomni.com",
-        token="mock-token",
-        timeout_ms=1000,
-        write_card=False,
-        collector_override=_mock_douyin_empty_collector,
-    )
+    author_analysis_module = importlib.import_module("scripts.author_home.orchestrator.run_author_analysis")
+    work_artifact_module = importlib.import_module("scripts.author_home.orchestrator.work_analysis_artifacts")
+    original_analysis = author_analysis_module.run_prompt_first_author_analysis
+    original_work_builder = work_artifact_module.build_card_analysis_artifact
+    author_analysis_module.run_prompt_first_author_analysis = _fake_analysis
+    work_artifact_module.build_card_analysis_artifact = _fake_work_card_analysis
+    WORK_ANALYSIS_BUILD_CALLS["count"] = 0
+    try:
+        dy = run_author_home_analysis(
+            platform="douyin",
+            input_value="mock://douyin",
+            base_url="https://api.tikomni.com",
+            token="mock-token",
+            timeout_ms=1000,
+            write_card=False,
+            collector_override=_mock_douyin_collector,
+        )
+        xhs = run_author_home_analysis(
+            platform="xiaohongshu",
+            input_value="mock://xhs",
+            base_url="https://api.tikomni.com",
+            token="mock-token",
+            timeout_ms=1000,
+            write_card=False,
+            collector_override=_mock_xhs_collector,
+        )
+        dy_empty = run_author_home_analysis(
+            platform="douyin",
+            input_value="mock://douyin-empty",
+            base_url="https://api.tikomni.com",
+            token="mock-token",
+            timeout_ms=1000,
+            write_card=False,
+            collector_override=_mock_douyin_empty_collector,
+        )
 
-    checks = [
-        _assert_result("douyin", dy, "mock-dy-request"),
-        _assert_result("xiaohongshu", xhs, "mock-xhs-request"),
-        _assert_semantic_empty_result("douyin-empty", dy_empty, "mock-empty-request"),
-    ]
-    output = {
-        "ok": all(item.get("ok") for item in checks),
-        "checks": checks,
-    }
+        with tempfile.TemporaryDirectory(prefix="tikomni-author-home-") as tmp:
+            tmp_path = Path(tmp)
+            card_root = tmp_path / "cards"
+            output_root = tmp_path / "output"
+            card_root.mkdir(parents=True, exist_ok=True)
+            output_root.mkdir(parents=True, exist_ok=True)
+            storage_config = {
+                "storage_routes": {
+                    "default": {
+                        "root_dir": str(output_root),
+                        "runs_dir": "_runs",
+                        "results_dir": "results",
+                        "errors_dir": "_errors",
+                    }
+                }
+            }
+            reporter = build_progress_reporter(
+                workflow="regression_author_home_componentized",
+                platform="douyin",
+                content_kind="author_home",
+                input_value="mock://douyin-standard",
+            )
+            stderr_buffer = io.StringIO()
+            with contextlib.redirect_stderr(stderr_buffer):
+                standard = run_author_home_analysis(
+                    platform="douyin",
+                    input_value="mock://douyin-standard",
+                    base_url="https://api.tikomni.com",
+                    token="mock-token",
+                    timeout_ms=1000,
+                    write_card=True,
+                    card_root=str(card_root),
+                    storage_config=storage_config,
+                    collector_override=_mock_douyin_collector,
+                    progress=reporter,
+                    max_items=5,
+                    asr_batch_size=5,
+                )
+                standard = _ensure_output_persist(
+                    result=standard,
+                    input_value="mock://douyin-standard",
+                    storage_config=storage_config,
+                    persist_output=True,
+                )
+                build_calls_before_second = WORK_ANALYSIS_BUILD_CALLS["count"]
+                standard_cached = run_author_home_analysis(
+                    platform="douyin",
+                    input_value="mock://douyin-standard",
+                    base_url="https://api.tikomni.com",
+                    token="mock-token",
+                    timeout_ms=1000,
+                    write_card=True,
+                    card_root=str(card_root),
+                    storage_config=storage_config,
+                    collector_override=_mock_douyin_collector,
+                    progress=reporter,
+                    max_items=5,
+                    asr_batch_size=5,
+                )
+                build_calls_after_second = WORK_ANALYSIS_BUILD_CALLS["count"]
+            progress_events = []
+            for line in stderr_buffer.getvalue().splitlines():
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    payload = json.loads(line)
+                except Exception:
+                    continue
+                if payload.get("channel") == "tikomni_progress":
+                    progress_events.append(payload)
+
+        checks = [
+            _assert_result("douyin", dy, "mock-dy-request"),
+            _assert_result("xiaohongshu", xhs, "mock-xhs-request"),
+            _assert_semantic_empty_result("douyin-empty", dy_empty, "mock-empty-request"),
+            _assert_standard_run_contract("douyin-standard", standard, progress_events),
+            _assert_work_analysis_cache_reuse(
+                "douyin-standard-cache",
+                standard,
+                standard_cached,
+                build_calls_before_second,
+                build_calls_after_second,
+            ),
+        ]
+        output = {
+            "ok": all(item.get("ok") for item in checks),
+            "checks": checks,
+        }
+    finally:
+        author_analysis_module.run_prompt_first_author_analysis = original_analysis
+        work_artifact_module.build_card_analysis_artifact = original_work_builder
+
     print(json.dumps(output, ensure_ascii=False, indent=2))
     raise SystemExit(0 if output["ok"] else 1)
 

@@ -206,12 +206,12 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
         platform_author_id=author_id,
         nickname=_t(_first(profile_data, ["nickname", "name"])),
         ip_location=_t(_first(profile_data, ["ip_location", "ip_location_desc", "ipLocation"])),
-        fans_count=_i(_first(profile_data, ["fans", "fans_count", "follower_count"])),
-        liked_count=_i(_first(profile_data, ["liked_count", "likes", "total_liked"])),
-        collected_count=_i(_first(profile_data, ["collected_count", "collect_count", "total_collected"])),
-        signature=_t(_first(profile_data, ["desc", "signature", "bio"])),
-        avatar_url=_t(_first(profile_data, ["image", "avatar", "avatar_url"])),
-        works_count=_i(_first(profile_data, ["notes", "note_count", "works_count"])),
+        fans_count=_i(_first(profile_data, ["fans", "fans_count", "follower_count", "followers"])),
+        liked_count=_i(_first(profile_data, ["liked_count", "likes", "total_liked", "like_count"])),
+        collected_count=_i(_first(profile_data, ["collected_count", "collect_count", "total_collected", "favorite_count"])),
+        signature=_t(_first(profile_data, ["desc", "signature", "bio", "introduction"])),
+        avatar_url=_t(_first(profile_data, ["image", "avatar", "avatar_url", "images"])),
+        works_count=_i(_first(profile_data, ["notes", "note_count", "works_count", "post_count"])),
         verified=bool(_first(profile_data, ["official_verified", "verified"], False)),
         snapshot_at=datetime.now().isoformat(timespec="seconds"),
     )
@@ -225,7 +225,7 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
         if not isinstance(item, dict):
             continue
         note_id = _t(_first(item, ["note_id", "id", "item_id"]))
-        interact = _first(item, ["interact_info", "statistics"], {})
+        interact = _first(item, ["interact_info", "interaction_info", "statistics"], {})
         metrics = {
             "like": _i(_first(interact, ["liked_count", "like_count", "digg_count"], 0)),
             "comment": _i(_first(interact, ["comment_count"], 0)),
@@ -236,23 +236,23 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
         subtitle_inline = _extract_xhs_subtitle_inline(item)
         subtitle_urls = _extract_xhs_subtitle_urls(item)
         video_down_url = _extract_xhs_video_down_url(item)
-        content_type_raw = _t(_first(item, ["type", "note_type"]))
+        content_type_raw = _t(_first(item, ["type", "note_type", "model_type"]))
         content_type = "video" if content_type_raw in {"video", "0", "normal"} else (content_type_raw or "note")
 
         work = build_work_item(
             platform="xiaohongshu",
             platform_work_id=note_id,
             platform_author_id=author_id,
-            title=_t(_first(item, ["title", "desc"])),
-            desc=_t(_first(item, ["desc", "title"])),
+            title=_t(_first(item, ["title", "display_title", "desc"])),
+            desc=_t(_first(item, ["desc", "content", "title"])),
             publish_time=_t(_first(item, ["publish_time", "time", "create_time"])),
             content_type=content_type,
             duration_ms=_i(_first(item, ["duration_ms", "duration", "video_duration"], 0)),
             tags=list(_first(item, ["tag_list", "tags", "hashtags"], [])) if isinstance(_first(item, ["tag_list", "tags", "hashtags"], []), list) else [],
             metrics=metrics,
-            cover_image=_t(_first(item, ["cover", "cover_url", "image"], "")),
+            cover_image=_t(_first(item, ["cover", "cover_url", "cover_image", "image", "image_url"], "")),
             source_url=f"https://www.xiaohongshu.com/explore/{note_id}" if note_id else "",
-            share_url=_t(_first(item, ["share_url", "url"])),
+            share_url=_t(_first(item, ["share_url", "share_link", "url", "note_url"])),
             video_down_url=video_down_url,
             asr_raw=subtitle_inline,
             asr_clean=subtitle_inline,

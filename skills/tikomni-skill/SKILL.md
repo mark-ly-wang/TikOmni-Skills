@@ -27,9 +27,13 @@ Complete cross-platform content tasks with traceable outputs:
   - trace fields: `rate_limit_wait_ms/retry_attempt/fallback_trigger_reason`
 - Author-home defaults: latest-first + cursor pagination + hard cap `max_items<=200` (all platforms).
 - Author-home ASR defaults:
-  - Douyin: U2-first
-  - Xiaohongshu: subtitle-first, invalid subtitle fallback U2
-  - `asr_source`: `xhs_subtitle | u2 | fallback_none`
+  - Apply the same ASR decision policy across all supported platforms.
+  - Prefer subtitle when route-level subtitle data is available and valid; otherwise fallback to U2.
+  - `asr_source` should reflect source class semantics (`subtitle | u2 | fallback_none`), while exact enum names can be route-defined.
+- Video copy default policy:
+  - Once a usable video media URL is resolved, default to ASR for transcript extraction.
+  - For multi-video tasks, prefer one batch submit before many concurrent single submits.
+  - Query completion/partial/failure judgment follows `references/playbooks/copy-extract-rules.md`.
 
 ## Trigger Examples / 触发示例
 - “帮我对标拆解这条抖音视频”
@@ -72,5 +76,6 @@ A run is done only when all are true:
 - Routing rules: `references/routing-rules.md`
 - Normalize rules: `references/normalize-rules.md`
 - Output markdown rules: `references/output-markdown.md`
+- Copy/ASR playbook: `references/playbooks/copy-extract-rules.md`
 - API catalog: `references/api-catalog/index.md`
 - Prompt contracts: `references/prompt-contracts/` (including `author-analysis.md`)

@@ -1,6 +1,6 @@
 # Tikomni API Catalog Index
 
-- generated_at: 2026-03-05T09:25:38.034Z
+- generated_at: 2026-03-06T01:46:37.744Z
 - source_openapi: `https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
 - total_operations: 989
 
@@ -40,11 +40,10 @@
 
 - Douyin homepage: `GET /api/u1/v1/douyin/app/v3/handler_user_profile`, `GET /api/u1/v1/douyin/app/v3/fetch_user_post_videos`
 - Xiaohongshu homepage: `GET /api/u1/v1/xiaohongshu/web_v2/fetch_user_info_app`, `GET /api/u1/v1/xiaohongshu/web_v2/fetch_home_notes_app`
-- U2 ASR: `POST /api/u2/v1/services/audio/asr/transcription`, `GET /api/u2/v1/tasks/{task_id}`
+- U2 ASR: `POST /api/u2/v1/services/audio/asr/transcription`, `POST /api/u2/v1/tasks/{task_id}`
 
 ## Selection Baseline
 
 1. Same platform + same intent: prefer `app > web_v2 > web`.
 2. Douyin homepage default sort: latest (`sort_type=0`), switch to hot only when requested.
 3. Use fallback when core fields are missing even if HTTP is 2xx.
-

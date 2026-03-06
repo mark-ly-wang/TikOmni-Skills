@@ -442,7 +442,7 @@ function buildIndexMarkdown(openapiFile, operations, grouped) {
     '- Xiaohongshu homepage: `GET /api/u1/v1/xiaohongshu/web_v2/fetch_user_info_app`, `GET /api/u1/v1/xiaohongshu/web_v2/fetch_home_notes_app`'
   );
   lines.push(
-    '- U2 ASR: `POST /api/u2/v1/services/audio/asr/transcription`, `GET /api/u2/v1/tasks/{task_id}`'
+    '- U2 ASR: `POST /api/u2/v1/services/audio/asr/transcription`, `POST /api/u2/v1/tasks/{task_id}`'
   );
   lines.push('');
   lines.push('## Selection Baseline');

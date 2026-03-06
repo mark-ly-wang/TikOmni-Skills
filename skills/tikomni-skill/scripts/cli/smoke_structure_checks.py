@@ -16,6 +16,7 @@ if __package__ in {None, ""}:
 import argparse
 import importlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -30,8 +31,32 @@ def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
 
-def _run_help(command: List[str]) -> Dict[str, Any]:
-    proc = subprocess.run(command, capture_output=True, text=True)
+def _run_help(command: List[str], *, cwd: Path, timeout_sec: int = 30) -> Dict[str, Any]:
+    env = dict(os.environ)
+    pythonpath_parts = [str(cwd)]
+    existing_pythonpath = str(env.get("PYTHONPATH") or "").strip()
+    if existing_pythonpath:
+        pythonpath_parts.append(existing_pythonpath)
+    env["PYTHONPATH"] = os.pathsep.join(pythonpath_parts)
+    try:
+        proc = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            cwd=str(cwd),
+            env=env,
+            timeout=max(1, int(timeout_sec)),
+        )
+    except subprocess.TimeoutExpired as error:
+        stdout = (error.stdout or "")
+        stderr = (error.stderr or "")
+        return {
+            "ok": False,
+            "returncode": None,
+            "stdout_head": "\n".join(str(stdout).splitlines()[:4]),
+            "stderr_head": "\n".join(str(stderr).splitlines()[:4]),
+            "error": f"timeout_after_{int(timeout_sec)}s",
+        }
     stdout = (proc.stdout or "")
     stderr = (proc.stderr or "")
     return {
@@ -198,8 +223,8 @@ def run_checks() -> Dict[str, Any]:
 
     for target in cli_targets:
         import_result = _check_import(target["module"])
-        module_help = _run_help([py, "-m", target["module"], "--help"])
-        direct_help = _run_help([py, str(target["path"]), "--help"])
+        module_help = _run_help([py, "-m", target["module"], "--help"], cwd=root)
+        direct_help = _run_help([py, str(target["path"]), "--help"], cwd=root)
         target_ok = bool(import_result.get("ok") and module_help.get("ok") and direct_help.get("ok"))
         all_ok = all_ok and target_ok
         checks[target["name"]] = {

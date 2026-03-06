@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Shared ASR pipeline helpers for runner scripts."""
 
+import json
 import time
+import urllib.error
+import urllib.request
 from urllib.parse import urlparse, urlunparse
 from typing import Any, Dict, List, Optional
 
@@ -12,6 +15,7 @@ from scripts.core.tikomni_common import (
     extract_task_status,
     extract_transcript_text,
     is_terminal_status,
+    normalize_text,
 )
 
 U2_BATCH_SUBMIT_HARD_LIMIT = 100
@@ -218,6 +222,15 @@ def _is_failed_status(status: str) -> bool:
     return status in {"FAILED", "FAILURE", "ERROR", "CANCELED", "CANCELLED"}
 
 
+def extract_platform_task_status(payload: Any) -> str:
+    status = deep_find_first(payload, ["platform_task_status"])
+    return _status_upper(status)
+
+
+def extract_pending_count(payload: Any) -> int:
+    return max(0, _safe_int(deep_find_first(payload, ["pending_count"])))
+
+
 def extract_u2_batch_result_items(payload: Any) -> List[Dict[str, Any]]:
     found: Dict[str, Dict[str, Any]] = {}
 
@@ -246,12 +259,14 @@ def extract_u2_batch_result_items(payload: Any) -> List[Dict[str, Any]]:
 
                 status = _status_upper(node.get("status") or node.get("task_status") or node.get("state"))
                 error_reason = str(node.get("error_reason") or node.get("error") or "").strip()
-                ok = _is_success_status(status) or bool(transcript)
+                transcription_url = normalize_text(node.get("transcription_url"))
+                ok = _is_success_status(status) or bool(transcript) or bool(transcription_url)
 
                 candidate = {
                     "file_url": file_url,
                     "transcript_text": transcript,
                     "task_status": status,
+                    "transcription_url": transcription_url,
                     "error_reason": error_reason,
                     "ok": ok,
                 }
@@ -263,11 +278,13 @@ def extract_u2_batch_result_items(payload: Any) -> List[Dict[str, Any]]:
                     old_score = (
                         1 if existing.get("ok") else 0,
                         len(str(existing.get("transcript_text") or "")),
+                        1 if existing.get("transcription_url") else 0,
                         1 if not existing.get("error_reason") else 0,
                     )
                     new_score = (
                         1 if candidate.get("ok") else 0,
                         len(str(candidate.get("transcript_text") or "")),
+                        1 if candidate.get("transcription_url") else 0,
                         1 if not candidate.get("error_reason") else 0,
                     )
                     if new_score > old_score:
@@ -294,6 +311,224 @@ def map_u2_batch_results_by_file_url(payload: Any) -> Dict[str, Dict[str, Any]]:
     return mapped
 
 
+def _parse_non_negative_item_index(value: Any) -> Optional[int]:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value >= 0 else None
+    if isinstance(value, float):
+        if value < 0 or not value.is_integer():
+            return None
+        return int(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text or not text.isdigit():
+            return None
+        return int(text)
+    return None
+
+
+def map_u2_batch_results_by_item_index(payload: Any) -> Dict[int, Dict[str, Any]]:
+    mapped: Dict[int, Dict[str, Any]] = {}
+    stack: List[Any] = [payload]
+
+    while stack:
+        node = stack.pop(0)
+        if isinstance(node, dict):
+            item_index_raw = node.get("item_index")
+            item_index = _parse_non_negative_item_index(item_index_raw)
+            if item_index is not None:
+                transcript = clean_transcript_text(
+                    node.get("transcript_text")
+                    or node.get("text")
+                    or node.get("transcript")
+                    or node.get("transcription")
+                    or node.get("content")
+                    or ""
+                )
+                if not transcript:
+                    transcript = clean_transcript_text(extract_transcript_text(node))
+
+                status = _status_upper(node.get("task_status") or node.get("status") or node.get("state"))
+                error_reason = str(node.get("error_reason") or node.get("error") or "").strip()
+                transcription_url = normalize_text(node.get("transcription_url"))
+                ok = _is_success_status(status) or bool(transcript) or bool(transcription_url)
+
+                candidate = {
+                    "item_index": item_index,
+                    "transcript_text": transcript,
+                    "task_status": status,
+                    "error_reason": error_reason,
+                    "transcription_url": transcription_url,
+                    "ok": ok,
+                }
+
+                existing = mapped.get(item_index)
+                if existing is None:
+                    mapped[item_index] = candidate
+                else:
+                    old_score = (
+                        1 if existing.get("ok") else 0,
+                        len(str(existing.get("transcript_text") or "")),
+                        1 if existing.get("transcription_url") else 0,
+                        1 if not existing.get("error_reason") else 0,
+                    )
+                    new_score = (
+                        1 if candidate.get("ok") else 0,
+                        len(str(candidate.get("transcript_text") or "")),
+                        1 if candidate.get("transcription_url") else 0,
+                        1 if not candidate.get("error_reason") else 0,
+                    )
+                    if new_score > old_score:
+                        mapped[item_index] = candidate
+
+            for value in node.values():
+                if isinstance(value, (dict, list)):
+                    stack.append(value)
+        elif isinstance(node, list):
+            for item in node:
+                if isinstance(item, (dict, list)):
+                    stack.append(item)
+
+    return mapped
+
+
+def _extract_transcript_from_transcription_payload(payload: Any) -> str:
+    if isinstance(payload, str):
+        text = clean_transcript_text(payload)
+        if text:
+            return text
+        try:
+            payload = json.loads(payload)
+        except Exception:
+            return ""
+
+    transcript = clean_transcript_text(deep_find_first(payload, ["full_text"]))
+    if transcript:
+        return transcript
+
+    transcript = clean_transcript_text(extract_transcript_text(payload))
+    if transcript:
+        return transcript
+
+    sentences = deep_find_first(payload, ["sentences"])
+    if isinstance(sentences, list):
+        lines: List[str] = []
+        for sentence in sentences:
+            if not isinstance(sentence, dict):
+                continue
+            line = clean_transcript_text(
+                sentence.get("text") or sentence.get("sentence") or sentence.get("content")
+            )
+            if line:
+                lines.append(line)
+        if lines:
+            return "\n".join(lines)
+
+    return ""
+
+
+def fetch_transcription_text_by_url(*, transcription_url: str, timeout_ms: int) -> Dict[str, Any]:
+    url = normalize_media_url(transcription_url)
+    if not url:
+        return {
+            "ok": False,
+            "transcription_url": "",
+            "error_reason": "transcription_url_missing",
+            "transcript_text": "",
+        }
+    if not (url.startswith("http://") or url.startswith("https://")):
+        return {
+            "ok": False,
+            "transcription_url": url,
+            "error_reason": "transcription_url_invalid",
+            "transcript_text": "",
+        }
+
+    request = urllib.request.Request(url=url, method="GET", headers={"Accept": "application/json"})
+    try:
+        with urllib.request.urlopen(request, timeout=max(timeout_ms / 1000.0, 1.0)) as response:
+            raw_text = response.read().decode("utf-8", errors="replace")
+    except urllib.error.URLError as error:
+        return {
+            "ok": False,
+            "transcription_url": url,
+            "error_reason": f"transcription_fetch_failed:{normalize_text(getattr(error, 'reason', error)) or 'unknown'}",
+            "transcript_text": "",
+        }
+    except Exception as error:
+        return {
+            "ok": False,
+            "transcription_url": url,
+            "error_reason": f"transcription_fetch_failed:{normalize_text(error) or 'unknown'}",
+            "transcript_text": "",
+        }
+
+    payload: Any = raw_text
+    try:
+        payload = json.loads(raw_text)
+    except Exception:
+        payload = raw_text
+
+    transcript = _extract_transcript_from_transcription_payload(payload)
+    if transcript:
+        return {
+            "ok": True,
+            "transcription_url": url,
+            "error_reason": "",
+            "transcript_text": transcript,
+        }
+
+    return {
+        "ok": False,
+        "transcription_url": url,
+        "error_reason": "transcription_payload_empty",
+        "transcript_text": "",
+    }
+
+
+def hydrate_u2_batch_results_from_transcription_urls(
+    *,
+    mapped_results: Dict[str, Dict[str, Any]],
+    timeout_ms: int,
+) -> Dict[str, Dict[str, Any]]:
+    hydrated: Dict[str, Dict[str, Any]] = {}
+    fetch_timeout_ms = max(1000, min(int(timeout_ms), 15000))
+
+    for file_url, item in mapped_results.items():
+        if not isinstance(item, dict):
+            continue
+
+        candidate = dict(item)
+        status = _status_upper(candidate.get("task_status"))
+        transcript = clean_transcript_text(candidate.get("transcript_text"))
+        transcription_url = normalize_text(candidate.get("transcription_url"))
+
+        if not transcript and _is_success_status(status) and transcription_url:
+            fetch_result = fetch_transcription_text_by_url(
+                transcription_url=transcription_url,
+                timeout_ms=fetch_timeout_ms,
+            )
+            fetched_text = clean_transcript_text(fetch_result.get("transcript_text"))
+            candidate["transcription_fetch"] = {
+                "ok": bool(fetch_result.get("ok")),
+                "error_reason": fetch_result.get("error_reason"),
+            }
+            if fetched_text:
+                transcript = fetched_text
+                candidate["transcript_text"] = fetched_text
+            elif not candidate.get("error_reason"):
+                candidate["error_reason"] = fetch_result.get("error_reason") or "transcription_payload_empty"
+
+        candidate["task_status"] = status
+        candidate["transcription_url"] = transcription_url
+        candidate["transcript_text"] = transcript
+        candidate["ok"] = bool(candidate.get("ok") or transcript)
+        hydrated[file_url] = candidate
+
+    return hydrated
+
+
 def build_u2_batch_progress(*, payload: Any, expected_total: int = 0) -> Dict[str, Any]:
     metrics_raw = extract_u2_task_metrics(payload)
     metrics = {str(key).strip().upper(): value for key, value in metrics_raw.items()} if isinstance(metrics_raw, dict) else {}
@@ -308,6 +543,13 @@ def build_u2_batch_progress(*, payload: Any, expected_total: int = 0) -> Dict[st
         + _safe_int(metrics.get("CANCELLED"))
     )
     metrics_completed = metrics_succeeded + metrics_failed
+
+    provider_total = _safe_int(deep_find_first(payload, ["input_count", "total_count"]))
+    provider_succeeded = _safe_int(deep_find_first(payload, ["succeeded_count"]))
+    provider_failed = _safe_int(deep_find_first(payload, ["failed_count"]))
+    provider_pending = max(0, _safe_int(deep_find_first(payload, ["pending_count"])))
+    provider_completed = provider_succeeded + provider_failed
+    provider_status = extract_platform_task_status(payload)
 
     mapped_results = map_u2_batch_results_by_file_url(payload)
     result_total = len(mapped_results)
@@ -324,13 +566,17 @@ def build_u2_batch_progress(*, payload: Any, expected_total: int = 0) -> Dict[st
 
     result_completed = result_succeeded + result_failed
 
-    target_total = metrics_total if metrics_total > 0 else max(0, int(expected_total or 0))
+    target_total = metrics_total if metrics_total > 0 else (provider_total if provider_total > 0 else max(0, int(expected_total or 0)))
     complete_by_metrics = target_total > 0 and metrics_completed >= target_total
+    complete_by_provider_counts = target_total > 0 and provider_pending == 0 and provider_completed >= target_total
+    complete_by_provider_status = provider_pending == 0 and provider_status in {"SUCCEEDED", "PARTIAL_SUCCEEDED", "FAILED"}
     complete_by_results = target_total > 0 and result_completed >= target_total
 
     completion_basis = "pending"
     if complete_by_metrics:
         completion_basis = "task_metrics"
+    elif complete_by_provider_counts or complete_by_provider_status:
+        completion_basis = "platform_status"
     elif complete_by_results:
         completion_basis = "results"
 
@@ -341,11 +587,16 @@ def build_u2_batch_progress(*, payload: Any, expected_total: int = 0) -> Dict[st
         "metrics_succeeded": metrics_succeeded,
         "metrics_failed": metrics_failed,
         "metrics_completed": metrics_completed,
+        "provider_total": provider_total,
+        "provider_succeeded": provider_succeeded,
+        "provider_failed": provider_failed,
+        "provider_pending": provider_pending,
+        "platform_task_status": provider_status,
         "results_total": result_total,
         "results_succeeded": result_succeeded,
         "results_failed": result_failed,
         "results_completed": result_completed,
-        "complete": bool(complete_by_metrics or complete_by_results),
+        "complete": bool(complete_by_metrics or complete_by_provider_counts or complete_by_provider_status or complete_by_results),
         "completion_basis": completion_basis,
         "metrics": metrics_raw if isinstance(metrics_raw, dict) else {},
     }
@@ -387,13 +638,16 @@ def poll_u2_task_core(
 
         payload = response.get("data")
         status = extract_task_status(payload)
+        platform_status = extract_platform_task_status(payload)
+        pending_count = extract_pending_count(payload)
         last_request_id = response.get("request_id") or last_request_id
 
         metrics = extract_u2_task_metrics(payload)
         batch_results = map_u2_batch_results_by_file_url(payload)
         batch_progress = build_u2_batch_progress(payload=payload, expected_total=expected_total)
 
-        last_status = status or last_status
+        effective_status = platform_status or status
+        last_status = effective_status or last_status
         last_payload = payload
         last_batch_results = batch_results
         last_metrics = metrics if isinstance(metrics, dict) else {}
@@ -404,6 +658,8 @@ def poll_u2_task_core(
                 "attempt": attempt,
                 "status_code": response.get("status_code"),
                 "task_status": status,
+                "platform_task_status": platform_status,
+                "pending_count": pending_count,
                 "request_id": response.get("request_id"),
                 "error_reason": response.get("error_reason"),
                 "batch_progress": batch_progress,
@@ -429,7 +685,9 @@ def poll_u2_task_core(
             }
 
         status_terminal = is_terminal_status(status)
-        batch_complete = bool(batch_progress.get("complete")) if require_batch_complete else status_terminal
+        platform_terminal = pending_count == 0 and platform_status in {"SUCCEEDED", "PARTIAL_SUCCEEDED", "FAILED"}
+        task_complete = status_terminal or platform_terminal
+        batch_complete = bool(batch_progress.get("complete")) if require_batch_complete else task_complete
 
         if require_batch_complete and not batch_complete:
             if attempt < max_polls:
@@ -438,7 +696,7 @@ def poll_u2_task_core(
             return {
                 "ok": False,
                 "task_id": task_id,
-                "task_status": status or "UNKNOWN",
+                "task_status": effective_status or "UNKNOWN",
                 "request_id": last_request_id,
                 "error_reason": "u2_batch_incomplete_timeout",
                 "raw_task": payload,
@@ -449,14 +707,19 @@ def poll_u2_task_core(
                 "trace": trace,
             }
 
-        if status_terminal or batch_complete:
-            transcript = extract_transcript_text(payload) if status == "SUCCEEDED" else ""
+        if task_complete or batch_complete:
+            success_signal = (
+                platform_status == "SUCCEEDED" and pending_count == 0
+            ) or _is_success_status(status)
+            transcript = extract_transcript_text(payload) if success_signal else ""
             return {
-                "ok": status == "SUCCEEDED",
+                "ok": bool(success_signal),
                 "task_id": task_id,
-                "task_status": status,
+                "task_status": effective_status or status,
+                "platform_task_status": platform_status,
+                "pending_count": pending_count,
                 "request_id": last_request_id,
-                "error_reason": None if status == "SUCCEEDED" else ("u2_task_failed" if status_terminal else (None if batch_complete else "u2_task_failed")),
+                "error_reason": None if success_signal else (None if batch_complete and require_batch_complete else "u2_task_failed"),
                 "transcript_text": clean_transcript_text(transcript),
                 "raw_task": payload,
                 "task_metrics": last_metrics,
@@ -748,6 +1011,48 @@ def run_u2_asr_batch_with_timeout_retry(
 
     raw_task_payload = final_poll_result.get("raw_task")
     mapped_results = map_u2_batch_results_by_file_url(raw_task_payload)
+
+    index_mapped = map_u2_batch_results_by_item_index(raw_task_payload)
+    for item_index, item in index_mapped.items():
+        if item_index < 0 or item_index >= len(limited_urls):
+            continue
+        file_url = normalize_media_url(limited_urls[item_index])
+        if not file_url:
+            continue
+
+        candidate = {
+            "file_url": file_url,
+            "transcript_text": clean_transcript_text(item.get("transcript_text")),
+            "task_status": _status_upper(item.get("task_status")),
+            "error_reason": str(item.get("error_reason") or "").strip(),
+            "transcription_url": normalize_text(item.get("transcription_url")),
+            "ok": bool(item.get("ok")),
+        }
+
+        existing = mapped_results.get(file_url)
+        if existing is None:
+            mapped_results[file_url] = candidate
+            continue
+
+        old_score = (
+            1 if existing.get("ok") else 0,
+            len(str(existing.get("transcript_text") or "")),
+            1 if existing.get("transcription_url") else 0,
+            1 if not existing.get("error_reason") else 0,
+        )
+        new_score = (
+            1 if candidate.get("ok") else 0,
+            len(str(candidate.get("transcript_text") or "")),
+            1 if candidate.get("transcription_url") else 0,
+            1 if not candidate.get("error_reason") else 0,
+        )
+        if new_score > old_score:
+            mapped_results[file_url] = candidate
+
+    mapped_results = hydrate_u2_batch_results_from_transcription_urls(
+        mapped_results=mapped_results,
+        timeout_ms=timeout_ms,
+    )
     result_items = list(mapped_results.values())
 
     return {

@@ -17,6 +17,7 @@ import scripts.pipeline.asr.asr_pipeline as asr_pipeline
 
 
 _ORIG_CALL_JSON_API = asr_pipeline.call_json_api
+_ORIG_FETCH_TRANSCRIPTION = asr_pipeline.fetch_transcription_text_by_url
 
 
 def _fake_call_json_api(*, path: str, body: Dict[str, Any] | None = None, **kwargs: Any) -> Dict[str, Any]:
@@ -41,11 +42,16 @@ def _fake_call_json_api(*, path: str, body: Dict[str, Any] | None = None, **kwar
                 "error_reason": None,
                 "data": {
                     "task_id": "task-batch-001",
-                    "status": "SUCCEEDED",
+                    "status": "RUNNING",
+                    "platform_task_status": "PARTIAL_SUCCEEDED",
+                    "input_count": 3,
+                    "succeeded_count": 2,
+                    "failed_count": 0,
+                    "pending_count": 1,
                     "task_metrics": {"TOTAL": 3, "SUCCEEDED": 2, "FAILED": 0},
                     "results": [
-                        {"file_url": "https://media.success-1.mp4", "status": "SUCCEEDED", "transcript_text": "第一条成功文本"},
-                        {"file_url": "https://media.success-2.mp4", "status": "SUCCEEDED", "transcript_text": "第二条成功文本"},
+                        {"item_index": 0, "status": "SUCCEEDED", "transcription_url": "https://transcript.success-1.json"},
+                        {"item_index": 1, "status": "SUCCEEDED", "transcription_url": "https://transcript.success-2.json"},
                     ],
                 },
             }
@@ -58,11 +64,16 @@ def _fake_call_json_api(*, path: str, body: Dict[str, Any] | None = None, **kwar
             "data": {
                 "task_id": "task-batch-001",
                 "status": "SUCCEEDED",
+                "platform_task_status": "PARTIAL_SUCCEEDED",
+                "input_count": 3,
+                "succeeded_count": 2,
+                "failed_count": 1,
+                "pending_count": 0,
                 "task_metrics": {"TOTAL": 3, "SUCCEEDED": 2, "FAILED": 1},
                 "results": [
-                    {"file_url": "https://media.success-1.mp4", "status": "SUCCEEDED", "transcript_text": "第一条成功文本"},
-                    {"file_url": "https://media.success-2.mp4", "status": "SUCCEEDED", "transcript_text": "第二条成功文本"},
-                    {"file_url": "https://media.failed-1.mp4", "status": "FAILED", "error_reason": "decode_error"},
+                    {"item_index": 0, "status": "SUCCEEDED", "transcription_url": "https://transcript.success-1.json"},
+                    {"item_index": 1, "status": "SUCCEEDED", "transcription_url": "https://transcript.success-2.json"},
+                    {"item_index": 2, "status": "FAILED", "error_reason": "decode_error"},
                 ],
             },
         }
@@ -79,12 +90,36 @@ def _fake_call_json_api(*, path: str, body: Dict[str, Any] | None = None, **kwar
 _fake_call_json_api.state = {"poll_count": 0}
 
 
+def _fake_fetch_transcription_text_by_url(*, transcription_url: str, timeout_ms: int) -> Dict[str, Any]:
+    if "success-1" in transcription_url:
+        return {
+            "ok": True,
+            "transcription_url": transcription_url,
+            "error_reason": "",
+            "transcript_text": "第一条成功文本",
+        }
+    if "success-2" in transcription_url:
+        return {
+            "ok": True,
+            "transcription_url": transcription_url,
+            "error_reason": "",
+            "transcript_text": "第二条成功文本",
+        }
+    return {
+        "ok": False,
+        "transcription_url": transcription_url,
+        "error_reason": "transcription_payload_empty",
+        "transcript_text": "",
+    }
+
+
 def _check(name: str, condition: bool, detail: Dict[str, Any]) -> Dict[str, Any]:
     return {"name": name, "ok": bool(condition), "detail": detail}
 
 
 def main() -> None:
     asr_pipeline.call_json_api = _fake_call_json_api
+    asr_pipeline.fetch_transcription_text_by_url = _fake_fetch_transcription_text_by_url
     try:
         bundle = asr_pipeline.run_u2_asr_batch_with_timeout_retry(
             base_url="https://api.tikomni.com",
@@ -112,8 +147,47 @@ def main() -> None:
             _check("poll_waits_for_complete_metrics", len(trace) == 2, {"trace_len": len(trace)}),
             _check("batch_complete_true", bool(bundle.get("batch_complete")), {"batch_complete": bundle.get("batch_complete")}),
             _check("batch_progress_complete", bool(batch_progress.get("complete")), batch_progress),
+            _check("platform_pending_zero_on_complete", int(batch_progress.get("provider_pending") or 0) == 0, batch_progress),
             _check("task_metrics_total_gt_1", int(task_metrics.get("TOTAL") or 0) > 1, task_metrics),
             _check("results_mapped_all_urls", len(bundle.get("mapped_results") or {}) == 3, {"mapped_count": len(bundle.get("mapped_results") or {})}),
+            _check(
+                "transcription_url_hydrated_to_text",
+                len([item for item in (bundle.get("result_items") or []) if item.get("task_status") == "SUCCEEDED" and item.get("transcript_text")]) == 2,
+                {"result_items": bundle.get("result_items") or []},
+            ),
+            _check(
+                "invalid_item_index_ignored",
+                asr_pipeline.map_u2_batch_results_by_item_index(
+                    {
+                        "results": [
+                            {"item_index": "abc", "status": "SUCCEEDED", "transcript_text": "should_skip"},
+                            {"item_index": -1, "status": "SUCCEEDED", "transcript_text": "should_skip"},
+                            {"item_index": "2", "status": "FAILED", "error_reason": "decode_error"},
+                        ]
+                    }
+                )
+                == {
+                    2: {
+                        "item_index": 2,
+                        "transcript_text": "",
+                        "task_status": "FAILED",
+                        "error_reason": "decode_error",
+                        "transcription_url": "",
+                        "ok": False,
+                    }
+                },
+                {
+                    "mapped": asr_pipeline.map_u2_batch_results_by_item_index(
+                        {
+                            "results": [
+                                {"item_index": "abc", "status": "SUCCEEDED", "transcript_text": "should_skip"},
+                                {"item_index": -1, "status": "SUCCEEDED", "transcript_text": "should_skip"},
+                                {"item_index": "2", "status": "FAILED", "error_reason": "decode_error"},
+                            ]
+                        }
+                    )
+                },
+            ),
         ]
 
         output = {
@@ -127,6 +201,7 @@ def main() -> None:
         raise SystemExit(0 if output["ok"] else 1)
     finally:
         asr_pipeline.call_json_api = _ORIG_CALL_JSON_API
+        asr_pipeline.fetch_transcription_text_by_url = _ORIG_FETCH_TRANSCRIPTION
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ if __package__ in {None, ""}:
             sys.path.insert(0, str(_parent))
             break
 
-"""Xiaohongshu extraction: APP -> WEB_V2 -> WEB, subtitle-first for video, image strategy B for photo notes."""
+"""Xiaohongshu extraction: APP V2 -> APP V1 -> WEB_V2 -> WEB."""
 
 from scripts.core.bootstrap_env import bootstrap_for_direct_run
 
@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from scripts.pipeline.asr.asr_pipeline import run_u2_asr_candidates_with_timeout_retry
 from scripts.core.config_loader import config_get, load_tikomni_config, resolve_storage_paths
+from scripts.core.progress_report import ProgressReporter
 from scripts.core.extract_pipeline import build_api_trace, resolve_trace_error_context
 from scripts.core.tikomni_common import (
     call_json_api,
@@ -40,7 +41,10 @@ from scripts.core.tikomni_common import (
 )
 from scripts.writers.write_benchmark_card import write_benchmark_card
 
-APP_ENDPOINT = "/api/u1/v1/xiaohongshu/app/get_note_info"
+APP_V2_VIDEO_ENDPOINT = "/api/u1/v1/xiaohongshu/app_v2/get_video_note_detail"
+APP_V2_IMAGE_ENDPOINT = "/api/u1/v1/xiaohongshu/app_v2/get_image_note_detail"
+APP_V2_MIXED_ENDPOINT = "/api/u1/v1/xiaohongshu/app_v2/get_mixed_note_detail"
+APP_V1_ENDPOINT = "/api/u1/v1/xiaohongshu/app/get_note_info"
 WEB_V2_V2_ENDPOINT = "/api/u1/v1/xiaohongshu/web_v2/fetch_feed_notes_v2"
 WEB_V2_V3_ENDPOINT = "/api/u1/v1/xiaohongshu/web_v2/fetch_feed_notes_v3"
 WEB_ENDPOINT = "/api/u1/v1/xiaohongshu/web/get_note_info_v7"
@@ -292,6 +296,74 @@ def _app_response_has_core_fields(response_data: Any) -> bool:
     # For APP-first strategy, if app only has weak image frames but no subtitle/video core,
     # continue probing WEB_V2 to improve media fidelity.
     return subtitle_hit or video_hit
+
+
+def _route_field_completeness(payload: Any, source_input: Dict[str, Optional[str]]) -> Dict[str, Any]:
+    note_id_hit = bool(_resolve_note_id(payload, source_input))
+    title_hit = bool(
+        _pick_text_from_paths(
+            payload,
+            [["title"], ["desc"], ["content"], ["note", "title"], ["note", "desc"], ["note", "content"]],
+        )
+    )
+    author_hit = bool(
+        _pick_text_from_paths(
+            payload,
+            [
+                ["nickname"],
+                ["author_nickname"],
+                ["user_nickname"],
+                ["author", "nickname"],
+                ["user", "nickname"],
+                ["author", "name"],
+                ["user", "name"],
+            ],
+        )
+    )
+    media_hit = bool(_extract_video_candidates(payload) or _extract_image_candidates(payload))
+    subtitle_hit = bool(_extract_subtitle_inline_text(payload)) or bool(_extract_subtitle_urls(payload))
+    metrics_hit = any(
+        _pick_int_from_paths(payload, [path], prefer_positive=True) is not None
+        for path in (
+            ["digg_count"],
+            ["liked_count"],
+            ["like_count"],
+            ["comment_count"],
+            ["collect_count"],
+            ["share_count"],
+            ["view_count"],
+            ["play_count"],
+        )
+    )
+
+    fields = {
+        "note_id": note_id_hit,
+        "title_or_desc": title_hit,
+        "author": author_hit,
+        "media": media_hit,
+        "subtitle": subtitle_hit,
+        "metrics": metrics_hit,
+    }
+    filled_count = sum(1 for hit in fields.values() if hit)
+    missing_core = [key for key in ("note_id", "title_or_desc", "media") if not fields.get(key)]
+    return {
+        "fields": fields,
+        "filled_count": filled_count,
+        "total_fields": len(fields),
+        "ratio": round(filled_count / max(len(fields), 1), 3),
+        "missing_core": missing_core,
+        "core_ready": not missing_core,
+    }
+
+
+def _route_success_for_note(response: Dict[str, Any], source_input: Dict[str, Optional[str]]) -> bool:
+    if not response.get("ok"):
+        return False
+    completeness = response.get("_field_completeness")
+    if not isinstance(completeness, dict):
+        completeness = _route_field_completeness(response.get("data"), source_input)
+        response["_field_completeness"] = completeness
+    return bool(completeness.get("core_ready"))
 
 
 def _pick_text_from_paths(payload: Any, paths: List[List[str]]) -> str:
@@ -721,6 +793,14 @@ def _fetch_note_info(*, base_url: str, token: str, timeout_ms: int, source_input
         response["_route_label"] = label
         if fallback_reason:
             response["fallback_trigger_reason"] = fallback_reason
+        response["_field_completeness"] = _route_field_completeness(response.get("data"), source_input) if response.get("ok") else {
+            "fields": {},
+            "filled_count": 0,
+            "total_fields": 0,
+            "ratio": 0.0,
+            "missing_core": ["note_id", "title_or_desc", "media"],
+            "core_ready": False,
+        }
         attempts.append({"label": label, "endpoint": path, "response": response})
         return response
 
@@ -730,13 +810,35 @@ def _fetch_note_info(*, base_url: str, token: str, timeout_ms: int, source_input
     if note_id:
         app_params["note_id"] = note_id
 
-    app_response = _call(APP_ENDPOINT, app_params, "app")
-    if app_response.get("ok"):
+    app_v2_attempts = [
+        (APP_V2_VIDEO_ENDPOINT, "app_v2_video"),
+        (APP_V2_IMAGE_ENDPOINT, "app_v2_image"),
+        (APP_V2_MIXED_ENDPOINT, "app_v2_mixed"),
+    ]
+    next_reason: Optional[str] = None
+
+    for path, label in app_v2_attempts:
+        app_v2_response = _call(path, app_params, label, fallback_reason=next_reason)
+        if _route_success_for_note(app_v2_response, source_input):
+            app_v2_response["_attempts"] = attempts
+            return app_v2_response
+        if app_v2_response.get("ok"):
+            app_v2_response["fallback_trigger_reason"] = "field_completeness_below_threshold"
+        next_reason = "field_completeness_below_threshold" if app_v2_response.get("ok") else (
+            "primary_timeout_retry_exhausted" if app_v2_response.get("timeout_retry_exhausted") else "primary_non_timeout_failure"
+        )
+
+    app_response = _call(APP_V1_ENDPOINT, app_params, "app_v1", fallback_reason=next_reason)
+    if _route_success_for_note(app_response, source_input):
         app_response["_attempts"] = attempts
         return app_response
+    if app_response.get("ok"):
+        app_response["fallback_trigger_reason"] = "field_completeness_below_threshold"
 
     app_fallback_reason = (
-        "primary_timeout_retry_exhausted" if app_response.get("timeout_retry_exhausted") else "primary_non_timeout_failure"
+        "field_completeness_below_threshold"
+        if app_response.get("ok")
+        else ("primary_timeout_retry_exhausted" if app_response.get("timeout_retry_exhausted") else "primary_non_timeout_failure")
     )
     is_short = _is_short_share_url(share_text)
 
@@ -1279,8 +1381,11 @@ def run_xiaohongshu_extract(
     storage_config: Optional[Dict[str, Any]] = None,
     allow_process_env: bool = False,
     persist_output: bool = True,
+    progress: Optional[ProgressReporter] = None,
 ) -> Dict[str, Any]:
     source_input = _normalize_input(input_value, share_text, note_id)
+    if progress is not None:
+        progress.started(stage="note.workflow", message="xiaohongshu note workflow started")
     metadata_fields: Dict[str, Any] = {}
     if not source_input["share_text"] and not source_input["note_id"]:
         result = _build_result(
@@ -1333,6 +1438,8 @@ def run_xiaohongshu_extract(
 
     trace: List[Dict[str, Any]] = []
 
+    if progress is not None:
+        progress.progress(stage="note.fetch", message="fetching xiaohongshu note payload")
     note_response = _fetch_note_info(
         base_url=runtime["base_url"],
         token=runtime["token"],
@@ -1353,9 +1460,24 @@ def run_xiaohongshu_extract(
                 step=step,
                 endpoint=endpoint,
                 response=response,
-                extra={"route_label": label, "attempt": index},
+                extra={
+                    "route_label": label,
+                    "attempt": index,
+                    "chosen_route": note_response.get("_route_label"),
+                    "field_completeness": response.get("_field_completeness"),
+                },
             )
         )
+
+    trace.append(
+        {
+            "step": "u1_get_note_info_route_decision",
+            "chosen_route": note_response.get("_route_label"),
+            "request_id": note_response.get("request_id"),
+            "field_completeness": note_response.get("_field_completeness"),
+            "attempt_count": len(attempts),
+        }
+    )
 
     if not note_response.get("ok"):
         error_ctx = resolve_trace_error_context(
@@ -1404,7 +1526,7 @@ def run_xiaohongshu_extract(
         )
 
     effective_payload = note_response.get("data")
-    app_route_success = str(note_response.get("_route_label") or "") == "app"
+    app_route_success = str(note_response.get("_route_label") or "").startswith("app")
     metadata_enrich_on_sparse = bool(config_get(storage_config or {}, "xhs.metadata_enrich_on_sparse", True))
 
     initial_metadata = _extract_xhs_metadata(
@@ -1624,6 +1746,12 @@ def run_xiaohongshu_extract(
             )
 
         u2_candidates = _dedupe_keep_order([u2_gate.get("video_down_url")] + list(video_candidates))
+        if progress is not None:
+            progress.progress(
+                stage="note.u2",
+                message="starting xiaohongshu u2 flow",
+                data={"candidate_count": len(u2_candidates)},
+            )
         u2_bundle = run_u2_asr_candidates_with_timeout_retry(
             base_url=runtime["base_url"],
             token=runtime["token"],
@@ -1662,6 +1790,16 @@ def run_xiaohongshu_extract(
                 "final_error_reason": poll_result.get("error_reason"),
             }
         )
+        if progress is not None:
+            (progress.done if poll_result.get("ok") else progress.failed)(
+                stage="note.u2",
+                message="xiaohongshu u2 flow finished" if poll_result.get("ok") else "xiaohongshu u2 flow failed",
+                data={
+                    "task_id": poll_result.get("task_id") or task_id,
+                    "task_status": poll_result.get("task_status"),
+                    "error_reason": poll_result.get("error_reason"),
+                },
+            )
 
         if not poll_result.get("ok") and (
             not submit_response.get("ok") or not (poll_result.get("task_id") or task_id)
@@ -1827,13 +1965,26 @@ def run_xiaohongshu_extract(
             storage_config=storage_config,
         )
 
-    return _finalize_result(
+    finalized = _finalize_result(
         result=result,
         source_input=source_input,
         note_id=str(resolved_note_id) if resolved_note_id else source_input.get("note_id"),
         storage_config=storage_config,
         persist_output=persist_output,
     )
+    if progress is not None:
+        final_event = progress.failed if finalized.get("error_reason") else progress.done
+        final_event(
+            stage="note.workflow",
+            message="xiaohongshu note workflow finished" if not finalized.get("error_reason") else "xiaohongshu note workflow failed",
+            data={
+                "request_id": finalized.get("request_id"),
+                "card_write_ok": bool((finalized.get("card_write") or {}).get("ok")),
+                "output_persist_ok": bool((finalized.get("output_persist") or {}).get("ok")),
+                "text_source": finalized.get("text_source"),
+            },
+        )
+    return finalized
 
 
 def main() -> None:

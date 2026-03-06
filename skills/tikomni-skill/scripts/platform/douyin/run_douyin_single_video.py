@@ -28,6 +28,7 @@ from typing import Any, Dict, List, Optional
 
 from scripts.core.config_loader import config_get, load_tikomni_config, resolve_storage_paths
 from scripts.core.extract_pipeline import resolve_trace_error_context
+from scripts.core.progress_report import ProgressReporter
 from scripts.platform.douyin.douyin_video_type_matrix import normalize_douyin_video_type
 from scripts.pipeline.asr.asr_pipeline import submit_u2_asr_with_retry
 from scripts.pipeline.asr.poll_u2_task import poll_u2_task
@@ -658,8 +659,11 @@ def run_douyin_single_video(
     storage_config: Optional[Dict[str, Any]] = None,
     allow_process_env: bool = False,
     persist_output: bool = True,
+    progress: Optional[ProgressReporter] = None,
 ) -> Dict[str, Any]:
     source_input = _normalize_input(input_value, share_url)
+    if progress is not None:
+        progress.started(stage="single_video.workflow", message="douyin single_video workflow started")
     if not source_input.get("share_url"):
         result = _build_result(
             source_input=source_input,
@@ -720,6 +724,8 @@ def run_douyin_single_video(
 
     trace: List[Dict[str, Any]] = []
 
+    if progress is not None:
+        progress.progress(stage="single_video.fetch", message="fetching douyin single_video payload")
     one_video_response = _u1_fetch_one_video(
         base_url=runtime["base_url"],
         token=runtime["token"],
@@ -930,6 +936,12 @@ def run_douyin_single_video(
     poll_result: Dict[str, Any] = {}
 
     if can_u2 and video_down_url:
+        if progress is not None:
+            progress.progress(
+                stage="single_video.u2",
+                message="starting douyin u2 submit",
+                data={"video_down_url_present": True},
+            )
         submit_bundle = submit_u2_asr_with_retry(
             base_url=runtime["base_url"],
             token=runtime["token"],
@@ -967,9 +979,17 @@ def run_douyin_single_video(
         )
 
         if not submit_response.get("ok") or not u2_task_id:
+            if progress is not None:
+                progress.failed(
+                    stage="single_video.u2",
+                    message="douyin u2 submit failed",
+                    data={"error_reason": submit_response.get("error_reason") or "u2_submit_failed_or_missing_task_id"},
+                )
             error_reason = submit_response.get("error_reason") or "u2_submit_failed_or_missing_task_id"
             u2_task_status = "UNKNOWN"
         else:
+            if progress is not None:
+                progress.progress(stage="single_video.u2", message="polling douyin u2 task", data={"task_id": u2_task_id})
             poll_result = poll_u2_task(
                 base_url=runtime["base_url"],
                 token=runtime["token"],
@@ -994,6 +1014,12 @@ def run_douyin_single_video(
                     "attempts": len(poll_result.get("trace", [])),
                 }
             )
+            if progress is not None:
+                (progress.done if poll_result.get("ok") else progress.failed)(
+                    stage="single_video.u2",
+                    message="douyin u2 polling finished" if poll_result.get("ok") else "douyin u2 polling failed",
+                    data={"task_id": u2_task_id, "task_status": u2_task_status, "attempts": len(poll_result.get("trace", []))},
+                )
 
     error_ctx = resolve_trace_error_context(
         responses=[poll_result, submit_response, one_video_response],
@@ -1039,6 +1065,8 @@ def run_douyin_single_video(
     )
 
     if write_card:
+        if progress is not None:
+            progress.progress(stage="single_video.card_write", message="writing douyin single_video card")
         result["card_write"] = write_benchmark_card(
             payload=result,
             platform="douyin",
@@ -1049,13 +1077,25 @@ def run_douyin_single_video(
             storage_config=storage_config,
         )
 
-    return _finalize_result(
+    finalized = _finalize_result(
         result=result,
         source_input=source_input,
         platform_work_id=platform_work_id,
         storage_config=storage_config,
         persist_output=persist_output,
     )
+    if progress is not None:
+        final_event = progress.failed if finalized.get("error_reason") else progress.done
+        final_event(
+            stage="single_video.workflow",
+            message="douyin single_video workflow finished" if not finalized.get("error_reason") else "douyin single_video workflow failed",
+            data={
+                "request_id": finalized.get("request_id"),
+                "card_write_ok": bool((finalized.get("card_write") or {}).get("ok")),
+                "output_persist_ok": bool((finalized.get("output_persist") or {}).get("ok")),
+            },
+        )
+    return finalized
 
 
 def main() -> None:

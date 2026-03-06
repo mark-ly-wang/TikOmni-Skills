@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any, Callable, Dict, Mapping, MutableMapping, Optional, Tuple, TypedDict
 
+from scripts.core.progress_report import ProgressReporter
+
 from scripts.author_home.orchestrator.run_author_analysis import run_author_home_analysis
 from scripts.platform.douyin.run_douyin_single_video import run_douyin_single_video
 from scripts.platform.xiaohongshu.run_xiaohongshu_extract import run_xiaohongshu_extract
@@ -44,6 +46,7 @@ class WorkflowContext(TypedDict, total=False):
     max_items: int
     asr_batch_size: int
     checkpoint: Optional[Dict[str, Any]]
+    progress_reporter: Optional[ProgressReporter]
 
 
 class ResultEnvelope(TypedDict, total=False):
@@ -141,6 +144,7 @@ def _run_douyin_single_video_workflow(ctx: WorkflowContext) -> Mapping[str, Any]
         storage_config=ctx.get("storage_config"),
         allow_process_env=bool(ctx.get("allow_process_env", False)),
         persist_output=bool(ctx.get("persist_output", True)),
+        progress=ctx.get("progress_reporter") if isinstance(ctx.get("progress_reporter"), ProgressReporter) else None,
     )
 
 
@@ -171,6 +175,7 @@ def _run_xiaohongshu_note_workflow(ctx: WorkflowContext) -> Mapping[str, Any]:
         storage_config=ctx.get("storage_config"),
         allow_process_env=bool(ctx.get("allow_process_env", False)),
         persist_output=bool(ctx.get("persist_output", True)),
+        progress=ctx.get("progress_reporter") if isinstance(ctx.get("progress_reporter"), ProgressReporter) else None,
     )
 
 
@@ -198,6 +203,7 @@ def _run_douyin_author_home_workflow(ctx: WorkflowContext) -> Mapping[str, Any]:
         collect_material=bool(ctx.get("collect_material", False)),
         card_root=ctx.get("card_root"),
         storage_config=ctx.get("storage_config"),
+        progress=ctx.get("progress_reporter") if isinstance(ctx.get("progress_reporter"), ProgressReporter) else None,
     )
 
 
@@ -225,6 +231,7 @@ def _run_xhs_author_home_workflow(ctx: WorkflowContext) -> Mapping[str, Any]:
         collect_material=bool(ctx.get("collect_material", False)),
         card_root=ctx.get("card_root"),
         storage_config=ctx.get("storage_config"),
+        progress=ctx.get("progress_reporter") if isinstance(ctx.get("progress_reporter"), ProgressReporter) else None,
     )
 
 

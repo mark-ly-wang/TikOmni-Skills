@@ -1,24 +1,27 @@
 # Capability Routing Matrix
 
-This matrix is the capability routing entry list for the TikOmni skill.
-Match fixed capabilities first, then use universal fallback.
+Use this matrix to decide whether a request matches a fixed capability.
+If none fits, enter universal fallback.
 
-Scope:
-- This document defines agent routing policy.
-- Unified entry and registry handle mapping and dispatch only.
+This file defines:
+- capability name
+- trigger intent
+- route chain entry
+- output expectation
+
+This file does **not** define global endpoint priority or platform-specific endpoint versions.
 
 | capability | status | trigger intents | route chain (entry script/playbook) | output expectation | notes |
 |---|---|---|---|---|---|
-| douyin.single_video | active | Douyin single video parsing, single-post structured extraction, field extraction from video URL | `scripts/cli/run_tikomni_extract.py` -> `scripts/registry/workflow_registry.py` -> `scripts/platform/douyin/run_douyin_single_video.py` | Single-video `raw + normalized + markdown` with `missing_fields`, `fallback_trace`, and `request_id` (when available) | availability-first; `one_video app` primary, `one_video web` fallback |
-| xiaohongshu.single_note | active | Xiaohongshu single-note parsing, content and engagement extraction from note URL | `scripts/cli/run_tikomni_extract.py` -> `scripts/registry/workflow_registry.py` -> `scripts/platform/xiaohongshu/run_xiaohongshu_extract.py` | Single-note `raw + normalized + markdown` with `missing_fields`, `fallback_trace`, and `request_id` (when available) | default kind in registry is `note`; alias `single_video` supported |
-| douyin.author_home | active | Douyin author homepage extraction + author analysis (componentized pipeline) | `scripts/cli/run_tikomni_extract.py --platform douyin --content-kind author_home` -> `scripts/registry/workflow_registry.py` -> `scripts/author_home/orchestrator/run_author_analysis.py` | Author profile + paginated works + prompt-first analysis + reused single-work cards | default strategy fixed: latest + cursor loop + max_items=200 |
-| xiaohongshu.author_home | active | Xiaohongshu author homepage extraction + author analysis (componentized pipeline) | `scripts/cli/run_tikomni_extract.py --platform xiaohongshu --content-kind author_home` -> `scripts/registry/workflow_registry.py` -> `scripts/author_home/orchestrator/run_author_analysis.py` | Author profile + paginated works + prompt-first analysis + reused single-work cards | default strategy fixed: latest + cursor loop + max_items=200 |
-| author.sample_writer | active | Utility: write normalized homepage works into standard cards | `scripts/writers/write_author_homepage_samples.py` | Reusable author sample output with traceable fields | utility-only; not homepage execution entry |
-| universal.intent_fallback | fallback | General research/extraction/analysis requests that miss fixed capabilities above | `references/routing-rules.md` -> `references/api-catalog/index.md` -> `references/normalize-rules.md` -> `references/output-markdown.md` | Structured result/report for user intent with explicit `missing_fields` and `fallback_trace` | trigger only after fixed capability miss |
+| douyin.single_video | active | Douyin single video parsing, single-post structured extraction, field extraction from video URL | `scripts/cli/run_tikomni_extract.py` -> `scripts/registry/workflow_registry.py` -> `scripts/platform/douyin/run_douyin_single_video.py` | Single-video `raw + normalized + markdown` with `missing_fields`, `fallback_trace`, and `request_id` (when available) | fixed capability |
+| xiaohongshu.single_note | active | Xiaohongshu single-note parsing, content and engagement extraction from note URL | `scripts/cli/run_tikomni_extract.py` -> `scripts/registry/workflow_registry.py` -> `scripts/platform/xiaohongshu/run_xiaohongshu_extract.py` | Single-note `raw + normalized + markdown` with `missing_fields`, `fallback_trace`, and `request_id` (when available) | fixed capability |
+| douyin.author_home | active | Douyin author homepage extraction + author analysis (componentized pipeline) | `scripts/cli/run_tikomni_extract.py --platform douyin --content-kind author_home` -> `scripts/registry/workflow_registry.py` -> `scripts/author_home/orchestrator/run_author_analysis.py` | Author profile + paginated works + prompt-first analysis + reused single-work cards | fixed capability |
+| xiaohongshu.author_home | active | Xiaohongshu author homepage extraction + author analysis (componentized pipeline) | `scripts/cli/run_tikomni_extract.py --platform xiaohongshu --content-kind author_home` -> `scripts/registry/workflow_registry.py` -> `scripts/author_home/orchestrator/run_author_analysis.py` | Author profile + paginated works + prompt-first analysis + reused single-work cards | fixed capability |
+| author.sample_writer | active | Utility: write normalized homepage works into standard cards | `scripts/writers/write_author_homepage_samples.py` | Reusable author sample output with traceable fields | utility-only |
+| universal.intent_fallback | fallback | Any supported social-platform request that does not cleanly match a fixed capability but still fits TikOmni data extraction/analysis intent | `references/routing-rules.md` -> `references/api-catalog/index.md` -> `references/normalize-rules.md` -> `references/output-markdown.md` | Structured result/report with explicit `missing_fields` and `fallback_trace` | use when fixed capability does not fit |
 
-## Routing Rules (Hard)
-1. Perform capability matching by this matrix first (`active` priority).
-2. Enter `universal.intent_fallback` only when fixed capabilities are not matched.
-3. Registry is for handler mapping lookup only; do not use it as routing policy priority resolver.
-4. Do not describe matrix/playbook policy as guaranteed script execution; execution facts must come from runtime results and trace.
-5. Legacy homepage playbooks (`references/playbooks/douyin-home-extract.md`, `references/playbooks/xiaohongshu-home-extract.md`) are decommissioned and cannot be used as execution entry.
+## Hard rules
+1. Match active fixed capabilities first.
+2. Enter `universal.intent_fallback` only when no fixed capability cleanly fits.
+3. Treat registry as handler lookup only, not as policy storage.
+4. Do not infer TikOmni's total capability boundary from this matrix alone.

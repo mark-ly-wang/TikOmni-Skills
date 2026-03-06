@@ -26,6 +26,7 @@ from typing import Any, Dict
 
 from scripts.core.config_loader import config_get, load_tikomni_config, resolve_storage_paths
 from scripts.core.extract_pipeline import detect_platform_from_input
+from scripts.core.progress_report import build_progress_reporter
 from scripts.core.tikomni_common import resolve_runtime, write_json_stdout
 from scripts.registry.workflow_registry import DEFAULT_WORKFLOW_REGISTRY, normalize_result_envelope
 
@@ -289,6 +290,32 @@ def main() -> None:
 
     requested_content_kind = args.content_kind
 
+    progress = build_progress_reporter(
+        workflow="run_tikomni_extract",
+        platform=platform,
+        content_kind=requested_content_kind,
+        input_value=args.input,
+    )
+    progress.started(
+        stage="workflow",
+        message="workflow started",
+        data={
+            "requested_content_kind": requested_content_kind,
+            "write_card": bool(args.write_card),
+            "persist_output": bool(args.persist_output),
+        },
+    )
+    if not args.write_card or not args.persist_output:
+        progress.progress(
+            stage="workflow.debug_opt_out",
+            message="debug opt-out flags active",
+            data={
+                "write_card": bool(args.write_card),
+                "persist_output": bool(args.persist_output),
+                "warning": "--no-write-card/--no-persist-output are debug-only opt-outs for standard runs",
+            },
+        )
+
     runtime = resolve_runtime(
         env_file=resolved_env_file,
         api_key_env=api_key_env,
@@ -334,23 +361,35 @@ def main() -> None:
         "max_items": int(args.max_items),
         "asr_batch_size": int(asr_batch_size),
         "checkpoint": checkpoint_payload,
+        "progress_reporter": progress,
     }
 
     resolved_content_kind = None
 
     try:
+        progress.progress(stage="workflow.resolve", message="resolving workflow handler")
         handler, resolved_content_kind = DEFAULT_WORKFLOW_REGISTRY.resolve(
             platform=platform,
             content_kind=requested_content_kind,
         )
 
         if handler is None or not resolved_content_kind:
+            progress.failed(
+                stage="workflow.resolve",
+                message="workflow handler not found",
+                data={"requested_content_kind": requested_content_kind},
+            )
             result = _build_unsupported_result(
                 input_value=args.input,
                 platform=platform,
                 content_kind=requested_content_kind,
             )
         else:
+            progress.progress(
+                stage="workflow.dispatch",
+                message="dispatching workflow handler",
+                data={"resolved_content_kind": resolved_content_kind},
+            )
             raw_result = handler(workflow_ctx)
             result = normalize_result_envelope(
                 raw_result,
@@ -362,18 +401,45 @@ def main() -> None:
             resolved_content_kind
             or (requested_content_kind if requested_content_kind != "auto" else "unknown")
         )
+        progress.failed(
+            stage="workflow.runtime",
+            message="runtime not ready",
+            data={"error_reason": str(error), "resolved_content_kind": fallback_content_kind},
+        )
         result = _build_runtime_not_ready_result(
             platform=platform,
             content_kind=fallback_content_kind,
             error_reason=str(error),
         )
 
+    progress.progress(
+        stage="workflow.persist",
+        message="ensuring output artifact",
+        data={"persist_output": bool(args.persist_output)},
+    )
     result = _ensure_output_persist(
         result=result,
         input_value=args.input,
         storage_config=config,
         persist_output=bool(args.persist_output),
     )
+
+    if result.get("error_reason"):
+        progress.failed(
+            stage="workflow",
+            message="workflow finished with error",
+            data={"error_reason": result.get("error_reason")},
+        )
+    else:
+        progress.done(
+            stage="workflow",
+            message="workflow finished",
+            data={
+                "resolved_content_kind": result.get("content_kind"),
+                "has_card_write": isinstance(result.get("card_write"), dict),
+                "output_persist_ok": bool((result.get("output_persist") or {}).get("ok")),
+            },
+        )
 
     write_json_stdout(result)
     raise SystemExit(0 if not result.get("error_reason") else 1)

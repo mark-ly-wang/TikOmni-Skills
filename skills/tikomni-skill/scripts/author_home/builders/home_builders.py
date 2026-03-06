@@ -8,63 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-
-def _coerce_unix_sec(value: Any) -> int:
-    try:
-        if value is None:
-            return 0
-        if isinstance(value, (int, float)):
-            parsed = int(value)
-        else:
-            text = str(value).strip()
-            if not text:
-                return 0
-            parsed = int(float(text))
-        if parsed > 1_000_000_000_000:
-            parsed //= 1000
-        return parsed if parsed > 0 else 0
-    except Exception:
-        return 0
-
 from scripts.writers.write_benchmark_card import write_benchmark_card
-
-
-def _work_payload(work: Dict[str, Any], profile: Dict[str, Any], analysis_text: str) -> Dict[str, Any]:
-    metrics = work.get("metrics") if isinstance(work.get("metrics"), dict) else {}
-    author = {
-        "nickname": profile.get("nickname"),
-        "author_platform_id": profile.get("author_platform_id") or profile.get("platform_author_id"),
-        "author_handle": profile.get("author_handle") or "",
-    }
-    publish_time = work.get("publish_time")
-    create_time_sec = _coerce_unix_sec(publish_time)
-    return {
-        # Reuse single-video card template fields while keeping author sample routing.
-        "content_kind": "single_video",
-        "platform_work_id": work.get("platform_work_id"),
-        "title": work.get("title") or work.get("desc"),
-        "desc": work.get("desc") or work.get("title"),
-        "source_url": work.get("source_url"),
-        "share_url": work.get("share_url"),
-        "cover_image": work.get("cover_image"),
-        "video_down_url": work.get("video_down_url"),
-        "author": author,
-        "author_handle": author.get("author_handle"),
-        "author_platform_id": author.get("author_platform_id"),
-        "publish_time": publish_time,
-        "publish_time_source": "author_home.work.publish_time",
-        "create_time_sec": create_time_sec,
-        "digg_count": int(metrics.get("like", 0) or 0),
-        "comment_count": int(metrics.get("comment", 0) or 0),
-        "collect_count": int(metrics.get("collect", 0) or 0),
-        "share_count": int(metrics.get("share", 0) or 0),
-        "play_count": int(metrics.get("play", 0) or 0),
-        "summary": analysis_text or "",
-        "insights": ["source=author_home_componentized", "work_card_reused_single_video_template"],
-        "raw_content": work.get("asr_raw") or "",
-        "asr_clean": work.get("asr_clean") or "",
-        "asr_source": work.get("asr_source") or "fallback_none",
-    }
 
 
 def build_work_cards(
@@ -72,20 +16,31 @@ def build_work_cards(
     platform: str,
     profile: Dict[str, Any],
     works: List[Dict[str, Any]],
-    analysis_text: str,
+    render_payloads: Dict[str, Dict[str, Any]],
     card_root: Optional[str],
     storage_config: Optional[Dict[str, Any]],
     collect_material: bool,
     write_card: bool,
+    failed_items: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     if not write_card:
         return {"enabled": False, "count": 0, "results": []}
 
     sample_author = str(profile.get("nickname") or profile.get("platform_author_id") or "作者")
     results: List[Dict[str, Any]] = []
+    unresolved: List[Dict[str, Any]] = list(failed_items or [])
 
     for work in works:
-        payload = _work_payload(work, profile, analysis_text)
+        platform_work_id = str(work.get("platform_work_id") or "").strip()
+        payload = render_payloads.get(platform_work_id)
+        if not isinstance(payload, dict):
+            unresolved.append(
+                {
+                    "platform_work_id": platform_work_id,
+                    "error_reason": "missing_work_analysis_artifact",
+                }
+            )
+            continue
         result = write_benchmark_card(
             payload=payload,
             platform=platform,
@@ -98,7 +53,12 @@ def build_work_cards(
         )
         results.append(result)
 
-    return {"enabled": True, "count": len(results), "results": results}
+    return {
+        "enabled": True,
+        "count": len(results),
+        "results": results,
+        "failed_items": unresolved,
+    }
 
 
 def build_author_card(

@@ -407,12 +407,13 @@ def _run_u2_batch_for_entries(
     submit_response = submit_bundle.get("submit_response") if isinstance(submit_bundle.get("submit_response"), dict) else {}
     poll_result = bundle.get("poll_result") if isinstance(bundle.get("poll_result"), dict) else {}
     task_metrics = bundle.get("task_metrics") if isinstance(bundle.get("task_metrics"), dict) else {}
+    submit_accepted = bool(submit_response.get("ok") and submit_bundle.get("task_id"))
 
     trace: List[Dict[str, Any]] = [
         {
             "step": "author_home.asr.batch.submitted",
             "batch_id": batch_id,
-            "ok": bool(submit_response.get("ok") and submit_bundle.get("task_id")),
+            "ok": submit_accepted,
             "batch_size": len(entries),
             "batch_unique_urls": len(unique_urls),
             "task_id": submit_bundle.get("task_id"),
@@ -494,7 +495,7 @@ def _run_u2_batch_for_entries(
         "task_metrics": task_metrics,
         "batch_progress": batch_progress,
         "batch_complete": batch_complete,
-        "submitted": True,
+        "submitted": submit_accepted,
         "completed": batch_complete,
     }
 

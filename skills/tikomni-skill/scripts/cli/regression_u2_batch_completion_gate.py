@@ -155,6 +155,39 @@ def main() -> None:
                 len([item for item in (bundle.get("result_items") or []) if item.get("task_status") == "SUCCEEDED" and item.get("transcript_text")]) == 2,
                 {"result_items": bundle.get("result_items") or []},
             ),
+            _check(
+                "invalid_item_index_ignored",
+                asr_pipeline.map_u2_batch_results_by_item_index(
+                    {
+                        "results": [
+                            {"item_index": "abc", "status": "SUCCEEDED", "transcript_text": "should_skip"},
+                            {"item_index": -1, "status": "SUCCEEDED", "transcript_text": "should_skip"},
+                            {"item_index": "2", "status": "FAILED", "error_reason": "decode_error"},
+                        ]
+                    }
+                )
+                == {
+                    2: {
+                        "item_index": 2,
+                        "transcript_text": "",
+                        "task_status": "FAILED",
+                        "error_reason": "decode_error",
+                        "transcription_url": "",
+                        "ok": False,
+                    }
+                },
+                {
+                    "mapped": asr_pipeline.map_u2_batch_results_by_item_index(
+                        {
+                            "results": [
+                                {"item_index": "abc", "status": "SUCCEEDED", "transcript_text": "should_skip"},
+                                {"item_index": -1, "status": "SUCCEEDED", "transcript_text": "should_skip"},
+                                {"item_index": "2", "status": "FAILED", "error_reason": "decode_error"},
+                            ]
+                        }
+                    )
+                },
+            ),
         ]
 
         output = {

@@ -311,6 +311,23 @@ def map_u2_batch_results_by_file_url(payload: Any) -> Dict[str, Dict[str, Any]]:
     return mapped
 
 
+def _parse_non_negative_item_index(value: Any) -> Optional[int]:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value if value >= 0 else None
+    if isinstance(value, float):
+        if value < 0 or not value.is_integer():
+            return None
+        return int(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text or not text.isdigit():
+            return None
+        return int(text)
+    return None
+
+
 def map_u2_batch_results_by_item_index(payload: Any) -> Dict[int, Dict[str, Any]]:
     mapped: Dict[int, Dict[str, Any]] = {}
     stack: List[Any] = [payload]
@@ -319,9 +336,8 @@ def map_u2_batch_results_by_item_index(payload: Any) -> Dict[int, Dict[str, Any]
         node = stack.pop(0)
         if isinstance(node, dict):
             item_index_raw = node.get("item_index")
-            item_index = _safe_int(item_index_raw)
-            has_item_index = item_index_raw is not None and str(item_index_raw).strip() != ""
-            if has_item_index:
+            item_index = _parse_non_negative_item_index(item_index_raw)
+            if item_index is not None:
                 transcript = clean_transcript_text(
                     node.get("transcript_text")
                     or node.get("text")

@@ -12,7 +12,7 @@ DISPLAY_TIMEZONE = timezone(timedelta(hours=8))
 SUBTITLE_SOURCE_ENUM = {"native_subtitle", "external_asr", "missing"}
 ASR_SOURCE_ENUM = {"native_subtitle", "external_asr", "fallback_none"}
 WORK_MODALITY_ENUM = {"video", "text"}
-PRIMARY_TEXT_SOURCE_ENUM = {"asr_clean", "caption_raw", "missing"}
+PRIMARY_TEXT_SOURCE_ENUM = {"asr_clean", "caption_raw"}
 ANALYSIS_ELIGIBILITY_ENUM = {"eligible", "incomplete"}
 
 
@@ -126,13 +126,13 @@ def _infer_primary_text(*, work_modality: str, caption_raw: str, asr_clean: str)
 
 def _infer_primary_text_source(*, work_modality: str, caption_raw: str, asr_clean: str) -> str:
     if work_modality == "video":
-        return "asr_clean" if asr_clean else "missing"
-    return "caption_raw" if caption_raw else "missing"
+        return "asr_clean"
+    return "caption_raw"
 
 
 def _infer_analysis_state(*, work_modality: str, caption_raw: str, asr_raw: str, video_download_url: str) -> Dict[str, str]:
     if work_modality == "video":
-        if asr_raw or video_download_url:
+        if asr_raw:
             return {"analysis_eligibility": "eligible", "analysis_exclusion_reason": ""}
         return {
             "analysis_eligibility": "incomplete",
@@ -184,7 +184,7 @@ class WorkItemNormalized:
     share_url: str = ""
     video_download_url: str = ""
     primary_text: str = ""
-    primary_text_source: str = "missing"
+    primary_text_source: str = "caption_raw"
     analysis_eligibility: str = "eligible"
     analysis_exclusion_reason: str = ""
     platform_native_refs: Dict[str, Any] = field(default_factory=dict)
@@ -358,10 +358,15 @@ def build_work_item(**kwargs: Any) -> Dict[str, Any]:
         caption_raw=caption_raw,
         asr_clean=asr_clean,
     )
-    primary_text_source = _to_text(kwargs.get("primary_text_source")) or _infer_primary_text_source(
-        work_modality=work_modality,
-        caption_raw=caption_raw,
-        asr_clean=asr_clean,
+    primary_text_source_raw = _to_text(kwargs.get("primary_text_source"))
+    primary_text_source = (
+        primary_text_source_raw
+        if primary_text_source_raw in PRIMARY_TEXT_SOURCE_ENUM
+        else _infer_primary_text_source(
+            work_modality=work_modality,
+            caption_raw=caption_raw,
+            asr_clean=asr_clean,
+        )
     )
     analysis_state = _infer_analysis_state(
         work_modality=work_modality,

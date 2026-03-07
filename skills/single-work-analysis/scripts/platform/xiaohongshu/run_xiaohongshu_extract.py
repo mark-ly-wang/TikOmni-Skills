@@ -699,6 +699,7 @@ def _extract_xhs_metadata(
         "caption_raw": _pick_text_from_paths(payload, [["desc"], ["content"], ["note", "desc"], ["note", "content"]]),
         "author": author,
         "author_handle": author_handle,
+        "platform_author_id": xhs_user_id,
         "author_platform_id": xhs_user_id,
         "xhs_user_id": xhs_user_id,
         "xhs_sec_token": normalize_text(xhs_sec_token),
@@ -743,7 +744,7 @@ def _append_missing_metadata_fields(missing_fields: List[Dict[str, str]], metada
         "title",
         "author",
         "author_handle",
-        "author_platform_id",
+        "platform_author_id",
         "xhs_user_id",
         "xhs_sec_token",
         "share_url",
@@ -1344,7 +1345,7 @@ def _build_result(
     work_modality = "video" if normalize_text(note_content_type).lower() in {"video", "mixed"} else "text"
     caption_raw = normalize_text(metadata.get("caption_raw"))
     primary_text = raw_content if work_modality == "video" else (caption_raw or raw_content)
-    primary_text_source = "asr_clean" if work_modality == "video" and raw_content else ("caption_raw" if primary_text else "missing")
+    primary_text_source = "asr_clean" if work_modality == "video" else "caption_raw"
     analysis_eligibility = "eligible" if primary_text else "incomplete"
     analysis_exclusion_reason = "" if analysis_eligibility == "eligible" else ("video_asr_unavailable" if work_modality == "video" else "caption_raw_missing")
 
@@ -1383,7 +1384,7 @@ def _build_result(
         "video_download_url": metadata.get("video_download_url") or metadata.get("video_down_url"),
         "work_modality": work_modality,
         "author_handle": metadata.get("author_handle"),
-        "author_platform_id": metadata.get("author_platform_id"),
+        "platform_author_id": metadata.get("platform_author_id") or metadata.get("author_platform_id"),
         "xhs_user_id": metadata.get("xhs_user_id"),
         "xhs_sec_token": metadata.get("xhs_sec_token"),
         "downloaded_assets": downloaded_assets,

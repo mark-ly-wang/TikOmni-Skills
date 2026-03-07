@@ -312,7 +312,7 @@ def _run_u2_for_work(
         "asr_raw": "",
         "asr_clean": "",
         "primary_text": "",
-        "primary_text_source": "missing",
+        "primary_text_source": "asr_clean",
         "analysis_eligibility": "incomplete",
         "analysis_exclusion_reason": "video_asr_unavailable",
         "asr_status": "failed",
@@ -402,7 +402,7 @@ def _fallback_none_result(reason: str) -> Dict[str, Any]:
         "asr_raw": "",
         "asr_clean": "",
         "primary_text": "",
-        "primary_text_source": "missing",
+        "primary_text_source": "asr_clean",
         "analysis_eligibility": "incomplete",
         "analysis_exclusion_reason": normalize_text(reason) or "video_asr_unavailable",
         "asr_status": "failed",
@@ -415,7 +415,7 @@ def _mark_text_work_ready(work: Dict[str, Any]) -> Dict[str, Any]:
     caption_raw = normalize_text(work.get("caption_raw"))
     return {
         "primary_text": caption_raw,
-        "primary_text_source": "caption_raw" if caption_raw else "missing",
+        "primary_text_source": "caption_raw",
         "analysis_eligibility": "eligible" if caption_raw else "incomplete",
         "analysis_exclusion_reason": "" if caption_raw else "caption_raw_missing",
         "asr_status": "not_applicable",

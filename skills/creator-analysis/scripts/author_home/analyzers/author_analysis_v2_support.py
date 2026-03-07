@@ -371,7 +371,12 @@ def _normalize_work(profile: Dict[str, Any], work: Dict[str, Any]) -> Dict[str, 
     title = _safe_text(work.get("title"))
     caption_raw = _safe_text(work.get("caption_raw") or work.get("desc"))
     primary_text = _safe_text(work.get("primary_text") or work.get("asr_clean") or work.get("asr_raw") or caption_raw)
-    primary_text_source = _safe_text(work.get("primary_text_source")) or ("asr_clean" if primary_text and _safe_text(work.get("work_modality")) == "video" else ("caption_raw" if primary_text else "missing"))
+    primary_text_source_raw = _safe_text(work.get("primary_text_source"))
+    primary_text_source = (
+        primary_text_source_raw
+        if primary_text_source_raw in {"asr_clean", "caption_raw"}
+        else ("asr_clean" if _safe_text(work.get("work_modality")) == "video" else "caption_raw")
+    )
     work_modality = _safe_text(work.get("work_modality")) or ("video" if _safe_text(work.get("video_download_url") or work.get("video_down_url") or work.get("asr_raw")) else "text")
     merged = "\n".join(part for part in [title, caption_raw, primary_text] if part)
     return {
@@ -788,7 +793,7 @@ def validate_author_analysis_input_v1(payload: Dict[str, Any]) -> List[Dict[str,
             errors.append({"field": f"sampled_works.{index}", "reason": "all_text_fields_empty"})
         if _safe_text(row.get("work_modality")) not in {"video", "text"}:
             errors.append({"field": f"sampled_works.{index}.work_modality", "reason": "enum_required"})
-        if _safe_text(row.get("primary_text_source")) not in {"asr_clean", "caption_raw", "missing"}:
+        if _safe_text(row.get("primary_text_source")) not in {"asr_clean", "caption_raw"}:
             errors.append({"field": f"sampled_works.{index}.primary_text_source", "reason": "enum_required"})
         if _safe_text(row.get("hook_type")) not in HOOK_TYPES_ENUM:
             errors.append({"field": f"sampled_works.{index}.hook_type", "reason": "enum_required"})

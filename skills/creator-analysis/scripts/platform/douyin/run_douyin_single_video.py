@@ -307,6 +307,7 @@ def _extract_author(item: Dict[str, Any]) -> Dict[str, Optional[str]]:
 
     return {
         "author_handle": author_handle or None,
+        "platform_author_id": author_platform_id or None,
         "author_platform_id": author_platform_id or None,
         "douyin_sec_uid": douyin_sec_uid or None,
         "douyin_aweme_author_id": douyin_aweme_author_id or None,
@@ -557,9 +558,15 @@ def _build_missing_fields(
     if not normalize_text(video_down_url):
         _append("video_down_url")
 
-    for key in ("author_handle", "author_platform_id", "douyin_sec_uid", "douyin_aweme_author_id"):
-        if not normalize_text(author.get(key)):
-            _append(key)
+    author_key_map = {
+        "author_handle": ("author_handle",),
+        "platform_author_id": ("platform_author_id", "author_platform_id"),
+        "douyin_sec_uid": ("douyin_sec_uid",),
+        "douyin_aweme_author_id": ("douyin_aweme_author_id",),
+    }
+    for field, aliases in author_key_map.items():
+        if not any(normalize_text(author.get(alias)) for alias in aliases):
+            _append(field)
 
     return missing
 
@@ -620,7 +627,7 @@ def _build_result(
         "video_down_url": video_down_url,
         "author": author,
         "author_handle": author.get("author_handle"),
-        "author_platform_id": author.get("author_platform_id"),
+        "platform_author_id": author.get("platform_author_id") or author.get("author_platform_id"),
         "douyin_sec_uid": author.get("douyin_sec_uid"),
         "douyin_aweme_author_id": author.get("douyin_aweme_author_id"),
         "digg_count": metrics.get("digg_count", 0),

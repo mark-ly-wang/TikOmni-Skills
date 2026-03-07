@@ -117,7 +117,7 @@
         "caption_raw": { "type": "string" },
         "work_modality": { "type": "string", "enum": ["video", "text"] },
         "primary_text": { "type": "string" },
-        "primary_text_source": { "type": "string", "enum": ["asr_clean", "caption_raw", "missing"] },
+        "primary_text_source": { "type": "string", "enum": ["asr_clean", "caption_raw"] },
         "published_date": { "type": "string" },
         "publish_time": { "type": ["string", "integer", "number", "null"] },
         "publish_days_ago": { "type": ["integer", "null"], "minimum": 0 },

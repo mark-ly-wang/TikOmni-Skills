@@ -37,6 +37,7 @@ def _author_hint(payload: Dict[str, Any], fallback: str) -> str:
         for key in (
             "nickname",
             "author_handle",
+            "platform_author_id",
             "author_platform_id",
             "xhs_user_id",
             "douyin_aweme_author_id",

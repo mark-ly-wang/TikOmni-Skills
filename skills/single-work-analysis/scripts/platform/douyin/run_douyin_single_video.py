@@ -321,6 +321,7 @@ def _extract_author(item: Dict[str, Any]) -> Dict[str, Optional[str]]:
 
     return {
         "author_handle": author_handle or None,
+        "platform_author_id": author_platform_id or None,
         "author_platform_id": author_platform_id or None,
         "douyin_sec_uid": douyin_sec_uid or None,
         "douyin_aweme_author_id": douyin_aweme_author_id or None,
@@ -571,9 +572,15 @@ def _build_missing_fields(
     if not normalize_text(video_down_url):
         _append("video_down_url")
 
-    for key in ("author_handle", "author_platform_id", "douyin_sec_uid", "douyin_aweme_author_id"):
-        if not normalize_text(author.get(key)):
-            _append(key)
+    author_key_map = {
+        "author_handle": ("author_handle",),
+        "platform_author_id": ("platform_author_id", "author_platform_id"),
+        "douyin_sec_uid": ("douyin_sec_uid",),
+        "douyin_aweme_author_id": ("douyin_aweme_author_id",),
+    }
+    for field, aliases in author_key_map.items():
+        if not any(normalize_text(author.get(alias)) for alias in aliases):
+            _append(field)
 
     return missing
 
@@ -641,7 +648,7 @@ def _build_result(
         "work_modality": "video",
         "author": author,
         "author_handle": author.get("author_handle"),
-        "author_platform_id": author.get("author_platform_id"),
+        "platform_author_id": author.get("platform_author_id") or author.get("author_platform_id"),
         "douyin_sec_uid": author.get("douyin_sec_uid"),
         "douyin_aweme_author_id": author.get("douyin_aweme_author_id"),
         "digg_count": metrics.get("digg_count", 0),
@@ -656,7 +663,7 @@ def _build_result(
         "u2_task_status": u2_task_status,
         "raw_content": raw_content,
         "primary_text": primary_text,
-        "primary_text_source": "asr_clean" if raw_content else "missing",
+        "primary_text_source": "asr_clean",
         "analysis_eligibility": analysis_eligibility,
         "analysis_exclusion_reason": analysis_exclusion_reason,
         "asr_source": asr_source,

@@ -103,11 +103,11 @@ def build_author_card(
         ],
         "author": {
             "nickname": profile.get("nickname"),
-            "author_platform_id": profile.get("author_platform_id") or profile.get("platform_author_id"),
+            "platform_author_id": profile.get("author_platform_id") or profile.get("platform_author_id"),
             "author_handle": profile.get("author_handle") or "",
         },
         "author_handle": profile.get("author_handle") or "",
-        "author_platform_id": profile.get("author_platform_id") or profile.get("platform_author_id"),
+        "platform_author_id": profile.get("author_platform_id") or profile.get("platform_author_id"),
         "nickname": profile.get("nickname") or "",
         "ip_location": profile.get("ip_location") or "",
         "signature": profile.get("signature") or "",

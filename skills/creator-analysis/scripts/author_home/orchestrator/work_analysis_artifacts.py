@@ -99,16 +99,21 @@ def _author_home_structural_sections(work: Dict[str, Any]) -> Dict[str, Any]:
     recent_rank = work.get("recent_30d_score_rank")
     recent_rank_text = recent_rank if recent_rank is not None else "NA"
     work_modality = _safe_text(work.get("work_modality")) or "unknown"
+    primary_text_source = _safe_text(work.get("primary_text_source"))
+    if primary_text_source not in {"asr_clean", "caption_raw"}:
+        primary_text_source = "asr_clean" if work_modality == "video" else "caption_raw"
+    primary_text_label = "视频口播清洗文本" if primary_text_source == "asr_clean" else "作者原始文案"
+    has_primary_text = bool(_safe_text(work.get("primary_text")))
     modules = {
         "选题": [
             f"- 原始 tags：{'、'.join(tags[:6]) if tags else '无'}。",
             f"- 分桶/排名：bucket={bucket} / all_time_rank={all_time_rank or 'NA'} / recent_30d_rank={recent_rank_text}。",
-            f"- 主文本来源：primary_text_source={_safe_text(work.get('primary_text_source')) or 'missing'}。",
+            f"- 主文本载体：{primary_text_label}。",
         ],
         "文风": [
             f"- 内容形态：work_modality={work_modality} / content_form={_safe_text(work.get('content_form')) or 'unknown'}。",
             f"- 表达标记：{'、'.join(style_markers[:6]) if style_markers else '未命中显著 style_markers'}。",
-            f"- 分析资格：analysis_eligibility={_safe_text(work.get('analysis_eligibility')) or 'eligible'}。",
+            f"- 数据状态：{'主文本已就绪' if has_primary_text else '主文本缺失，仅保留事实字段'}。",
         ],
         "Hook": [
             f"- hook_type：{_safe_text(work.get('hook_type')) or 'unknown'}。",
@@ -149,7 +154,7 @@ def build_single_work_payload(
     author_handle = _safe_text(profile.get("author_handle"))
     author = {
         "nickname": profile.get("nickname"),
-        "author_platform_id": author_platform_id,
+        "platform_author_id": author_platform_id,
         "author_handle": author_handle,
     }
     payload: Dict[str, Any] = {
@@ -164,7 +169,7 @@ def build_single_work_payload(
         "video_download_url": work.get("video_download_url") or work.get("video_down_url"),
         "author": author,
         "author_handle": author_handle,
-        "author_platform_id": author_platform_id,
+        "platform_author_id": author_platform_id,
         "publish_time": work.get("publish_time"),
         "published_date": work.get("published_date"),
         "duration_ms": _safe_int(work.get("duration_ms"), default=0),
@@ -295,11 +300,11 @@ def _refresh_cached_payload(
     payload["request_id"] = work.get("request_id") or payload.get("request_id")
     payload["author"] = {
         "nickname": profile.get("nickname"),
-        "author_platform_id": profile.get("author_platform_id") or profile.get("platform_author_id"),
+        "platform_author_id": profile.get("author_platform_id") or profile.get("platform_author_id"),
         "author_handle": profile.get("author_handle") or "",
     }
     payload["author_handle"] = profile.get("author_handle") or ""
-    payload["author_platform_id"] = profile.get("author_platform_id") or profile.get("platform_author_id")
+    payload["platform_author_id"] = profile.get("author_platform_id") or profile.get("platform_author_id")
     for field, value in _metrics_from_work(work).items():
         payload[field] = value
     return payload

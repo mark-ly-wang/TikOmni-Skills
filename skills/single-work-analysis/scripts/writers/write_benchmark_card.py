@@ -47,7 +47,6 @@ def resolve_default_card_root() -> str:
 # Keep import-time compatibility for other scripts without crashing when env is absent.
 DEFAULT_CARD_ROOT = ""
 CARD_TYPES = ["work", "author", "author_sample_work"]
-ASR_CLEAN_CONTRACT = "prompt-contracts/asr-clean.md@v1"
 
 
 def _normalize_lines(value: Any) -> List[str]:
@@ -287,9 +286,12 @@ def _extract_author(payload: Dict[str, Any]) -> Dict[str, str]:
         or normalize_text(source_author.get("author_handle"))
         or nickname
     )
-    author_platform_id = (
-        normalize_text(payload.get("author_platform_id"))
+    platform_author_id = (
+        normalize_text(payload.get("platform_author_id"))
+        or normalize_text(payload.get("author_platform_id"))
+        or normalize_text(author.get("platform_author_id"))
         or normalize_text(author.get("author_platform_id"))
+        or normalize_text(source_author.get("platform_author_id"))
         or normalize_text(source_author.get("author_platform_id"))
     )
 
@@ -318,7 +320,7 @@ def _extract_author(payload: Dict[str, Any]) -> Dict[str, str]:
     return {
         "nickname": nickname,
         "author_handle": author_handle,
-        "author_platform_id": author_platform_id,
+        "platform_author_id": platform_author_id,
         "xhs_user_id": xhs_user_id,
         "xhs_sec_token": xhs_sec_token,
         "douyin_sec_uid": douyin_sec_uid,
@@ -375,7 +377,7 @@ def _pick_author_slug(payload: Dict[str, Any], author_hint: Optional[str] = None
     base = normalize_text(author_hint)
     if not base:
         author = _extract_author(payload)
-        base = author["nickname"] or author["author_handle"] or author["author_platform_id"] or "作者"
+        base = author["nickname"] or author["author_handle"] or author["platform_author_id"] or "作者"
     slug = _clip_with_min(base, min_len=2, max_len=18, fallback="作者")
     return slug if len(slug) >= 2 else "作者"
 
@@ -500,12 +502,13 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
     if not work_modality:
         work_modality = "video" if video_download_url or raw_content else "text"
 
-    caption_status = normalize_text(payload.get("caption_status"))
-    if not caption_status:
-        caption_status = "missing" if not raw_content else "ready"
-
     published_date = _resolve_published_date(payload, create_time_sec)
-    primary_text_source = normalize_text(payload.get("primary_text_source")) or ("asr_clean" if work_modality == "video" and asr_clean else ("caption_raw" if normalize_text(payload.get("desc")) else "missing"))
+    primary_text_source_raw = normalize_text(payload.get("primary_text_source"))
+    primary_text_source = (
+        primary_text_source_raw
+        if primary_text_source_raw in {"asr_clean", "caption_raw"}
+        else ("asr_clean" if work_modality == "video" else "caption_raw")
+    )
     if not primary_text:
         primary_text = asr_clean if primary_text_source == "asr_clean" else normalize_text(payload.get("desc"))
 
@@ -515,7 +518,7 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
         "platform_work_id": platform_work_id,
         "author": author.get("nickname") or "",
         "author_handle": author.get("author_handle") or "",
-        "author_platform_id": author.get("author_platform_id") or "",
+        "platform_author_id": author.get("platform_author_id") or "",
         "caption_raw": caption_raw,
         "share_url": share_url,
         "source_url": source_url,
@@ -528,7 +531,6 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
         "collect_count": collect_count,
         "share_count": share_count,
         "play_count": play_count,
-        "caption_status": caption_status,
         "tags": _extract_tags(payload),
         "work_modality": work_modality,
         "category": category,
@@ -536,14 +538,9 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
         "summary": summary,
         "hot_score": hot_score,
         "raw_content": raw_content,
-        "caption_raw": caption_raw,
         "primary_text": primary_text,
-        "primary_text_source": primary_text_source,
         "asr_clean": asr_clean,
-        "analysis_eligibility": normalize_text(payload.get("analysis_eligibility")) or "eligible",
-        "analysis_exclusion_reason": normalize_text(payload.get("analysis_exclusion_reason")),
         "platform_native_refs": payload.get("platform_native_refs") if isinstance(payload.get("platform_native_refs"), dict) else {},
-        "asr_clean_contract": ASR_CLEAN_CONTRACT,
         "request_id": payload.get("request_id"),
         "confidence": normalize_text(payload.get("confidence")) or "low",
         "error_reason": payload.get("error_reason"),
@@ -1041,7 +1038,7 @@ def _render_author_markdown(
         "platform_work_id": fields.get("platform_work_id"),
         "author": fields.get("author"),
         "author_handle": fields.get("author_handle"),
-        "author_platform_id": fields.get("author_platform_id"),
+        "platform_author_id": fields.get("platform_author_id"),
         "nickname": fields.get("nickname"),
         "ip_location": fields.get("ip_location"),
         "avatar_url": fields.get("avatar_url"),
@@ -1067,7 +1064,7 @@ def _render_author_markdown(
         "",
         "## 基础事实",
         f"- 平台：{fields.get('platform') or '未知'}",
-        f"- 作者ID：{fields.get('author_platform_id') or '未知'}",
+        f"- 作者ID：{fields.get('platform_author_id') or '未知'}",
         f"- 账号标识：{fields.get('author_handle') or 'N/A'}",
         f"- 昵称：{fields.get('nickname') or fields.get('author') or '未知'}",
         f"- IP属地：{fields.get('ip_location') or 'N/A'}",
@@ -1140,7 +1137,6 @@ def _render_author_markdown(
             "## 附录",
             f"- confidence: {fields.get('confidence')}",
             f"- error_reason: {fields.get('error_reason')}",
-            f"- asr_clean_contract: {fields.get('asr_clean_contract')}",
             "",
             "```json",
             json.dumps(fields.get("extract_trace", []), ensure_ascii=False, indent=2),
@@ -1165,7 +1161,7 @@ def _render_markdown(
             fields=fields,
             generated_at=generated_at,
         )
-    author_name = fields.get("author") or fields.get("author_handle") or fields.get("author_platform_id") or "未知作者"
+    author_name = fields.get("author") or fields.get("author_handle") or fields.get("platform_author_id") or "未知作者"
     title = fields.get("title") or "（标题缺失）"
     metrics_line = (
         f"赞 {_display_metric(fields.get('digg_count'))} / 评 {_display_metric(fields.get('comment_count'))} / "
@@ -1190,7 +1186,7 @@ def _render_markdown(
         "platform_work_id": fields.get("platform_work_id"),
         "author": fields.get("author"),
         "author_handle": fields.get("author_handle"),
-        "author_platform_id": fields.get("author_platform_id"),
+        "platform_author_id": fields.get("platform_author_id"),
         "caption_raw": fields.get("caption_raw"),
         "primary_text": fields.get("primary_text"),
         "share_url": fields.get("share_url"),
@@ -1204,12 +1200,8 @@ def _render_markdown(
         "collect_count": fields.get("collect_count"),
         "share_count": fields.get("share_count"),
         "play_count": fields.get("play_count"),
-        "caption_status": fields.get("caption_status"),
         "tags": fields.get("tags", []),
         "work_modality": fields.get("work_modality"),
-        "category": fields.get("category"),
-        "primary_text_source": fields.get("primary_text_source"),
-        "analysis_eligibility": fields.get("analysis_eligibility"),
     }
 
     frontmatter = ["---"]
@@ -1264,9 +1256,6 @@ def _render_markdown(
             "",
             "### trace",
             f"- request_id: {fields.get('request_id')}",
-            f"- primary_text_source: {fields.get('primary_text_source')}",
-            f"- analysis_eligibility: {fields.get('analysis_eligibility')}",
-            f"- asr_clean_contract: {fields.get('asr_clean_contract')}",
             f"- confidence: {fields.get('confidence')}",
             f"- error_reason: {fields.get('error_reason')}",
             "",

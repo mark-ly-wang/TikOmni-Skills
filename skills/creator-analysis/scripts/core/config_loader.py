@@ -43,21 +43,21 @@ BUILTIN_DEFAULT_CONFIG: Dict[str, Any] = {
         "card_type_routes": {
             "work": {
                 "prefix": "CBV",
-                "parts": ["10-内容系统", "15-对标研究", "01-作品对标卡"],
+                "parts": ["内容系统", "对标研究", "作品卡"],
             },
             "author": {
                 "prefix": "CBA",
-                "parts": ["10-内容系统", "15-对标研究", "03-作者对标卡"],
+                "parts": ["内容系统", "对标研究", "作者卡"],
             },
             "author_sample_work": {
                 "prefix": "CBV",
-                "parts": ["10-内容系统", "15-对标研究", "02-作者样本集", "{platform}-{author_slug}"],
-            },
-            "material": {
-                "prefix": "CMAT",
-                "parts": ["10-内容系统", "12-素材库", "素材卡", "{year}", "{year_month}"],
+                "parts": ["内容系统", "对标研究", "作者样本卡", "{platform}-{author_slug}"],
             },
         },
+    },
+    "naming_rules": {
+        "card_filename_pattern": "{prefix}-{author_slug}-{title_slug}{ext}",
+        "json_filename_pattern": "{timestamp}-{platform}-{identifier}{ext}",
     },
     "asr_strategy": {
         "poll_interval_sec": 3.0,
@@ -80,42 +80,34 @@ LOCALE_ROUTE_PRESETS: Dict[str, Dict[str, Dict[str, Any]]] = {
     "zh": {
         "work": {
             "prefix": "CBV",
-            "parts": ["10-内容系统", "15-对标研究", "01-作品对标卡"],
+            "parts": ["内容系统", "对标研究", "作品卡"],
         },
         "author": {
             "prefix": "CBA",
-            "parts": ["10-内容系统", "15-对标研究", "03-作者对标卡"],
+            "parts": ["内容系统", "对标研究", "作者卡"],
         },
         "author_sample_work": {
             "prefix": "CBV",
-            "parts": ["10-内容系统", "15-对标研究", "02-作者样本集", "{platform}-{author_slug}"],
-        },
-        "material": {
-            "prefix": "CMAT",
-            "parts": ["10-内容系统", "12-素材库", "素材卡", "{year}", "{year_month}"],
+            "parts": ["内容系统", "对标研究", "作者样本卡", "{platform}-{author_slug}"],
         },
     },
     "en": {
         "work": {
             "prefix": "CBV",
-            "parts": ["10-content-system", "15-benchmark-research", "01-work-benchmark-cards"],
+            "parts": ["content-system", "benchmark-research", "work-cards"],
         },
         "author": {
             "prefix": "CBA",
-            "parts": ["10-content-system", "15-benchmark-research", "03-author-benchmark-cards"],
+            "parts": ["content-system", "benchmark-research", "author-cards"],
         },
         "author_sample_work": {
             "prefix": "CBV",
             "parts": [
-                "10-content-system",
-                "15-benchmark-research",
-                "02-author-sample-works",
+                "content-system",
+                "benchmark-research",
+                "author-sample-cards",
                 "{platform}-{author_slug}",
             ],
-        },
-        "material": {
-            "prefix": "CMAT",
-            "parts": ["10-content-system", "12-material-library", "material-cards", "{year}", "{year_month}"],
         },
     },
 }
@@ -124,6 +116,12 @@ CARD_ROUTE_ENV_KEYS: Dict[str, str] = {
     "work": "TIKOMNI_CARD_ROUTE_WORK",
     "author": "TIKOMNI_CARD_ROUTE_AUTHOR",
     "author_sample_work": "TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK",
+}
+
+CARD_PREFIX_ENV_KEYS: Dict[str, str] = {
+    "work": "TIKOMNI_CARD_PREFIX_WORK",
+    "author": "TIKOMNI_CARD_PREFIX_AUTHOR",
+    "author_sample_work": "TIKOMNI_CARD_PREFIX_AUTHOR_SAMPLE_WORK",
 }
 
 
@@ -268,6 +266,9 @@ def resolve_storage_paths(config: Dict[str, Any]) -> Dict[str, str]:
         else:
             resolved[key] = str((root_dir / part).resolve())
 
+    resolved["runs_root"] = resolved.get("runs_dir", str((root_dir / "_runs").resolve()))
+    resolved["results_root"] = resolved.get("results_dir", str((root_dir / "results").resolve()))
+    resolved["errors_root"] = resolved.get("errors_dir", str((root_dir / "_errors").resolve()))
     return resolved
 
 
@@ -304,9 +305,15 @@ def apply_env_overrides(config: Dict[str, Any], env_values: Optional[Dict[str, s
         if value is not None:
             default_route[config_key] = value
 
-    filename_pattern = _env_text("TIKOMNI_FILENAME_PATTERN", env_values=env_values)
-    if filename_pattern is not None:
-        naming_rules["filename_pattern"] = filename_pattern
+    card_filename_pattern = _env_text("TIKOMNI_FILENAME_PATTERN_CARD", env_values=env_values)
+    json_filename_pattern = _env_text("TIKOMNI_FILENAME_PATTERN_JSON", env_values=env_values)
+    legacy_filename_pattern = _env_text("TIKOMNI_FILENAME_PATTERN", env_values=env_values)
+    if card_filename_pattern is not None:
+        naming_rules["card_filename_pattern"] = card_filename_pattern
+    elif legacy_filename_pattern is not None:
+        naming_rules["card_filename_pattern"] = legacy_filename_pattern
+    if json_filename_pattern is not None:
+        naming_rules["json_filename_pattern"] = json_filename_pattern
 
     path_locale = _normalize_path_locale(_read_env("TIKOMNI_PATH_LOCALE", env_values=env_values) or "zh")
     locale_routes = LOCALE_ROUTE_PRESETS.get(path_locale, LOCALE_ROUTE_PRESETS["zh"])
@@ -347,6 +354,21 @@ def apply_env_overrides(config: Dict[str, Any], env_values: Optional[Dict[str, s
             "parts": env_parts,
         }
 
+    for route_key, env_name in CARD_PREFIX_ENV_KEYS.items():
+        prefix_value = _env_text(env_name, env_values=env_values)
+        if prefix_value is None:
+            continue
+        current = card_type_routes.get(route_key)
+        current_parts: List[str] = []
+        if isinstance(current, dict) and isinstance(current.get("parts"), list):
+            current_parts = [str(item) for item in current.get("parts", []) if str(item).strip()]
+        if not current_parts:
+            current_parts = list(LOCALE_ROUTE_PRESETS["zh"].get(route_key, {}).get("parts", []))
+        card_type_routes[route_key] = {
+            "prefix": prefix_value,
+            "parts": current_parts,
+        }
+
     resolved_storage = resolve_storage_paths(config)
     for key, value in resolved_storage.items():
         default_route[key] = value
@@ -365,14 +387,22 @@ def load_tikomni_config(
     )
     env_values = bootstrap.get("effective_env", {}) if isinstance(bootstrap, dict) else {}
 
+    explicit_config_requested = bool(
+        (cli_config_path and str(cli_config_path).strip())
+        or (isinstance(env_values, dict) and str(env_values.get("TIKOMNI_CONFIG_FILE", "")).strip())
+    )
     path = resolve_config_path(cli_config_path, env_values=env_values if isinstance(env_values, dict) else None)
 
     if yaml is None:
+        if explicit_config_requested:
+            raise RuntimeError(f"config_yaml_unavailable:{path}")
         return apply_env_overrides(_builtin_defaults(), env_values=env_values), "builtin-defaults"
 
     try:
         loaded = _load_yaml(path)
     except Exception:
+        if explicit_config_requested:
+            raise
         return apply_env_overrides(_builtin_defaults(), env_values=env_values), "builtin-defaults"
 
     merged = _deep_merge(_builtin_defaults(), loaded)

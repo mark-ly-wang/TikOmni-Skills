@@ -29,6 +29,7 @@ from typing import Any, Dict, List, Optional
 from scripts.core.config_loader import config_get, load_tikomni_config, resolve_storage_paths
 from scripts.core.extract_pipeline import resolve_trace_error_context
 from scripts.core.progress_report import ProgressReporter
+from scripts.core.storage_router import render_output_filename, resolve_json_filename_pattern
 from scripts.platform.douyin.douyin_video_type_matrix import normalize_douyin_video_type
 from scripts.pipeline.asr.asr_pipeline import submit_u2_asr_with_retry
 from scripts.pipeline.asr.poll_u2_task import poll_u2_task
@@ -148,12 +149,28 @@ def _persist_output_artifact(
     status = "error" if has_error else "success"
 
     if has_error:
-        target_dir = Path(paths.get("errors_dir", "")) / date_key
+        target_dir = Path(paths.get("errors_root", "")) / date_key
     else:
-        target_dir = Path(paths.get("runs_dir", "")) / str(paths.get("results_dir", "results")) / date_key
+        target_dir = Path(paths.get("results_root", "")) / date_key
 
     target_dir.mkdir(parents=True, exist_ok=True)
-    file_path = target_dir / f"{timestamp}-douyin-{identifier}.json"
+    file_name = render_output_filename(
+        pattern=resolve_json_filename_pattern(storage_config),
+        context={
+            "prefix": status,
+            "platform": "douyin",
+            "card_type": "single_work_result",
+            "author_slug": identifier,
+            "title_slug": identifier,
+            "identifier": identifier,
+            "timestamp": timestamp,
+            "date": date_key,
+            "ext": ".json",
+        },
+        default_filename=f"{timestamp}-douyin-{identifier}.json",
+        default_ext=".json",
+    )
+    file_path = target_dir / file_name
 
     payload = _build_persist_payload(
         result=result,
@@ -678,7 +695,6 @@ def run_douyin_single_video(
     u2_submit_backoff_ms: int,
     write_card: bool,
     card_type: str,
-    collect_material: bool,
     card_root: Optional[str],
     content_kind: str = "single_video",
     storage_config: Optional[Dict[str, Any]] = None,
@@ -729,7 +745,6 @@ def run_douyin_single_video(
                 platform="douyin",
                 card_type=card_type,
                 card_root=card_root,
-                collect_material=collect_material,
                 content_kind=content_kind,
                 storage_config=storage_config,
             )
@@ -827,7 +842,6 @@ def run_douyin_single_video(
                 platform="douyin",
                 card_type=card_type,
                 card_root=card_root,
-                collect_material=collect_material,
                 content_kind=content_kind,
                 storage_config=storage_config,
             )
@@ -880,7 +894,6 @@ def run_douyin_single_video(
                 platform="douyin",
                 card_type=card_type,
                 card_root=card_root,
-                collect_material=collect_material,
                 content_kind=content_kind,
                 storage_config=storage_config,
             )
@@ -1102,7 +1115,6 @@ def run_douyin_single_video(
             platform="douyin",
             card_type=card_type,
             card_root=card_root,
-            collect_material=collect_material,
             content_kind=content_kind,
             storage_config=storage_config,
         )
@@ -1156,7 +1168,6 @@ def main() -> None:
     )
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
     parser.add_argument("--content-kind", default="single_video", help="Routing kind, e.g. single_video/author_home/author_analysis")
-    parser.add_argument("--collect-material", action="store_true", help="Write extra CMAT card")
     parser.add_argument("--card-root", default=None, help="Card root (absolute); falls back to TIKOMNI_CARD_ROOT when writing cards")
     args = parser.parse_args()
 
@@ -1186,7 +1197,6 @@ def main() -> None:
             u2_submit_backoff_ms=args.u2_submit_backoff_ms,
             write_card=True,
             card_type=args.card_type,
-            collect_material=args.collect_material,
             card_root=args.card_root,
             content_kind=args.content_kind,
             storage_config=config,

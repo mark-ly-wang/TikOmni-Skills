@@ -45,7 +45,7 @@ def poll_u2_task(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Poll Tikomni U2 task until SUCCEEDED/FAILED")
     parser.add_argument("task_id", help="U2 task id")
-    parser.add_argument("--env-file", default=None, help="Optional env file path (e.g. skills/tikomni-skill/.env.local)")
+    parser.add_argument("--env-file", default=None, help="Optional env file path (e.g. <skill_root>/.env.local)")
     parser.add_argument("--api-key-env", default="TIKOMNI_API_KEY", help="API key env variable name")
     parser.add_argument("--allow-process-env", action="store_true", help="Allow process env to override .env/.env.local")
     parser.add_argument("--base-url", default=None, help="Tikomni API base url")

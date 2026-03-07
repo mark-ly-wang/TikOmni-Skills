@@ -4,8 +4,7 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILL = ROOT / "skills" / "tikomni-skill"
-SKILL_MD = SKILL / "SKILL.md"
+SKILLS_DIR = ROOT / "skills"
 
 
 def fail(msg: str) -> None:
@@ -13,31 +12,35 @@ def fail(msg: str) -> None:
     sys.exit(1)
 
 
-if not SKILL_MD.exists():
-    fail("skills/tikomni-skill/SKILL.md is missing")
+skill_dirs = sorted(p for p in SKILLS_DIR.iterdir() if (p / "SKILL.md").is_file())
+if not skill_dirs:
+    fail("no skills found under skills/")
 
-text = SKILL_MD.read_text(encoding="utf-8")
-match = re.match(r"^---\n(.*?)\n---\n", text, re.S)
-if not match:
-    fail("SKILL.md frontmatter is missing")
+for skill_dir in skill_dirs:
+    skill_md = skill_dir / "SKILL.md"
+    text = skill_md.read_text(encoding="utf-8")
+    match = re.match(r"^---\n(.*?)\n---\n", text, re.S)
+    if not match:
+        fail(f"{skill_md.relative_to(ROOT)} frontmatter is missing")
 
-frontmatter = match.group(1)
-if "name:" not in frontmatter:
-    fail("SKILL.md frontmatter missing 'name'")
-if "description:" not in frontmatter:
-    fail("SKILL.md frontmatter missing 'description'")
+    frontmatter = match.group(1)
+    if "name:" not in frontmatter:
+        fail(f"{skill_md.relative_to(ROOT)} frontmatter missing 'name'")
+    if "description:" not in frontmatter:
+        fail(f"{skill_md.relative_to(ROOT)} frontmatter missing 'description'")
 
-name_m = re.search(r"^name:\s*(.+)$", frontmatter, re.M)
-if not name_m:
-    fail("SKILL.md name field empty")
-name = name_m.group(1).strip().strip('"').strip("'")
-if name != "tikomni-skill":
-    fail(f"skill name must be 'tikomni-skill', got '{name}'")
+    name_m = re.search(r"^name:\s*(.+)$", frontmatter, re.M)
+    if not name_m:
+        fail(f"{skill_md.relative_to(ROOT)} name field empty")
+    name = name_m.group(1).strip().strip('"').strip("'")
+    expected_name = skill_dir.name
+    if name != expected_name:
+        fail(f"{skill_md.relative_to(ROOT)} name must be '{expected_name}', got '{name}'")
 
-if len(text.splitlines()) > 500:
-    fail("SKILL.md too long (>500 lines), split into references/")
+    if len(text.splitlines()) > 500:
+        fail(f"{skill_md.relative_to(ROOT)} too long (>500 lines), split into references/")
 
-if not (SKILL / "references").exists():
-    fail("references/ directory missing")
+    if not (skill_dir / "references").exists():
+        fail(f"{skill_dir.relative_to(ROOT)}/references directory missing")
 
-print("[OK] static skill validation passed")
+print(f"[OK] static skill validation passed ({len(skill_dirs)} skills)")

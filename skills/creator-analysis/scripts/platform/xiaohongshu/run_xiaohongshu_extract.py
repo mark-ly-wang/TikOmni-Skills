@@ -29,6 +29,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from scripts.pipeline.asr.asr_pipeline import run_u2_asr_candidates_with_timeout_retry
 from scripts.core.config_loader import config_get, load_tikomni_config, resolve_storage_paths
 from scripts.core.progress_report import ProgressReporter
+from scripts.core.storage_router import render_output_filename, resolve_json_filename_pattern
 from scripts.core.extract_pipeline import build_api_trace, resolve_trace_error_context
 from scripts.core.tikomni_common import (
     call_json_api,
@@ -176,12 +177,28 @@ def _persist_output_artifact(
     status = "error" if has_error else "success"
 
     if has_error:
-        target_dir = Path(paths.get("errors_dir", "")) / date_key
+        target_dir = Path(paths.get("errors_root", "")) / date_key
     else:
-        target_dir = Path(paths.get("runs_dir", "")) / str(paths.get("results_dir", "results")) / date_key
+        target_dir = Path(paths.get("results_root", "")) / date_key
 
     target_dir.mkdir(parents=True, exist_ok=True)
-    file_path = target_dir / f"{timestamp}-xiaohongshu-{identifier}.json"
+    file_name = render_output_filename(
+        pattern=resolve_json_filename_pattern(storage_config),
+        context={
+            "prefix": status,
+            "platform": "xiaohongshu",
+            "card_type": "single_work_result",
+            "author_slug": identifier,
+            "title_slug": identifier,
+            "identifier": identifier,
+            "timestamp": timestamp,
+            "date": date_key,
+            "ext": ".json",
+        },
+        default_filename=f"{timestamp}-xiaohongshu-{identifier}.json",
+        default_ext=".json",
+    )
+    file_path = target_dir / file_name
 
     payload = _build_persist_payload(
         result=result,
@@ -1247,7 +1264,7 @@ def _download_images(
 
     try:
         paths = resolve_storage_paths(storage_config or {})
-        base_dir = Path(paths.get("runs_dir", "")) / "assets" / datetime.now().strftime("%Y%m%d") / _traceable_identifier(source_input, note_id)
+        base_dir = Path(paths.get("runs_root", "")) / "assets" / datetime.now().strftime("%Y%m%d") / _traceable_identifier(source_input, note_id)
     except Exception:
         base_dir = Path("./tikomni-output/_runs/assets") / datetime.now().strftime("%Y%m%d") / _traceable_identifier(source_input, note_id)
 
@@ -1376,7 +1393,6 @@ def run_xiaohongshu_extract(
     force_u2_fallback: bool,
     write_card: bool,
     card_type: str,
-    collect_material: bool,
     card_root: Optional[str],
     storage_config: Optional[Dict[str, Any]] = None,
     allow_process_env: bool = False,
@@ -1421,7 +1437,6 @@ def run_xiaohongshu_extract(
                 platform="xiaohongshu",
                 card_type=card_type,
                 card_root=card_root,
-                collect_material=collect_material,
                 content_kind="note",
                 storage_config=storage_config,
             )
@@ -1518,7 +1533,6 @@ def run_xiaohongshu_extract(
                 platform="xiaohongshu",
                 card_type=card_type,
                 card_root=card_root,
-                collect_material=collect_material,
                 content_kind="note",
                 storage_config=storage_config,
             )
@@ -1681,7 +1695,6 @@ def run_xiaohongshu_extract(
                     platform="xiaohongshu",
                     card_type=card_type,
                     card_root=card_root,
-                    collect_material=collect_material,
                     content_kind="single_video",
                     storage_config=storage_config,
                 )
@@ -1738,7 +1751,6 @@ def run_xiaohongshu_extract(
                     platform="xiaohongshu",
                     card_type=card_type,
                     card_root=card_root,
-                    collect_material=collect_material,
                     content_kind="single_video",
                     storage_config=storage_config,
                 )
@@ -1852,7 +1864,6 @@ def run_xiaohongshu_extract(
                     platform="xiaohongshu",
                     card_type=card_type,
                     card_root=card_root,
-                    collect_material=collect_material,
                     content_kind="single_video",
                     storage_config=storage_config,
                 )
@@ -1900,7 +1911,6 @@ def run_xiaohongshu_extract(
                 platform="xiaohongshu",
                 card_type=card_type,
                 card_root=card_root,
-                collect_material=collect_material,
                 content_kind="single_video",
                 storage_config=storage_config,
             )
@@ -1965,7 +1975,6 @@ def run_xiaohongshu_extract(
             platform="xiaohongshu",
             card_type=card_type,
             card_root=card_root,
-            collect_material=collect_material,
             content_kind="note",
             storage_config=storage_config,
         )
@@ -2032,7 +2041,6 @@ def main() -> None:
     )
     parser.add_argument("--force-u2-fallback", action="store_true", help="Skip subtitle usage and force U2 fallback (test)")
     parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
-    parser.add_argument("--collect-material", action="store_true", help="Write extra CMAT card")
     parser.add_argument("--card-root", default=None, help="Card root (absolute); falls back to TIKOMNI_CARD_ROOT when writing cards")
     args = parser.parse_args()
 
@@ -2091,7 +2099,6 @@ def main() -> None:
             force_u2_fallback=args.force_u2_fallback,
             write_card=True,
             card_type=args.card_type,
-            collect_material=args.collect_material,
             card_root=args.card_root,
             storage_config=config,
             allow_process_env=args.allow_process_env,

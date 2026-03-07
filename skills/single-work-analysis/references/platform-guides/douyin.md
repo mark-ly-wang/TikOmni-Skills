@@ -9,7 +9,6 @@
 - 作者 handle：`short_id` / `unique_id`
 - 视频下载链接：优先无水印下载链接
 
-## 当前参考实现
+## 当前可运行实现
 
-- `skills/tikomni-skill/scripts/platform/douyin/`
-- `skills/tikomni-skill/scripts/author_home/adapters/platform_adapters.py`
+- `skills/single-work-analysis/scripts/platform/douyin/`

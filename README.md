@@ -6,7 +6,7 @@ A production-ready skill package for AI agents to fetch structured data from maj
 
 ## 🚀 What this repository is
 
-This repository provides the `tikomni-skill` used by AI agents, and now also includes the new split modules:
+This repository provides the split TikOmni skill modules used by AI agents:
 - `skills/meta-capability`
 - `skills/single-work-analysis`
 - `skills/creator-analysis`
@@ -30,7 +30,7 @@ Current catalog includes mainstream platforms such as:
 - TikTok, YouTube, Instagram, Threads, Twitter/X, Reddit, LinkedIn
 - WeChat Channels, WeChat Official Accounts, Toutiao, Xigua, Zhihu, Lemon8, Pipixia
 
-(See full list in `skills/tikomni-skill/references/api-catalog/index.md`.)
+(See the official docs catalog at https://docs.tikomni.com.)
 
 ## 🧩 What structured data you can get
 
@@ -46,7 +46,6 @@ Depending on platform and endpoint, the skill can return:
 > Practical feature scope you can use right now:
 
 ### 0) Skill modules currently in this repo
-- `skills/tikomni-skill`: legacy monolithic skill, still kept as reference/source during migration
 - `skills/meta-capability`: generic TikOmni exploration and execution guidance for agents
 - `skills/single-work-analysis`: single-work analysis module for current Douyin / Xiaohongshu implementations
 - `skills/creator-analysis`: creator-analysis module for current Douyin / Xiaohongshu implementations
@@ -86,6 +85,10 @@ Install/copy the target skill folder into your Claude skills directory.
 
 TikOmni user configuration is **env-only**. You do not need to edit YAML.
 
+Recommended workflow:
+- copy the repo-root [`env.example`](./env.example) to `skills/.env`
+- add `.env.local` inside a specific skill only when that skill needs a local override
+
 Required:
 ```bash
 TIKOMNI_API_KEY="your_real_key"
@@ -107,15 +110,21 @@ TIKOMNI_OUTPUT_RESULTS_DIR="results"
 TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
 
 # Naming
-TIKOMNI_FILENAME_PATTERN="{type}-{timestamp}-{job_id}.md"
+TIKOMNI_FILENAME_PATTERN_CARD="{prefix}-{author_slug}-{title_slug}{ext}"
+TIKOMNI_FILENAME_PATTERN_JSON="{timestamp}-{platform}-{identifier}{ext}"
 
 # Card route locale preset (default zh)
 TIKOMNI_PATH_LOCALE="zh"   # zh | en
 
+# Card prefixes
+TIKOMNI_CARD_PREFIX_WORK="CBV"
+TIKOMNI_CARD_PREFIX_AUTHOR="CBA"
+TIKOMNI_CARD_PREFIX_AUTHOR_SAMPLE_WORK="CBV"
+
 # Explicit routes (highest priority, separator: |)
 TIKOMNI_CARD_ROUTE_WORK="content-system|benchmark|work-cards"
 TIKOMNI_CARD_ROUTE_AUTHOR="content-system|benchmark|author-cards"
-TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="content-system|benchmark|author-samples|{platform}-{author_slug}"
+TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="content-system|benchmark|author-sample-cards|{platform}-{author_slug}"
 ```
 
 Route precedence:
@@ -125,7 +134,7 @@ Route precedence:
 
 Recommended placement:
 - `<skills_root>/.env` (shared config)
-- `skills/tikomni-skill/.env.local` (local override)
+- `<skill_root>/.env.local` (local override)
 
 For split modules, the same pattern applies:
 - shared env at the skills root
@@ -145,5 +154,7 @@ Use the skill through natural-language requests in your AI agent, for example:
 
 ## 📚 Core references
 
-- Skill entry: [`skills/tikomni-skill/SKILL.md`](./skills/tikomni-skill/SKILL.md)
-- API catalog: [`skills/tikomni-skill/references/api-catalog/index.md`](./skills/tikomni-skill/references/api-catalog/index.md)
+- Meta capability: [`skills/meta-capability/SKILL.md`](./skills/meta-capability/SKILL.md)
+- Single work analysis: [`skills/single-work-analysis/SKILL.md`](./skills/single-work-analysis/SKILL.md)
+- Creator analysis: [`skills/creator-analysis/SKILL.md`](./skills/creator-analysis/SKILL.md)
+- API docs: https://docs.tikomni.com

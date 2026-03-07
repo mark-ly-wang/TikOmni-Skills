@@ -207,11 +207,10 @@ def _resolve_artifact_root(storage_config: Optional[Dict[str, Any]]) -> Optional
         paths = resolve_storage_paths(storage_config or {})
     except Exception:
         return None
-    root_dir = Path(str(paths.get("root_dir") or "").strip())
-    runs_dir = str(paths.get("runs_dir") or "_runs").strip() or "_runs"
-    if not str(root_dir):
+    runs_root = Path(str(paths.get("runs_root") or "").strip())
+    if not str(runs_root):
         return None
-    return root_dir / runs_dir / "author_home_work_analysis_artifacts"
+    return runs_root / "author_home_work_analysis_artifacts"
 
 
 def _artifact_path(*, artifact_root: Optional[Path], platform: str, platform_work_id: str, content_kind: str) -> Tuple[Optional[Path], Optional[str]]:

@@ -66,7 +66,6 @@ def main() -> None:
     parser.add_argument("--allow-process-env", action="store_true", help="Allow process env to override .env/.env.local")
     parser.add_argument("--card-root", default=None, help="Card root (absolute); falls back to TIKOMNI_CARD_ROOT when writing cards")
     parser.add_argument("--sample-author", default="", help="Override author folder name")
-    parser.add_argument("--collect-material", action="store_true", help="Also write CMAT cards")
     args = parser.parse_args()
 
     config, _ = load_tikomni_config(
@@ -86,7 +85,6 @@ def main() -> None:
             platform=args.platform,
             card_type="author_sample_work",
             card_root=args.card_root,
-            collect_material=args.collect_material,
             sample_author=_author_hint(payload, args.sample_author),
             content_kind="author_home",
             storage_config=config,

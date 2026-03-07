@@ -25,8 +25,7 @@
 - 统一作品卡字段字典中的必保字段
 - 视频作品的 `video_download_url`
 
-## 当前参考实现
+## 当前可运行实现
 
-- 旧单体 skill 的现有实现可作为参考源码：
-  - `skills/tikomni-skill/scripts/author_home/`
-  - `skills/tikomni-skill/scripts/core/`
+- `skills/creator-analysis/scripts/author_home/`
+- `skills/creator-analysis/scripts/core/`

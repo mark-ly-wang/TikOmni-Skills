@@ -6,7 +6,7 @@
 
 ## 🚀 这是什么仓库
 
-本仓库提供 `tikomni-skill`，同时也已经包含新的拆分模块：
+本仓库提供拆分后的 TikOmni Skill 模块：
 - `skills/meta-capability`
 - `skills/single-work-analysis`
 - `skills/creator-analysis`
@@ -30,7 +30,7 @@
 - TikTok、YouTube、Instagram、Threads、Twitter/X、Reddit、LinkedIn
 - 视频号、公众号、头条、西瓜、知乎、Lemon8、皮皮虾
 
-完整列表见：`skills/tikomni-skill/references/api-catalog/index.md`
+完整列表见官方文档目录：https://docs.tikomni.com
 
 ## 🧩 可获取哪些结构化数据
 
@@ -46,7 +46,6 @@
 > 以下是当前可直接使用的功能范围（持续更新）：
 
 ### 0) 当前仓库内的 Skill 模块
-- `skills/tikomni-skill`：历史单体 skill，迁移期仍保留为参考源码
 - `skills/meta-capability`：给 Agent 的 TikOmni 通用探索与执行指引
 - `skills/single-work-analysis`：当前已覆盖抖音 / 小红书的单作品分析模块
 - `skills/creator-analysis`：当前已覆盖抖音 / 小红书的创作者分析模块
@@ -86,6 +85,10 @@
 
 TikOmni 用户配置统一走 **环境变量**，不需要编辑 YAML。
 
+推荐做法：
+- 先复制仓库根目录的 [`env.example`](./env.example) 到 `skills/.env`
+- 再按需要在某个 skill 目录下增加 `.env.local` 做局部覆盖
+
 必填：
 ```bash
 TIKOMNI_API_KEY="你的真实 key"
@@ -107,15 +110,21 @@ TIKOMNI_OUTPUT_RESULTS_DIR="results"
 TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
 
 # 命名规则
-TIKOMNI_FILENAME_PATTERN="{type}-{timestamp}-{job_id}.md"
+TIKOMNI_FILENAME_PATTERN_CARD="{prefix}-{author_slug}-{title_slug}{ext}"
+TIKOMNI_FILENAME_PATTERN_JSON="{timestamp}-{platform}-{identifier}{ext}"
 
 # 卡片目录语言预设（默认 zh）
 TIKOMNI_PATH_LOCALE="zh"   # zh | en
 
+# 卡片前缀
+TIKOMNI_CARD_PREFIX_WORK="CBV"
+TIKOMNI_CARD_PREFIX_AUTHOR="CBA"
+TIKOMNI_CARD_PREFIX_AUTHOR_SAMPLE_WORK="CBV"
+
 # 显式路由（最高优先级，分隔符：|）
 TIKOMNI_CARD_ROUTE_WORK="content-system|benchmark|work-cards"
 TIKOMNI_CARD_ROUTE_AUTHOR="content-system|benchmark|author-cards"
-TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="content-system|benchmark|author-samples|{platform}-{author_slug}"
+TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="content-system|benchmark|author-sample-cards|{platform}-{author_slug}"
 ```
 
 路由优先级：
@@ -125,7 +134,7 @@ TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="content-system|benchmark|author-samples|{
 
 推荐配置位置：
 - `<skills_root>/.env`（共享配置）
-- `skills/tikomni-skill/.env.local`（本地覆盖）
+- `<skill_root>/.env.local`（本地覆盖）
 
 对于拆分后的模块，也沿用同样规则：
 - 共享配置放在 skills 根层
@@ -145,5 +154,7 @@ TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="content-system|benchmark|author-samples|{
 
 ## 📚 核心参考
 
-- Skill 入口：[`skills/tikomni-skill/SKILL.md`](./skills/tikomni-skill/SKILL.md)
-- API 目录：[`skills/tikomni-skill/references/api-catalog/index.md`](./skills/tikomni-skill/references/api-catalog/index.md)
+- 元能力：[`skills/meta-capability/SKILL.md`](./skills/meta-capability/SKILL.md)
+- 单作品分析：[`skills/single-work-analysis/SKILL.md`](./skills/single-work-analysis/SKILL.md)
+- 创作者分析：[`skills/creator-analysis/SKILL.md`](./skills/creator-analysis/SKILL.md)
+- API 文档：https://docs.tikomni.com

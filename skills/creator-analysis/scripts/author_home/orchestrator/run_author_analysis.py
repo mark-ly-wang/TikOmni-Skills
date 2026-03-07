@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from scripts.core.config_loader import resolve_storage_paths
+from scripts.core.storage_router import render_output_filename, resolve_json_filename_pattern
 
 from scripts.author_home.adapters.platform_adapters import adapt_douyin_author_home, adapt_xhs_author_home
 from scripts.author_home.orchestrator.work_analysis_artifacts import orchestrate_work_analysis_artifacts
@@ -129,12 +130,28 @@ def _persist_output_artifact(*, result: Dict[str, Any], input_value: str, storag
     status = "error" if has_error else "success"
 
     if has_error:
-        target_dir = Path(paths.get("errors_dir", "")) / date_key
+        target_dir = Path(paths.get("errors_root", "")) / date_key
     else:
-        target_dir = Path(paths.get("runs_dir", "")) / str(paths.get("results_dir", "results")) / date_key
+        target_dir = Path(paths.get("results_root", "")) / date_key
 
     target_dir.mkdir(parents=True, exist_ok=True)
-    file_path = target_dir / f"{timestamp}-{platform}-{identifier}.json"
+    file_name = render_output_filename(
+        pattern=resolve_json_filename_pattern(storage_config),
+        context={
+            "prefix": status,
+            "platform": platform,
+            "card_type": "author_home_result",
+            "author_slug": identifier,
+            "title_slug": identifier,
+            "identifier": identifier,
+            "timestamp": timestamp,
+            "date": date_key,
+            "ext": ".json",
+        },
+        default_filename=f"{timestamp}-{platform}-{identifier}.json",
+        default_ext=".json",
+    )
+    file_path = target_dir / file_name
     payload = _build_persist_payload(
         result=result,
         status=status,
@@ -172,7 +189,6 @@ def run_author_home_analysis(
     checkpoint: Optional[Dict[str, Any]] = None,
     write_card: bool = True,
     persist_output: bool = True,
-    collect_material: bool = False,
     card_root: Optional[str] = None,
     storage_config: Optional[Dict[str, Any]] = None,
     collector_override: Optional[CollectorFn] = None,
@@ -313,7 +329,7 @@ def run_author_home_analysis(
         progress.progress(
             stage="author_home.card_write",
             message="writing author and work cards",
-            data={"write_card": bool(write_card), "collect_material": bool(collect_material)},
+            data={"write_card": bool(write_card)},
         )
     work_card_write = build_work_cards(
         platform=platform,
@@ -322,7 +338,6 @@ def run_author_home_analysis(
         render_payloads=render_payloads,
         card_root=card_root,
         storage_config=storage_config,
-        collect_material=collect_material,
         write_card=write_card,
         failed_items=work_analysis_failed,
     )
@@ -332,7 +347,6 @@ def run_author_home_analysis(
         analysis_payload=analysis,
         card_root=card_root,
         storage_config=storage_config,
-        collect_material=collect_material,
         write_card=write_card,
     )
 

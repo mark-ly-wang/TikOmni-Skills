@@ -27,6 +27,7 @@ except Exception:  # pragma: no cover - py<3.9 fallback
     ZoneInfo = None
 
 from scripts.core.analysis_pipeline import DEFAULT_MODULE_SECTIONS, build_analysis_sections
+from scripts.core.config_loader import load_tikomni_config
 from scripts.core.storage_router import build_card_output_path, normalize_card_type, resolve_effective_card_type
 from scripts.core.tikomni_common import normalize_text, read_json_file, write_json_stdout
 
@@ -963,7 +964,6 @@ def _build_output_path(
     card_root: str,
     platform: str,
     card_type: str,
-    material: bool,
     payload: Dict[str, Any],
     now: dt.datetime,
     sample_author: Optional[str],
@@ -971,12 +971,11 @@ def _build_output_path(
 ) -> Dict[str, str]:
     author_slug = _pick_author_slug(payload, author_hint=sample_author)
     title_slug = _pick_title_slug(payload)
-    target_type = "material" if material else card_type
 
     path, route_parts = build_card_output_path(
         card_root=card_root,
         platform=platform,
-        card_type=target_type,
+        card_type=card_type,
         author_slug=author_slug,
         title_slug=title_slug,
         year=now.strftime("%Y"),
@@ -989,7 +988,7 @@ def _build_output_path(
         "route_parts": route_parts,
         "author_slug": author_slug,
         "title_slug": title_slug,
-        "target_type": target_type,
+        "target_type": card_type,
     }
 
 
@@ -1307,7 +1306,6 @@ def write_benchmark_card(
     platform: str,
     card_type: str,
     card_root: Optional[str],
-    collect_material: bool,
     sample_author: Optional[str] = None,
     content_kind: Optional[str] = None,
     storage_config: Optional[Dict[str, Any]] = None,
@@ -1333,7 +1331,6 @@ def write_benchmark_card(
         card_root=resolved_card_root,
         platform=platform,
         card_type=effective_card_type,
-        material=False,
         payload=payload,
         now=now,
         sample_author=sample_author,
@@ -1350,30 +1347,6 @@ def write_benchmark_card(
     )
     _write_file(primary_path, primary_markdown)
 
-    material_path: Optional[str] = None
-    material_route_parts: Optional[str] = None
-    if collect_material:
-        material_target = _build_output_path(
-            card_root=resolved_card_root,
-            platform=platform,
-            card_type=effective_card_type,
-            material=True,
-            payload=payload,
-            now=now,
-            sample_author=sample_author,
-            storage_config=storage_config,
-        )
-        material_path = material_target["path"]
-        material_route_parts = material_target["route_parts"]
-        material_card_id = os.path.basename(material_path).replace(".md", "")
-        material_markdown = _render_markdown(
-            card_id=material_card_id,
-            card_type="material",
-            fields=fields,
-            generated_at=generated_at,
-        )
-        _write_file(material_path, material_markdown)
-
     return {
         "ok": True,
         "platform": platform,
@@ -1381,12 +1354,9 @@ def write_benchmark_card(
         "requested_card_type": normalized_card_type,
         "force_card_type": bool(force_card_type),
         "content_kind": resolved_content_kind or None,
-        "collect_material": collect_material,
         "primary_card_path": primary_path,
-        "material_card_path": material_path,
         "routing": {
             "primary_route_parts": primary_target["route_parts"],
-            "material_route_parts": material_route_parts,
             "storage_routes_configured": bool(isinstance(storage_config, dict) and isinstance(storage_config.get("storage_routes"), dict)),
         },
         "required_fields": fields,
@@ -1406,11 +1376,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Write benchmark card markdown to card root")
     parser.add_argument("--platform", required=True, help="Platform name, e.g. douyin or xiaohongshu")
     parser.add_argument("--card-type", choices=CARD_TYPES, default="work", help="Primary card type")
+    parser.add_argument("--config", default=None, help="Runtime config YAML path")
+    parser.add_argument("--env-file", default=None, help="Shared env file path; defaults to <skills_root>/.env")
+    parser.add_argument("--allow-process-env", action="store_true", help="Allow process env to override .env/.env.local")
     parser.add_argument("--sample-author", default=None, help="Optional author slug override for author_sample_work")
     parser.add_argument("--content-kind", default=None, help="Optional workflow kind, e.g. single_video/author_home/author_analysis")
     parser.add_argument("--force-card-type", action="store_true", help="Force manual --card-type to override content_kind mapping")
     parser.add_argument("--card-root", default=None, help="Card root path (absolute); falls back to TIKOMNI_CARD_ROOT when omitted")
-    parser.add_argument("--collect-material", action="store_true", help="Write extra CMAT card when explicitly requested")
     parser.add_argument(
         "--input-json",
         default="-",
@@ -1418,15 +1390,20 @@ def main() -> None:
     )
     args = parser.parse_args()
 
+    config, _ = load_tikomni_config(
+        args.config,
+        env_file=args.env_file,
+        allow_process_env=args.allow_process_env,
+    )
     payload = _read_payload_from_input(args.input_json)
     result = write_benchmark_card(
         payload=payload,
         platform=args.platform,
         card_type=args.card_type,
         card_root=args.card_root,
-        collect_material=args.collect_material,
         sample_author=args.sample_author,
         content_kind=args.content_kind,
+        storage_config=config,
         force_card_type=args.force_card_type,
     )
     write_json_stdout(result)

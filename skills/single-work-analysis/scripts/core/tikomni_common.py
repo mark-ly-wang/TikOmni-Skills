@@ -52,20 +52,25 @@ def _parse_env_file(env_file: Optional[str]) -> Dict[str, str]:
     return parsed
 
 
-def get_repo_root() -> Path:
-    """Return canonical repository root regardless of current working directory."""
+def get_skills_root() -> Path:
+    """Return the user-facing skills root."""
     script_path = Path(__file__).resolve()
-    return script_path.parents[4]
+    return script_path.parents[3]
+
+
+def get_repo_root() -> Path:
+    """Return repository root for internal development-only relative paths."""
+    return get_skills_root().parent
 
 
 def _resolve_env_file_path(env_file: Optional[str]) -> Path:
-    repo_root = get_repo_root()
+    skills_root = get_skills_root()
     if not env_file:
-        return (repo_root / ".env").resolve()
+        return (skills_root / ".env").resolve()
 
     candidate = Path(env_file).expanduser()
     if not candidate.is_absolute():
-        candidate = repo_root / candidate
+        candidate = skills_root / candidate
     return candidate.resolve()
 
 
@@ -136,6 +141,7 @@ def bootstrap_runtime_env(
         priority.insert(0, "process_env")
 
     return {
+        "skills_root": str(get_skills_root()),
         "repo_root": str(get_repo_root()),
         "workspace_env": str(workspace_env_path),
         "local_env": str(local_env_path),

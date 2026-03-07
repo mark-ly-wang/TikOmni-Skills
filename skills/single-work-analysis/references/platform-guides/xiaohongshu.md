@@ -9,7 +9,6 @@
 - 作者 handle：可读账号标识
 - 视频作品优先检查平台原生字幕，再决定是否调用外部 ASR
 
-## 当前参考实现
+## 当前可运行实现
 
-- `skills/tikomni-skill/scripts/platform/xiaohongshu/`
-- `skills/tikomni-skill/scripts/author_home/adapters/platform_adapters.py`
+- `skills/single-work-analysis/scripts/platform/xiaohongshu/`

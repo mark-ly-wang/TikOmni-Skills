@@ -19,7 +19,6 @@ def build_work_cards(
     render_payloads: Dict[str, Dict[str, Any]],
     card_root: Optional[str],
     storage_config: Optional[Dict[str, Any]],
-    collect_material: bool,
     write_card: bool,
     failed_items: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
@@ -46,7 +45,6 @@ def build_work_cards(
             platform=platform,
             card_type="author_sample_work",
             card_root=card_root,
-            collect_material=collect_material,
             sample_author=sample_author,
             content_kind="author_home",
             storage_config=storage_config,
@@ -68,7 +66,6 @@ def build_author_card(
     analysis_payload: Dict[str, Any],
     card_root: Optional[str],
     storage_config: Optional[Dict[str, Any]],
-    collect_material: bool,
     write_card: bool,
 ) -> Dict[str, Any]:
     if not write_card:
@@ -146,7 +143,6 @@ def build_author_card(
         platform=platform,
         card_type="author",
         card_root=card_root,
-        collect_material=collect_material,
         sample_author=None,
         content_kind="author_analysis",
         storage_config=storage_config,

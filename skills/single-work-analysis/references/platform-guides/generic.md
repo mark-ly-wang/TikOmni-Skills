@@ -22,8 +22,7 @@
 - 如果有平台字幕，映射到 `subtitle_raw`，再统一到 `asr_raw`。
 - 如果没有字幕，必须先确保 `video_download_url`，再调用 ASR。
 
-## 当前参考实现
+## 当前可运行实现
 
-- 旧单体 skill 的现有实现可作为参考源码：
-  - `skills/tikomni-skill/scripts/platform/`
-  - `skills/tikomni-skill/scripts/core/`
+- `skills/single-work-analysis/scripts/platform/`
+- `skills/single-work-analysis/scripts/core/`

@@ -1,27 +1,25 @@
 #!/usr/bin/env python3
-"""Storage routing helpers for benchmark/material card outputs (Phase 4)."""
+"""Storage routing helpers for benchmark card outputs."""
 
 from __future__ import annotations
 
 import os
+import re
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 DEFAULT_CARD_TYPE_ROUTES: Dict[str, Dict[str, Any]] = {
     "work": {
         "prefix": "CBV",
-        "parts": ["10-内容系统", "15-对标研究", "01-作品对标卡"],
+        "parts": ["内容系统", "对标研究", "作品卡"],
     },
     "author": {
         "prefix": "CBA",
-        "parts": ["10-内容系统", "15-对标研究", "03-作者对标卡"],
+        "parts": ["内容系统", "对标研究", "作者卡"],
     },
     "author_sample_work": {
         "prefix": "CBV",
-        "parts": ["10-内容系统", "15-对标研究", "02-作者样本集", "{platform}-{author_slug}"],
-    },
-    "material": {
-        "prefix": "CMAT",
-        "parts": ["10-内容系统", "12-素材库", "素材卡", "{year}", "{year_month}"],
+        "parts": ["内容系统", "对标研究", "作者样本卡", "{platform}-{author_slug}"],
     },
 }
 
@@ -96,7 +94,7 @@ def _configured_card_routes(storage_config: Optional[Dict[str, Any]]) -> Dict[st
 
     merged: Dict[str, Dict[str, Any]] = {k: dict(v) for k, v in DEFAULT_CARD_TYPE_ROUTES.items()}
     for key, value in configured.items():
-        card_type = normalize_card_type(str(key)) if str(key) != "material" else "material"
+        card_type = normalize_card_type(str(key))
         if not isinstance(value, dict):
             continue
 
@@ -110,6 +108,66 @@ def _configured_card_routes(storage_config: Optional[Dict[str, Any]]) -> Dict[st
             "parts": parts,
         }
     return merged
+
+
+DEFAULT_CARD_FILENAME_PATTERN = "{prefix}-{author_slug}-{title_slug}{ext}"
+DEFAULT_JSON_FILENAME_PATTERN = "{timestamp}-{platform}-{identifier}{ext}"
+_INVALID_FILENAME_CHARS = re.compile(r"[\\\\/:*?\"<>|]+")
+_SPACE_RUN = re.compile(r"\s+")
+
+
+def _sanitize_filename_token(value: Any, fallback: str = "item") -> str:
+    text = str(value or "").strip()
+    if not text:
+        text = fallback
+    text = _INVALID_FILENAME_CHARS.sub("-", text)
+    text = _SPACE_RUN.sub("-", text)
+    text = text.replace("/", "-").replace("\\", "-")
+    text = re.sub(r"-{2,}", "-", text).strip(" .-_")
+    return text or fallback
+
+
+def resolve_card_filename_pattern(storage_config: Optional[Dict[str, Any]]) -> str:
+    if not isinstance(storage_config, dict):
+        return DEFAULT_CARD_FILENAME_PATTERN
+    naming_rules = storage_config.get("naming_rules")
+    if not isinstance(naming_rules, dict):
+        return DEFAULT_CARD_FILENAME_PATTERN
+    pattern = str(naming_rules.get("card_filename_pattern") or "").strip()
+    return pattern or DEFAULT_CARD_FILENAME_PATTERN
+
+
+def resolve_json_filename_pattern(storage_config: Optional[Dict[str, Any]]) -> str:
+    if not isinstance(storage_config, dict):
+        return DEFAULT_JSON_FILENAME_PATTERN
+    naming_rules = storage_config.get("naming_rules")
+    if not isinstance(naming_rules, dict):
+        return DEFAULT_JSON_FILENAME_PATTERN
+    pattern = str(naming_rules.get("json_filename_pattern") or "").strip()
+    return pattern or DEFAULT_JSON_FILENAME_PATTERN
+
+
+def render_output_filename(
+    *,
+    pattern: str,
+    context: Dict[str, Any],
+    default_filename: str,
+    default_ext: str,
+) -> str:
+    safe_context = {key: _sanitize_filename_token(value, fallback=key) for key, value in context.items()}
+    safe_context["ext"] = default_ext
+    try:
+        rendered = str(pattern).format(**safe_context).strip()
+    except Exception:
+        rendered = default_filename
+    rendered = _INVALID_FILENAME_CHARS.sub("-", rendered)
+    rendered = _SPACE_RUN.sub("-", rendered)
+    rendered = rendered.replace("/", "-").replace("\\", "-").strip()
+    if not rendered:
+        rendered = default_filename
+    if not Path(rendered).suffix:
+        rendered = f"{rendered}{default_ext}"
+    return rendered
 
 
 def resolve_effective_card_type(
@@ -174,9 +232,22 @@ def build_card_output_path(
     directory = os.path.join(card_root, *rendered_parts)
     os.makedirs(directory, exist_ok=True)
 
-    if card_type == "material":
-        filename = f"{prefix}-{timestamp}-{platform}.md"
-    else:
-        filename = f"{prefix}-{author_slug}-{title_slug}.md"
+    default_filename = f"{prefix}-{author_slug}-{title_slug}.md"
+    filename = render_output_filename(
+        pattern=resolve_card_filename_pattern(storage_config),
+        context={
+            "prefix": prefix,
+            "platform": platform,
+            "card_type": card_type,
+            "author_slug": author_slug,
+            "title_slug": title_slug,
+            "timestamp": timestamp,
+            "date": timestamp.split("-", 1)[0],
+            "identifier": f"{platform}-{author_slug}-{title_slug}",
+            "ext": ".md",
+        },
+        default_filename=default_filename,
+        default_ext=".md",
+    )
 
     return os.path.join(directory, filename), "/".join(rendered_parts)

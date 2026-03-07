@@ -15,7 +15,7 @@
 - 视频下载链接：优先无水印路径
 - 互动指标：点赞、评论、收藏、分享、播放
 
-## 当前参考实现
+## 当前可运行实现
 
-- `skills/tikomni-skill/scripts/author_home/adapters/platform_adapters.py`
-- `skills/tikomni-skill/scripts/author_home/orchestrator/run_author_analysis.py`
+- `skills/creator-analysis/scripts/author_home/adapters/platform_adapters.py`
+- `skills/creator-analysis/scripts/author_home/orchestrator/run_author_analysis.py`

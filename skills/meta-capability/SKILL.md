@@ -1,34 +1,40 @@
 ---
 name: meta-capability
-description: 在需要先探索平台能力、定位可用接口、设计最小可行执行路径，或处理陌生平台而尚未命中固定业务模块时使用。适用于先完成接口发现、资源定位、字段盘点、执行编排，再决定是否转交 $single-work-analysis 或 $creator-analysis 的任务。
+description: Use this skill for TikOmni platform capability discovery, full API route lookup, input-field requirements, and route-selection across Douyin, Xiaohongshu, TikTok, YouTube, X, WeChat Channels, Official Accounts, and other supported platforms. 当用户问“支持哪些平台/接口”“能抓什么”“该调哪个接口”“要传哪些字段”“怎么获取作品/评论/主页/搜索/榜单/创作者数据”时触发；单作品深度分析和创作者聚合分析继续走专用 skill。
 ---
 
 # Meta Capability
 
 ## 何时使用
 
-- 用户目标还不够具体，先要判断应该走哪条能力链路。
-- 平台较陌生，先要确认有哪些接口、字段、媒体资源和执行约束。
-- 需要为“其他平台”设计最小可行接入路径，但还没有专用适配脚本。
+- 用户先要确认 TikOmni 当前支持哪些平台、对象和 API 能力。
+- 用户要知道“该调哪个 route”“要传哪些字段”“是否有评论/搜索/榜单/主页接口”。
+- 需要在真正进入分析前，先完成平台能力盘点、路由选择和字段可得性判断。
+- 面对陌生平台或陌生对象时，需要从全量 OpenAPI 中筛出最小可行调用链。
+
+## 核心职责
+
+- 提供完整 API 路由目录，让 agent 先知道“有哪些接口”。
+- 告诉 agent 每条 route 的典型能力类型、入参位置和请求体字段。
+- 给出当前仓库已验证的优先路由链，避免 agent 在全量目录里盲选。
+- 在进入专用 skill 之前，先完成能力发现、接口选择、字段盘点和可行性判断。
 
 ## 不要做
 
-- 不要定义作品卡或作者卡字段语义。
-- 不要输出 `single-work-analysis` 或 `creator-analysis` 的正式分析结论。
-- 不要把浏览器/manual observation 伪装成平台 API 结果。
+- 不要把浏览器观察、猜测或人工补写内容伪装成接口结果。
+- 不要承诺当前平台或当前接口链路拿不到的字段。
+- 不要把单作品深度分析或作者级聚合分析直接塞进本 skill 本体。
+- 不要只写“能力描述”而不给 route、入参和字段要求。
 
 ## 工作流程
 
-1. 先明确目标：平台、对象、数量、需要的字段、预期输出。
-2. 读取 `references/dispatch.md`，判断应转交 `$single-work-analysis`、`$creator-analysis`，还是先继续做通用探索。
-3. 如果进入通用探索，读取 `references/execution-guidelines.md`，优先确定：
-   - 可用接口
-   - 媒体/文本资源入口
-   - 必须字段是否可取
-   - 是否需要下载媒体或调用外部 ASR
-4. 一旦业务边界清晰，转交到对应能力模块，不继续持有业务语义。
+1. 先读 `references/api-capability-catalog.md`，确认平台标签、route 总量、能力类型和入参字段。
+2. 再读 `references/implemented-route-map.md`，优先走当前仓库已经验证过的路由链。
+3. 读取 `references/execution-guidelines.md`，确认对象类型、目标字段、输出形式和降级策略。
+4. 如果任务是单作品深度分析或创作者聚合分析，再转交给专用 skill，但保留已经确认的 route 和字段事实。
 
 ## References
 
-- 路由与转交：`references/dispatch.md`
+- API 能力总表：`references/api-capability-catalog.md`
+- 当前已验证路由链：`references/implemented-route-map.md`
 - 通用执行规则：`references/execution-guidelines.md`

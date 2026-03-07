@@ -1,4 +1,4 @@
 interface:
   display_name: "元能力"
-  short_description: "通用平台探索、接口发现、执行编排与任务落地综合能力"
-  default_prompt: "使用 -capability 为当前任务识别可用接口、组织执行步骤并给出最小可行路径。"
+  short_description: "TikOmni 全量 API 能力查询、路由选择与字段要求总入口"
+  default_prompt: "使用 -capability 先确认 TikOmni 支持哪些接口、该调哪个 route、要传哪些字段，再决定是否进入专用分析 skill。"

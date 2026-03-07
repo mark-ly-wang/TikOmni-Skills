@@ -91,6 +91,10 @@ Optional flags:
 - `--dir <path>`: override the target skills directory
 - `--force`: overwrite an existing installed skill directory
 
+Distribution note:
+- `npx` installs from the npm registry package, not by cloning this GitHub repository at install time.
+- GitHub is the source repo; npm is the distribution channel for end-user installation.
+
 ### OpenClaw
 Place this repo (or one of the skill folders under `skills/`) in your OpenClaw workspace skills path, then let OpenClaw load the skill.
 
@@ -107,6 +111,9 @@ Before the npm package is published, you can run the installer locally:
 node bin/tikomni-skills.js list
 node bin/tikomni-skills.js install codex meta-capability --dir "/tmp/tikomni-skills"
 ```
+
+### Publishing
+Release notes and publish steps live in [`RELEASING.md`](./RELEASING.md).
 
 ## ⚙️ Configure after installation (env-only)
 

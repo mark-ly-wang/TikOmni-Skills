@@ -91,6 +91,10 @@ npx @tikomni/skills install openclaw meta-capability --dir "/custom/skills"
 - `--dir <path>`：显式指定 skills 目录
 - `--force`：覆盖已存在的同名 skill 目录
 
+分发说明：
+- `npx` 安装时连接的是 npm registry，不是在安装时去 clone GitHub 仓库。
+- GitHub 是源码仓库，npm 才是给最终用户分发安装包的渠道。
+
 ### OpenClaw
 把本仓库（或 `skills/` 下的某个 skill 目录）放到 OpenClaw 的 skills 目录，让系统加载。
 
@@ -107,6 +111,9 @@ npx @tikomni/skills install openclaw meta-capability --dir "/custom/skills"
 node bin/tikomni-skills.js list
 node bin/tikomni-skills.js install codex meta-capability --dir "/tmp/tikomni-skills"
 ```
+
+### 发布说明
+发布步骤见 [`RELEASING.zh-CN.md`](./RELEASING.zh-CN.md)。
 
 ## ⚙️ 安装后怎么配置（仅 env）
 

@@ -1,0 +1,75 @@
+name: npm-publish
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      npm_dist_tag:
+        description: "npm dist-tag"
+        required: true
+        default: "latest"
+      dry_run:
+        description: "Run publish in dry-run mode"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verify tag matches package version
+        if: github.event_name == 'push'
+        run: |
+          PACKAGE_VERSION="$(node -p "require('./package.json').version")"
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "${PACKAGE_VERSION}" != "${TAG_VERSION}" ]; then
+            echo "[FAIL] package.json version ${PACKAGE_VERSION} does not match tag ${GITHUB_REF_NAME}"
+            exit 1
+          fi
+
+      - name: Run npm tests
+        run: npm test
+
+      - name: Run repository validation
+        run: |
+          python3 scripts/ci_skill_validate.py
+          python3 scripts/ci_secret_scan.py
+          python3 scripts/ci_package_manifest.py
+          python3 scripts/ci_build_skill_zip.py
+
+      - name: Pack dry run
+        run: npm pack --dry-run
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          DIST_TAG="latest"
+          DRY_RUN="false"
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+            DIST_TAG="${{ inputs.npm_dist_tag }}"
+            DRY_RUN="${{ inputs.dry_run }}"
+          fi
+
+          if [ "${DRY_RUN}" = "true" ]; then
+            npm publish --tag "${DIST_TAG}" --dry-run
+          else
+            npm publish --tag "${DIST_TAG}"
+          fi

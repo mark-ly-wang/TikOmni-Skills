@@ -6,7 +6,10 @@ A production-ready skill package for AI agents to fetch structured data from maj
 
 ## 🚀 What this repository is
 
-This repository provides the `tikomni-skill` used by AI agents.
+This repository provides the `tikomni-skill` used by AI agents, and now also includes the new split modules:
+- `skills/meta-capability`
+- `skills/single-work-analysis`
+- `skills/creator-analysis`
 
 With this skill, agents can:
 - collect cross-platform public content data
@@ -42,6 +45,12 @@ Depending on platform and endpoint, the skill can return:
 
 > Practical feature scope you can use right now:
 
+### 0) Skill modules currently in this repo
+- `skills/tikomni-skill`: legacy monolithic skill, still kept as reference/source during migration
+- `skills/meta-capability`: generic TikOmni exploration and execution guidance for agents
+- `skills/single-work-analysis`: single-work analysis module for current Douyin / Xiaohongshu implementations
+- `skills/creator-analysis`: creator-analysis module for current Douyin / Xiaohongshu implementations
+
 ### 1) Douyin / Xiaohongshu single-content analysis
 - Single video/note extraction: title, author, publish time, engagement basics, etc.
 - Text layer: subtitle/copy extraction when supported by upstream endpoints
@@ -65,13 +74,13 @@ Depending on platform and endpoint, the skill can return:
 Use the integration method matching your agent runtime.
 
 ### OpenClaw
-Place this repo (or `skills/tikomni-skill`) in your OpenClaw workspace skills path, then let OpenClaw load the skill.
+Place this repo (or one of the skill folders under `skills/`) in your OpenClaw workspace skills path, then let OpenClaw load the skill.
 
 ### Codex
-Install/copy `skills/tikomni-skill` into your Codex skills directory.
+Install/copy the target skill folder into your Codex skills directory.
 
 ### Claude Code
-Install/copy `skills/tikomni-skill` into your Claude skills directory.
+Install/copy the target skill folder into your Claude skills directory.
 
 ## ⚙️ Configure after installation (env-only)
 
@@ -115,8 +124,12 @@ Route precedence:
 3) built-in/default config
 
 Recommended placement:
-- `<repo_root>/.env` (project-level)
+- `<skills_root>/.env` (shared config)
 - `skills/tikomni-skill/.env.local` (local override)
+
+For split modules, the same pattern applies:
+- shared env at the skills root
+- optional per-skill override in each skill folder's `.env.local`
 
 ## ▶️ How to use
 

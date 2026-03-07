@@ -6,7 +6,10 @@
 
 ## 🚀 这是什么仓库
 
-本仓库提供 `tikomni-skill`。
+本仓库提供 `tikomni-skill`，同时也已经包含新的拆分模块：
+- `skills/meta-capability`
+- `skills/single-work-analysis`
+- `skills/creator-analysis`
 
 它可以让 Agent：
 - 跨平台抓取公开内容数据
@@ -42,6 +45,12 @@
 
 > 以下是当前可直接使用的功能范围（持续更新）：
 
+### 0) 当前仓库内的 Skill 模块
+- `skills/tikomni-skill`：历史单体 skill，迁移期仍保留为参考源码
+- `skills/meta-capability`：给 Agent 的 TikOmni 通用探索与执行指引
+- `skills/single-work-analysis`：当前已覆盖抖音 / 小红书的单作品分析模块
+- `skills/creator-analysis`：当前已覆盖抖音 / 小红书的创作者分析模块
+
 ### 1) 抖音 / 小红书单作品分析
 - 单视频（或单笔记）提取：标题、作者、发布时间、互动数据等基础信息
 - 文本能力：字幕/文案提取（接口支持时）
@@ -65,13 +74,13 @@
 按你的 Agent 运行环境安装即可。
 
 ### OpenClaw
-把本仓库（或 `skills/tikomni-skill`）放到 OpenClaw 的 skills 目录，让系统加载。
+把本仓库（或 `skills/` 下的某个 skill 目录）放到 OpenClaw 的 skills 目录，让系统加载。
 
 ### Codex
-把 `skills/tikomni-skill` 复制到 Codex 的 skills 目录。
+把目标 skill 目录复制到 Codex 的 skills 目录。
 
 ### Claude Code
-把 `skills/tikomni-skill` 复制到 Claude Code 的 skills 目录。
+把目标 skill 目录复制到 Claude Code 的 skills 目录。
 
 ## ⚙️ 安装后怎么配置（仅 env）
 
@@ -115,8 +124,12 @@ TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="content-system|benchmark|author-samples|{
 3) 内置/默认配置
 
 推荐配置位置：
-- `<repo_root>/.env`
+- `<skills_root>/.env`（共享配置）
 - `skills/tikomni-skill/.env.local`（本地覆盖）
+
+对于拆分后的模块，也沿用同样规则：
+- 共享配置放在 skills 根层
+- 某个 skill 需要特殊覆盖时，再在该 skill 目录下增加 `.env.local`
 
 ## ▶️ 怎么使用
 

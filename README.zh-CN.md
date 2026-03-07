@@ -72,6 +72,25 @@
 
 按你的 Agent 运行环境安装即可。
 
+### 命令安装（`npx`）
+把这个包发布到 npm 后，可以直接用命令安装：
+
+```bash
+npx @tikomni/skills list
+npx @tikomni/skills install codex all
+npx @tikomni/skills install claude-code creator-analysis
+npx @tikomni/skills install openclaw meta-capability --dir "/custom/skills"
+```
+
+默认安装目录：
+- `codex` -> `$CODEX_HOME/skills`，默认 `~/.codex/skills`
+- `claude-code` -> `~/.claude/skills`
+- `openclaw` -> 优先 `~/.openclaw/workspace/skills`，否则 `~/.openclaw/skills`
+
+可选参数：
+- `--dir <path>`：显式指定 skills 目录
+- `--force`：覆盖已存在的同名 skill 目录
+
 ### OpenClaw
 把本仓库（或 `skills/` 下的某个 skill 目录）放到 OpenClaw 的 skills 目录，让系统加载。
 
@@ -80,6 +99,14 @@
 
 ### Claude Code
 把目标 skill 目录复制到 Claude Code 的 skills 目录。
+
+### 本地开发调试
+在 npm 包还没发布之前，也可以直接本地运行安装器：
+
+```bash
+node bin/tikomni-skills.js list
+node bin/tikomni-skills.js install codex meta-capability --dir "/tmp/tikomni-skills"
+```
 
 ## ⚙️ 安装后怎么配置（仅 env）
 

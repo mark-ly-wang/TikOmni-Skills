@@ -1,0 +1,36 @@
+{
+  "name": "@tikomni/skills",
+  "version": "0.1.0",
+  "description": "TikOmni skill installer CLI for Codex, Claude Code, and OpenClaw",
+  "license": "UNLICENSED",
+  "bin": {
+    "tikomni-skills": "./bin/tikomni-skills.js"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "skills/",
+    ".skill-package-allowlist.txt",
+    "env.example",
+    "README.md",
+    "README.zh-CN.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test"
+  },
+  "keywords": [
+    "tikomni",
+    "skills",
+    "codex",
+    "claude-code",
+    "openclaw",
+    "installer"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Tikomni/TikOmni-Skills.git"
+  }
+}

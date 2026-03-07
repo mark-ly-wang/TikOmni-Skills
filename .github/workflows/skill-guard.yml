@@ -7,6 +7,18 @@ on:
     branches: [main]
 
 jobs:
+  node-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: CLI tests
+        run: npm test
+      - name: CLI list smoke test
+        run: node bin/tikomni-skills.js list
+
   validate:
     runs-on: ubuntu-latest
     steps:

@@ -8,6 +8,9 @@
 
 # build artifacts
 dist/
+node_modules/
+*.tgz
+.npm/
 
 # local reports (workspace-only, do not publish)
 reports/

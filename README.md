@@ -72,6 +72,25 @@ Depending on platform and endpoint, the skill can return:
 
 Use the integration method matching your agent runtime.
 
+### CLI installer (`npx`)
+After publishing this package to npm, you can install skills directly with:
+
+```bash
+npx @tikomni/skills list
+npx @tikomni/skills install codex all
+npx @tikomni/skills install claude-code creator-analysis
+npx @tikomni/skills install openclaw meta-capability --dir "/custom/skills"
+```
+
+Default install targets:
+- `codex` -> `$CODEX_HOME/skills` or `~/.codex/skills`
+- `claude-code` -> `~/.claude/skills`
+- `openclaw` -> prefers `~/.openclaw/workspace/skills`, otherwise `~/.openclaw/skills`
+
+Optional flags:
+- `--dir <path>`: override the target skills directory
+- `--force`: overwrite an existing installed skill directory
+
 ### OpenClaw
 Place this repo (or one of the skill folders under `skills/`) in your OpenClaw workspace skills path, then let OpenClaw load the skill.
 
@@ -80,6 +99,14 @@ Install/copy the target skill folder into your Codex skills directory.
 
 ### Claude Code
 Install/copy the target skill folder into your Claude skills directory.
+
+### Local development
+Before the npm package is published, you can run the installer locally:
+
+```bash
+node bin/tikomni-skills.js list
+node bin/tikomni-skills.js install codex meta-capability --dir "/tmp/tikomni-skills"
+```
 
 ## ⚙️ Configure after installation (env-only)
 

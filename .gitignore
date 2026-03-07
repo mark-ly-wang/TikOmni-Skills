@@ -15,6 +15,8 @@ node_modules/
 # local reports (workspace-only, do not publish)
 reports/
 .private/
+RELEASING.md
+RELEASING.zh-CN.md
 
 # python cache artifacts
 __pycache__/

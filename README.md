@@ -113,7 +113,7 @@ node bin/tikomni-skills.js install codex meta-capability --dir "/tmp/tikomni-ski
 ```
 
 ### Publishing
-Release notes and publish steps live in [`RELEASING.md`](./RELEASING.md).
+Publishing is handled by the npm workflow plus the package metadata in this repository.
 
 ## ⚙️ Configure after installation (env-only)
 

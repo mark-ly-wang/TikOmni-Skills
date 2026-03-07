@@ -113,7 +113,7 @@ node bin/tikomni-skills.js install codex meta-capability --dir "/tmp/tikomni-ski
 ```
 
 ### 发布说明
-发布步骤见 [`RELEASING.zh-CN.md`](./RELEASING.zh-CN.md)。
+正式发布依赖仓库内的 npm workflow 和 `package.json` 发布元数据。
 
 ## ⚙️ 安装后怎么配置（仅 env）
 

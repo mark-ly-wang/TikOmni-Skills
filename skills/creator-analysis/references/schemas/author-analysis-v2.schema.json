@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "author_analysis_v2",
+  "type": "object",
+  "required": [
+    "author_positioning",
+    "trust_model",
+    "cognitive_engine",
+    "expression_hooks",
+    "content_mechanism",
+    "commercial_bridge",
+    "core_tensions",
+    "evidence_pack",
+    "clone_guidance"
+  ],
+  "properties": {
+    "author_positioning": {
+      "type": "object",
+      "required": ["role", "audience", "problem", "value"],
+      "properties": {
+        "role": { "type": "string" },
+        "audience": { "type": "string" },
+        "problem": { "type": "string" },
+        "value": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "trust_model": {
+      "type": "object",
+      "required": ["trust_source", "relationship_posture", "trust_risks"],
+      "properties": {
+        "trust_source": { "type": "string" },
+        "relationship_posture": { "type": "string" },
+        "trust_risks": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "cognitive_engine": {
+      "type": "object",
+      "required": ["worldview", "problem_definition", "reasoning_modes"],
+      "properties": {
+        "worldview": { "type": "string" },
+        "problem_definition": { "type": "string" },
+        "reasoning_modes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "expression_hooks": {
+      "type": "object",
+      "required": ["hook_keywords", "hook_patterns", "memorability_sources"],
+      "properties": {
+        "hook_keywords": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "hook_patterns": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "memorability_sources": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "content_mechanism": {
+      "type": "object",
+      "required": ["topic_sources", "topic_goals", "winning_structures", "traffic_drivers"],
+      "properties": {
+        "topic_sources": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "topic_goals": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "winning_structures": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "traffic_drivers": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "commercial_bridge": {
+      "type": "object",
+      "required": ["funnel_role", "conversion_path", "commercial_risks"],
+      "properties": {
+        "funnel_role": { "type": "string" },
+        "conversion_path": { "type": "string" },
+        "commercial_risks": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "core_tensions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "surface", "deep_reason", "strategic_implication"],
+        "properties": {
+          "label": { "type": "string" },
+          "surface": { "type": "string" },
+          "deep_reason": { "type": "string" },
+          "strategic_implication": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "evidence_pack": {
+      "type": "object",
+      "required": ["sample_size", "sample_confidence", "boundaries"],
+      "properties": {
+        "sample_size": { "type": "integer", "minimum": 0 },
+        "sample_confidence": {
+          "type": "string",
+          "enum": ["low", "medium", "high"]
+        },
+        "boundaries": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "clone_guidance": {
+      "type": "object",
+      "required": ["copyable_elements", "non_copyable_elements", "danger_zones", "if_only_learn_one_thing"],
+      "properties": {
+        "copyable_elements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "non_copyable_elements": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "danger_zones": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "if_only_learn_one_thing": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

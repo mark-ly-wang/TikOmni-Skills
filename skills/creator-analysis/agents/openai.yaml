@@ -1,0 +1,4 @@
+interface:
+  display_name: "Creator Analysis"
+  short_description: "面向创作者主页、作品集合、作品卡与聚合结论的分析能力"
+  default_prompt: "使用 -analysis 分析一个创作者，生成作者卡、作品卡与聚合结论。"

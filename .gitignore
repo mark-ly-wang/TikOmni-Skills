@@ -11,6 +11,7 @@ dist/
 
 # local reports (workspace-only, do not publish)
 reports/
+.private/
 
 # python cache artifacts
 __pycache__/

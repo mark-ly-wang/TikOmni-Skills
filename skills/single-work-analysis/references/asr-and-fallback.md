@@ -1,20 +1,20 @@
-# 单作品 ASR 与失败路径
+# Single-Item ASR and Failure Handling
 
-## 视频作品 ASR
+## Video ASR
 
-0. 先读 `references/service-guides/asr-u2-u3-fallback.md`，统一执行“U2 主路径 -> 90 秒软观察 -> 120 秒（2 分钟）硬 fallback -> U3 -> 再回 U2”。
-1. 如果接口直接返回 `subtitle_raw`，优先映射到 `asr_raw`。
-2. 如果没有 `subtitle_raw`，使用 `video_download_url` 调用 ASR。
-3. `asr_clean` 只能由 `asr_raw` 规则清洗得到。
+1. Read `references/service-guides/asr-u2-u3-fallback.md` first and follow the shared flow: U2 primary path -> 90-second soft observation -> 120-second hard fallback -> U3 -> back to U2.
+2. If the route already returns `subtitle_raw`, map it to `asr_raw` first.
+3. If `subtitle_raw` is unavailable, call ASR with `video_download_url`.
+4. Derive `asr_clean` only from `asr_raw` through the cleaning rules.
 
-## 超时与 fallback
+## Timeout and Fallback
 
-- 90 秒：软观察阈值。
-- 120 秒（2 分钟）：硬 fallback 阈值。
-- 120 秒时若仍无完整 `asr_raw`，走“上传媒体 -> 公网 URL -> 再调 ASR”fallback。
+- 90 seconds: soft observation threshold.
+- 120 seconds: hard fallback threshold.
+- If there is still no complete `asr_raw` after 120 seconds, use the upload-media -> public URL -> ASR retry fallback path.
 
-## 失败终态
+## Failure End State
 
-- 如果上游上传媒体接口未就绪，或 fallback 后仍拿不到 `asr_raw`，保留事实卡。
-- 此时返回 `incomplete` 结果。
-- 不伪造 `primary_text`，不输出依赖主文本的分析结论。
+- If the upstream media-upload route is unavailable, or if `asr_raw` is still unavailable after fallback, keep the fact card.
+- Return `incomplete` in that state.
+- Do not fabricate `primary_text`, and do not output analysis conclusions that depend on missing main text.

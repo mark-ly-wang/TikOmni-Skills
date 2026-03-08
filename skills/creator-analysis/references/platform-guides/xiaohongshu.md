@@ -1,54 +1,54 @@
-# 小红书 Creator 指引
+# Xiaohongshu Creator Guide
 
-## 先读什么
+## Read This First
 
-- 先读 `references/api-capability-index.md`，再读 `references/api-tags/xiaohongshu-app-v2-api.md`、`references/api-tags/xiaohongshu-app-api.md`、`references/api-tags/xiaohongshu-web-v2-api.md`。
-- 当前仓库已验证的是“主页输入 -> user_id/xsec_token 解析 -> profile 多路由级联 -> posts 多路由级联”。
+- Use this guide first for Xiaohongshu creator, profile, and account tasks.
+- The validated chain in this repository is profile input -> `user_id` / `xsec_token` resolution -> profile cascade -> post-list cascade.
 
-## 作者侧优先资源
+## Preferred Creator Resources
 
-- 昵称
+- nickname
 - handle
-- IP 属地
-- 头像
-- 粉丝数、累计获赞数、作品数
+- IP location
+- avatar
+- fan count, liked count, work count
 
-## 作品侧优先资源
+## Preferred Work Resources
 
-- 作品 ID：`note_id`
-- 标题 / 文案：`title` / `desc` / `content`
-- 视频作品优先检查原生字幕
-- 互动指标：点赞、评论、收藏、分享、播放
+- work ID: `note_id`
+- title / caption: `title` / `desc` / `content`
+- for video items, check native subtitles first
+- engagement metrics: digg, comment, collect, share, play
 
-## 当前优先路由链
+## Preferred Route Chain
 
-1. 主页标识解析：`GET /api/u1/v1/xiaohongshu/app/get_user_id_and_xsec_token`
-   - OpenAPI 必填入参：`share_link`
-   - 当前实现会同时冗余传 `share_url`、`url`
-2. 作者 profile 级联：
+1. Profile identifier resolution: `GET /api/u1/v1/xiaohongshu/app/get_user_id_and_xsec_token`
+   - OpenAPI-required input: `share_link`
+   - The current implementation also sends `share_url` and `url` redundantly.
+2. Profile cascade:
    - `GET /api/u1/v1/xiaohongshu/app_v2/get_user_info`
    - `GET /api/u1/v1/xiaohongshu/web_v2/fetch_user_info_app`
    - `GET /api/u1/v1/xiaohongshu/app/get_user_info`
-   - 典型入参：`user_id`，必要时补 `share_text` / `xsec_token`
-3. 主页作品分页级联：
+   - Typical input: `user_id`, with `share_text` / `xsec_token` as needed
+3. Post-list cascade:
    - `GET /api/u1/v1/xiaohongshu/app_v2/get_user_posted_notes`
    - `GET /api/u1/v1/xiaohongshu/web_v2/fetch_home_notes_app`
    - `GET /api/u1/v1/xiaohongshu/app/get_user_notes`
-   - 典型入参：`user_id`、`cursor`
+   - Typical input: `user_id`, `cursor`
 
-## 需要落到的统一字段
+## Unified Fields To Fill
 
-- 作者卡：`platform_author_id`、`author_handle`、`nickname`、`ip_location`、`signature`、`avatar_url`、`fans_count`、`liked_count`、`collected_count`、`works_count`、`verified`
-- 作品卡：`platform_work_id`、`title`、`caption_raw`、`published_date`、`digg_count`、`comment_count`、`collect_count`、`share_count`、`play_count`、`video_download_url`
+- creator card: `platform_author_id`, `author_handle`, `nickname`, `ip_location`, `signature`, `avatar_url`, `fans_count`, `liked_count`, `collected_count`, `works_count`, `verified`
+- work cards: `platform_work_id`, `title`, `caption_raw`, `published_date`, `digg_count`, `comment_count`, `collect_count`, `share_count`, `play_count`, `video_download_url`
 
-## 选路规则
+## Route Rules
 
-- 已有 `user_id` 时，直接跳过 resolve route；`xsec_token` 作为补充，不是所有路由都必需。
-- profile 和 posts 都必须按级联顺序尝试，并基于字段完整度判断是否切 fallback。
-- 如果批量 U2 ASR 超过 120 秒（2 分钟）仍未完全返回，只对未成功子集按 `references/service-guides/asr-u2-u3-fallback.md` 走 U3 fallback。
-- 主页作品页拿不到稳定字段时，再回 `references/api-capability-index.md` 锁定 tag，并读对应 `references/api-tags/*.md` 找补充 route，不要直接把半残字段送进作者分析。
+- If `user_id` is already available, skip the resolution route. Treat `xsec_token` as supplemental rather than universally required.
+- Try both the profile cascade and the posts cascade in order, and switch to fallback based on field completeness.
+- If batch U2 ASR is still incomplete after 120 seconds, follow `references/service-guides/asr-u2-u3-fallback.md` and use U3 fallback only for the unsuccessful subset.
+- If the profile-post chain still cannot provide stable fields, go back to `references/api-capability-index.md` and the matching `references/api-tags/*.md` for supplemental routes instead of sending half-complete data into creator analysis.
 
-## 当前可运行实现
+## Current Runnable Implementation
 
 - `skills/creator-analysis/scripts/author_home/adapters/platform_adapters.py`
 - `skills/creator-analysis/scripts/author_home/orchestrator/run_author_analysis.py`

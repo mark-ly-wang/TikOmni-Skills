@@ -1,4 +1,4 @@
 interface:
   display_name: "Creator Analysis"
-  short_description: "跨平台账号主页、创作者/博主对标拆解、作者卡与聚合分析"
-  default_prompt: "使用 creator-analysis 处理一个创作者或账号主页，生成作者卡、作品卡、抽样解释与聚合结论。"
+  short_description: "Creator, profile, and collection benchmark analysis"
+  default_prompt: "Use $creator-analysis to analyze a creator, account profile, or content collection and return the creator card, work cards, creator benchmark breakdown, and aggregated conclusions."

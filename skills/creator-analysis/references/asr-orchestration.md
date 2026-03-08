@@ -1,33 +1,33 @@
-# Creator 场景 ASR 编排
+# Creator ASR Orchestration
 
-## 主路径
+## Primary Path
 
-- 先读 `references/service-guides/asr-u2-u3-fallback.md`，统一执行“U2 主路径 -> 90 秒软观察 -> 120 秒（2 分钟）硬 fallback -> U3 -> 再回 U2”。
-- creator / 主页场景的视频作品必须优先走批量 ASR。
-- 单次批量请求上限为 100 条 `video_download_url`。
-- 不建议逐条串行或逐条并行调用 ASR 作为主页主路径。
+- Read `references/service-guides/asr-u2-u3-fallback.md` first and follow the shared flow: U2 primary path -> 90-second soft observation -> 120-second hard fallback -> U3 -> back to U2.
+- Video items in creator or profile tasks must prefer batch ASR.
+- The per-batch request limit is 100 `video_download_url` values.
+- Do not treat one-by-one serial or one-by-one parallel ASR calls as the primary path for creator tasks.
 
-## 两级来源
+## Two-Level Source Order
 
-1. 接口直接返回 `subtitle_raw`：
-   - 先映射到 `asr_raw`
-2. 没有 `subtitle_raw`：
-   - 使用 `video_download_url` 调用 ASR
+1. If the route directly returns `subtitle_raw`:
+   - map it to `asr_raw` first
+2. If `subtitle_raw` is unavailable:
+   - call ASR with `video_download_url`
 
-## 超时与 fallback
+## Timeout and Fallback
 
-- 90 秒：软观察阈值
-- 120 秒（2 分钟）：硬 fallback 阈值
-- 120 秒时若仍未完全返回，只对未成功子集走上传媒体 fallback
+- 90 seconds: soft observation threshold.
+- 120 seconds: hard fallback threshold.
+- If the batch is still incomplete after 120 seconds, run upload-media fallback only for the unsuccessful subset.
 
-## 上传媒体 fallback
+## Upload-Media Fallback
 
-1. 调上游申请接口，拿临时上传 URL
-2. 下载或流式转发无水印视频资源
-3. 调完成接口，拿公网可读 URL
-4. 用公网 URL 重新调 ASR
+1. Call the upstream request route and obtain a temporary upload URL.
+2. Download or stream-relay the no-watermark video resource.
+3. Call the completion route and obtain a publicly readable URL.
+4. Call ASR again with the public URL.
 
-## 失败终态
+## Failure End State
 
-- 上游上传媒体接口未就绪时，未成功子集标记为 `analysis_eligibility=incomplete`
-- `analysis_eligibility=incomplete` 的作品保留事实卡，但排除出 sampling、sampled explanations、`author_analysis_v2`
+- If the upstream media-upload route is unavailable, mark the unsuccessful subset as `analysis_eligibility=incomplete`.
+- Keep fact cards for items with `analysis_eligibility=incomplete`, but exclude them from sampling, sampled explanations, and `author_analysis_v2`.

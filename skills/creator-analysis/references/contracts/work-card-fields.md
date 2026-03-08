@@ -1,6 +1,6 @@
-# Creator 作品卡字段字典
+# Creator Work Card Fields
 
-## 固定展示字段
+## Fixed Display Fields
 
 - `platform`
 - `platform_work_id`
@@ -20,13 +20,13 @@
 - `share_url`
 - `primary_text`
 
-## 视频作品额外展示字段
+## Video-Only Additional Fields
 
 - `asr_raw`
 - `video_download_url`
 
-## 关键规则
+## Key Rules
 
-- 全量作品都保留事实卡。
-- 最终作品卡不展示 `content_type`、`publish_time`、`create_time_sec`、`subtitle_raw`、`asr_source`、`asr_status`、`asr_error_reason`。
-- 视频作品拿不到 `asr_raw` 时，保留事实卡，但标记 `analysis_eligibility=incomplete` 并排除出 creator 分析。
+- Keep fact cards for all retrieved works.
+- The final work card should not expose `content_type`, `publish_time`, `create_time_sec`, `subtitle_raw`, `asr_source`, `asr_status`, or `asr_error_reason`.
+- If a video item cannot obtain `asr_raw`, keep the fact card but mark `analysis_eligibility=incomplete` and exclude that item from creator analysis.

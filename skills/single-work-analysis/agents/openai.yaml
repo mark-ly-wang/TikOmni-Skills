@@ -1,4 +1,4 @@
 interface:
   display_name: "Single Work Analysis"
-  short_description: "跨平台单作品对标、拆解、文案/字幕提取、作品卡与结构化分析"
-  default_prompt: "使用 single-work-analysis 处理单个作品，完成文案/字幕提取、作品卡生成与结构化分析。"
+  short_description: "Single-item extraction, transcription, and benchmark analysis"
+  default_prompt: "Use $single-work-analysis to handle one concrete content item and return the work card, transcript or subtitles, and single-item analysis, benchmark, or breakdown."

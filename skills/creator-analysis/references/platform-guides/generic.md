@@ -1,19 +1,19 @@
-# 其他平台创作者分析指引
+# Generic Creator Guide
 
-## 目标
+## Goal
 
-把陌生平台映射到统一作者卡与作品卡 contract，再完成 creator 分析。
+Map an unfamiliar platform into the unified creator-card and work-card contracts and then complete the creator analysis flow.
 
-## 先读什么
+## Read Order
 
-- 先读 `references/api-capability-index.md`，锁定对应平台 tag。
-- 再读对应的 `references/api-tags/<tag>.md`，确认 route、入参、请求体和成功响应摘要。
-- 优先筛 `user / author / creator / profile / home / channel / posts / notes / videos` 相关 route。
-- 再补评论、媒体下载、字幕和额外指标 route。
+- Start with `references/api-capability-index.md` to lock onto the relevant platform tag.
+- Read the matching `references/api-tags/<tag>.md` for route summaries, inputs, request bodies, and success-response summaries.
+- Prioritize routes related to `user / author / creator / profile / home / channel / posts / notes / videos`.
+- Add comment, media-download, subtitle, and extra-metric routes only when needed.
 
-## 最小映射清单
+## Minimum Mapping Checklist
 
-作者侧：
+creator side:
 
 - `platform_author_id`
 - `author_handle`
@@ -27,20 +27,20 @@
 - `works_count`
 - `verified`
 
-作品侧：
+work side:
 
-- 统一作品卡字段字典中的必保字段
-- 视频作品的 `video_download_url`
+- the required fields from the unified work-card field dictionary
+- for video items: `video_download_url`
 
-## 选路规则
+## Route Rules
 
-- 作者主页链路至少要覆盖“作者信息 + 作品列表分页”两段，不要只拿到 profile 就直接做 creator 分析。
-- 如果平台存在 profile route 和 posts route 多版本并存，优先选择字段更完整、分页能力更稳定的版本。
-- 作品列表 route 必须能稳定给出 `platform_work_id` 和发布时间/互动指标的主体字段，否则不能直接进入抽样和聚合分析。
-- 视频作品如果缺字幕且又没有下载链路，要在 route 选择阶段就标记后续 ASR 不可行。
-- 如果批量 U2 ASR 超过 120 秒（2 分钟）仍未完全返回，只对未成功子集按 `references/service-guides/asr-u2-u3-fallback.md` 走 U3 fallback。
+- The creator-profile chain must cover both creator information and paginated work-list retrieval. Do not stop at a profile-only route.
+- If the platform provides multiple profile routes or posts routes, prefer the variant with fuller fields and more stable pagination.
+- The work-list route must reliably provide `platform_work_id` and the main published-time and engagement fields before sampling or aggregation can begin.
+- If video items have no subtitles and no download path, mark ASR as infeasible at the route-selection stage.
+- If batch U2 ASR is still incomplete after 120 seconds, follow `references/service-guides/asr-u2-u3-fallback.md` and use U3 fallback only for the unsuccessful subset.
 
-## 当前可运行实现
+## Current Runnable Implementation
 
 - `skills/creator-analysis/scripts/author_home/`
 - `skills/creator-analysis/scripts/core/`

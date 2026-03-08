@@ -1,57 +1,71 @@
 ---
 name: creator-analysis
-description: 用于跨平台创作者、博主、达人、UP 主、账号主页与作品集合分析。当用户提到“账号分析”“创作者分析”“博主分析”“主页分析”“账号对标”“账号拆解”“分析某个账号/博主/达人/UP 主”“作者卡”“主页作品汇总”或要求输出账号主页的结构化数据、全量作品事实卡、抽样解释、聚合结论时触发；适用于抖音、小红书及其他平台的账号主页或作品集合，不用于单个作品分析。
+description: Use this skill for creator, account profile, and content-collection retrieval, benchmarking, breakdown, and analysis. Trigger when the user asks to analyze creator / analyze account / profile analysis / creator benchmark / creator breakdown, or 创作者分析 / 账号分析 / 主页分析 / 博主分析 / 博主对标 / 账号拆解 / 作者卡 / 主页作品汇总, and the target is a creator, account profile, channel, or content collection rather than one content item.
 ---
 
 # Creator Analysis
 
-## 何时使用
+## When To Use
 
-- 用户要分析一个创作者/博主/账号，而不是单个作品。
-- 需要输出作者卡、全量作品卡、抽样解释和作者级结论。
-- 需要对主页下多个视频优先走批量 ASR。
-- 平台不是抖音/小红书时，需要先把陌生平台映射到统一作品卡和作者卡字段。
+- Use this skill when the target is a creator, account, profile page, channel, or content collection rather than a single content item.
+- Use this skill when the user wants a creator card, a full set of work cards, sampled explanations, or aggregated creator-level conclusions.
+- Use this skill when multiple videos under one profile should go through batch ASR first.
+- Use this skill when the user provides a profile URL, creator handle, account identifier, channel entry, or another creator-level entry point.
 
-## 核心规则
+## What It Can Do
 
-- 全量作品保留事实卡，但不做逐条 LLM deep analysis。
-- 视频作品优先走批量 ASR，单次最多 100 条链接。
-- sampled works 的解释字段只能来自一次批量 LLM 分析。
-- `author_analysis_v2` 是正式的作者级主分析对象。
+- Fetch and normalize creator-side fact fields.
+- Fetch and normalize the full content collection under a profile.
+- Produce work fact cards for the retrieved items.
+- Run batch ASR for video items when needed.
+- Complete bucketing, sampling, sampled explanations, and creator-level analysis.
+- Return creator cards, work cards, and aggregated conclusions.
 
-## 工作流程
+## Core Rules
 
-1. 先读 `references/api-capability-index.md`，锁定当前平台 tag；再按需读 `references/api-tags/*.md`，确认主页、作者、作品列表、评论和媒体相关 route、认证方式与关键字段；如果需要精确字段说明、默认值、示例或完整响应结构，再读 `references/api-contracts/*.md`。
-2. 读取 `references/contracts/creator-card-fields.md`，获取作者卡必保字段。
-3. 读取 `references/contracts/work-card-fields.md`，为全量作品落事实卡。
-4. 根据平台读取对应 guide：
-   - 抖音：`references/platform-guides/douyin.md`
-   - 小红书：`references/platform-guides/xiaohongshu.md`
-   - 其他平台：`references/platform-guides/generic.md`
-5. 视频作品先读 `references/service-guides/asr-u2-u3-fallback.md`，再按 `references/asr-orchestration.md` 进行批量 ASR 和 fallback。
-6. 读取 `references/workflow.md`，完成分桶、抽样、sampled explanations、`author_analysis_v2`。
-7. 输出作者卡、作品卡和聚合结论。
+- Keep the task scoped to a creator, account profile, or content collection.
+- Prefer the platform guide first. Only go back to API discovery references when the guide is insufficient.
+- Keep fact cards for all retrieved works, but do not run per-work deep LLM analysis.
+- Prefer batch ASR for video items, with up to 100 links per batch.
+- Let sampled-work explanation fields come from one batch LLM step only.
+- Treat `author_analysis_v2` as the formal creator-level analysis object.
+- If `analysis_eligibility=incomplete`, keep the fact card but exclude the item from sampling, sampled explanations, and creator-level analysis.
 
-## 不要做
+## Do Not
 
-- 不要把 sampled explanations 原样铺到每个作品卡正文。
-- 不要把平台原始过程字段直接暴露到最终卡片正文。
-- 不要在 creator 路径里引入逐条作品 LLM 解释。
+- Do not paste sampled explanations directly into every work-card body.
+- Do not expose platform process fields directly in the final card body.
+- Do not introduce per-work LLM explanations inside the creator path.
+- Do not collapse a creator task into single-item analysis when the user clearly wants creator-level output.
+
+## Workflow
+
+1. Identify the platform and confirm that the target is a creator, account profile, channel, or content collection.
+2. Read `references/contracts/creator-card-fields.md` to confirm required creator-card fields.
+3. Read `references/contracts/work-card-fields.md` to confirm required work-card fields for the collected items.
+4. Read the platform guide first:
+   - Douyin: `references/platform-guides/douyin.md`
+   - Xiaohongshu: `references/platform-guides/xiaohongshu.md`
+   - Other platforms: `references/platform-guides/generic.md`
+5. If video items are involved, read `references/service-guides/asr-u2-u3-fallback.md` and then `references/asr-orchestration.md` to run batch ASR and fallback.
+6. Read `references/api-capability-index.md`, `references/api-tags/`, and `references/api-contracts/` only when the platform guide does not provide enough route or field detail.
+7. Read `references/workflow.md` to complete bucketing, sampling, sampled explanations, and `author_analysis_v2`.
+8. Return the creator card, work cards, and aggregated conclusions.
 
 ## References
 
-- API 能力索引：`references/api-capability-index.md`
-- 按 tag 路由详情：`references/api-tags/`
-- 按 tag 完整契约：`references/api-contracts/`
-- U2/U3 ASR fallback：`references/service-guides/asr-u2-u3-fallback.md`
-- 作者卡字段：`references/contracts/creator-card-fields.md`
-- 作品卡字段：`references/contracts/work-card-fields.md`
-- ASR 编排：`references/asr-orchestration.md`
-- Creator 工作流：`references/workflow.md`
-- 作者级 prompt：`references/prompt-contracts/author-analysis-v2.md`
-- Sampled explanations prompt：`references/prompt-contracts/sampled-work-batch-explanations.md`
-- 作者级 schema：`references/schemas/author-analysis-v2.schema.json`
-- Sampled explanations schema：`references/schemas/sampled-work-batch-explanations.schema.json`
-- 其他平台指引：`references/platform-guides/generic.md`
-- 抖音：`references/platform-guides/douyin.md`
-- 小红书：`references/platform-guides/xiaohongshu.md`
+- API capability index: `references/api-capability-index.md`
+- Tag-level route summaries: `references/api-tags/`
+- Tag-level full contracts: `references/api-contracts/`
+- U2/U3 ASR fallback: `references/service-guides/asr-u2-u3-fallback.md`
+- Creator-card fields: `references/contracts/creator-card-fields.md`
+- Work-card fields: `references/contracts/work-card-fields.md`
+- ASR orchestration: `references/asr-orchestration.md`
+- Creator workflow: `references/workflow.md`
+- Author-analysis prompt contract: `references/prompt-contracts/author-analysis-v2.md`
+- Sampled-explanations prompt contract: `references/prompt-contracts/sampled-work-batch-explanations.md`
+- Author-analysis schema: `references/schemas/author-analysis-v2.schema.json`
+- Sampled-explanations schema: `references/schemas/sampled-work-batch-explanations.schema.json`
+- Generic platform guide: `references/platform-guides/generic.md`
+- Douyin guide: `references/platform-guides/douyin.md`
+- Xiaohongshu guide: `references/platform-guides/xiaohongshu.md`

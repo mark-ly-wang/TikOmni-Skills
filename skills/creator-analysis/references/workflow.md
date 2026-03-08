@@ -1,18 +1,18 @@
-# Creator 工作流
+# Creator Workflow
 
-## 主流程
+## Main Flow
 
-1. 获取作者事实字段。
-2. 获取作品集合并为每个作品落事实卡。
-3. 对视频作品执行批量 ASR。
-4. 将 `analysis_eligibility=incomplete` 的作品排除出后续分析。
-5. 做全量聚合、分桶与抽样。
-6. 对 sampled works 执行一次批量 explanations。
-7. 生成 `author_analysis_v2`。
-8. 输出作者卡、作品卡和聚合结论。
+1. Collect creator fact fields.
+2. Collect the content set and write a fact card for each work.
+3. Run batch ASR for video items.
+4. Exclude works with `analysis_eligibility=incomplete` from downstream analysis.
+5. Run full aggregation, bucketing, and sampling.
+6. Run one batch explanation step for sampled works.
+7. Generate `author_analysis_v2`.
+8. Return the creator card, work cards, and aggregated conclusions.
 
-## 必守规则
+## Required Rules
 
-- 不做逐条作品 LLM deep analysis。
-- `sampled_work_explanations` 只来自一次批量阶段。
-- `author_analysis_v2` 是正式作者级主输出。
+- Do not run per-work LLM deep analysis.
+- `sampled_work_explanations` must come from one batch stage only.
+- `author_analysis_v2` is the formal creator-level primary output.

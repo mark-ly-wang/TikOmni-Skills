@@ -1,6 +1,6 @@
-# 统一作品卡字段字典
+# Work Card Fields
 
-## 最终作品卡展示字段
+## Final Display Fields
 
 - `platform`
 - `platform_work_id`
@@ -20,22 +20,22 @@
 - `share_url`
 - `primary_text`
 
-## 视频作品额外展示字段
+## Video-Only Additional Fields
 
 - `asr_raw`
 - `video_download_url`
 
-## 关键语义
+## Key Semantics
 
-- `caption_raw` 是作者自己写的描述/文案/正文，不是字幕，不是 ASR 原文。
-- `primary_text` 是主展示文本与主分析文本：
-  - 视频：`primary_text = asr_clean`
-  - 文本：`primary_text = caption_raw`
-- `video_download_url` 对视频作品是必保字段，默认即无水印下载链接。
-- `subtitle_raw` 只是采集层来源字段，不进入最终作品卡正文。
+- `caption_raw` is the author-written description, caption, or body text. It is not subtitles and it is not raw ASR.
+- `primary_text` is the main display text and the main analysis text:
+  - video: `primary_text = asr_clean`
+  - text: `primary_text = caption_raw`
+- `video_download_url` is a required field for video items and should default to the no-watermark download URL when available.
+- `subtitle_raw` is a collection-layer source field and should not appear in the final work-card body.
 
-## 缺失值规则
+## Missing-Value Rules
 
-- 缺失的数值字段在展示层统一显示 `N/A`。
-- 平台明确返回 `0` 时保留 `0`。
-- `published_date` 统一按展示时区生成，默认 `Asia/Shanghai`。
+- Missing numeric fields should be rendered as `N/A` in the display layer.
+- Preserve `0` when the platform explicitly returns `0`.
+- Generate `published_date` in the display timezone, with `Asia/Shanghai` as the default.

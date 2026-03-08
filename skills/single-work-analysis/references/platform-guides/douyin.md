@@ -1,46 +1,47 @@
-# 抖音单作品指引
+# Douyin Single Content Guide
 
-## 先读什么
+## Read This First
 
-- 先读 `references/api-capability-index.md`，再读 `references/api-tags/douyin-app-v3-api.md` 和 `references/api-tags/douyin-web-api.md`。
-- 当前仓库的已验证单作品路由链只覆盖“分享链接 -> 单视频详情 -> 必要时 ASR”。
+- Use this guide first for Douyin single-item tasks.
+- The validated chain in this repository currently covers share URL -> single-video detail -> ASR when needed.
 
-## 优先资源
+## Preferred Resources
 
-- 标题：`title`
-- 文案：`desc`
-- 作品 ID：`aweme_id`
-- 作者 ID：作者稳定 ID
-- 作者 handle：`short_id` / `unique_id`
-- 视频下载链接：优先无水印下载链接
+- title: `title`
+- caption: `desc`
+- work ID: `aweme_id`
+- author ID: stable author identifier
+- author handle: `short_id` / `unique_id`
+- video download URL: prefer the no-watermark download URL
 
-## 当前优先路由链
+## Preferred Route Chain
 
-1. 主路由：`GET /api/u1/v1/douyin/app/v3/fetch_one_video_by_share_url`
-   - 必填入参：`share_url`
-   - 用途：拿单作品详情、作者基础信息、互动指标、媒体资源。
-2. Fallback：`GET /api/u1/v1/douyin/web/fetch_one_video_by_share_url`
-   - 必填入参：`share_url`
-   - 用途：APP 路由失败或字段不足时兜底。
-3. 视频转写：`POST /api/u2/v1/services/audio/asr/transcription`
-   - 请求体关键字段：`input.file_urls[]`
-   - 轮询：`POST /api/u2/v1/tasks/{task_id}`
-   - 用途：平台未直接返回可用字幕时生成 `asr_raw`。
+1. Primary route: `GET /api/u1/v1/douyin/app/v3/fetch_one_video_by_share_url`
+   - Required input: `share_url`
+   - Purpose: fetch single-item detail, basic author fields, engagement metrics, and media resources.
+2. Fallback route: `GET /api/u1/v1/douyin/web/fetch_one_video_by_share_url`
+   - Required input: `share_url`
+   - Purpose: fallback when the app route fails or returns insufficient fields.
+3. Video transcription:
+   - `POST /api/u2/v1/services/audio/asr/transcription`
+   - polling: `POST /api/u2/v1/tasks/{task_id}`
+   - key request-body field: `input.file_urls[]`
+   - Purpose: produce `asr_raw` when the platform does not return usable subtitles.
 
-## 需要落到的统一字段
+## Unified Fields To Fill
 
-- 必保：`platform`、`platform_work_id`、`platform_author_id`、`author_handle`、`title`、`caption_raw`、`work_modality`
-- 指标：`digg_count`、`comment_count`、`collect_count`、`share_count`、`play_count`
-- 链路：`source_url`、`share_url`、`cover_image`
-- 视频额外：`video_download_url`、`asr_raw`
+- required fields: `platform`, `platform_work_id`, `platform_author_id`, `author_handle`, `title`, `caption_raw`, `work_modality`
+- engagement metrics: `digg_count`, `comment_count`, `collect_count`, `share_count`, `play_count`
+- source links: `source_url`, `share_url`, `cover_image`
+- video-only fields: `video_download_url`, `asr_raw`
 
-## 选路规则
+## Route Rules
 
-- 用户只给分享链接时，直接走上面的主路由链，不要先自行搜索其他 detail route。
-- 视频作品优先吃平台原始字幕；只有拿不到可用 `subtitle_raw / asr_raw` 时才调用 U2 ASR。
-- 如果 U2 超过 120 秒（2 分钟）仍无结果，按 `references/service-guides/asr-u2-u3-fallback.md` 走 U3 fallback。
-- 如果目标只是评论、搜索、榜单，不属于本 guide 的单作品主链，回到 `references/api-capability-index.md` 锁定 tag，再读对应 `references/api-tags/*.md` 重新选 route。
+- If the user provides only a share URL, use the primary route chain directly instead of searching for other detail routes first.
+- Prefer platform-native subtitles for video items. Call U2 ASR only when usable `subtitle_raw` or `asr_raw` is missing.
+- If U2 still has no result after 120 seconds, follow `references/service-guides/asr-u2-u3-fallback.md` and use U3 fallback.
+- If the target is comments, search, rankings, or another non-single-item task, leave this guide and go back to `references/api-capability-index.md` for route discovery.
 
-## 当前可运行实现
+## Current Runnable Implementation
 
 - `skills/single-work-analysis/scripts/platform/douyin/`

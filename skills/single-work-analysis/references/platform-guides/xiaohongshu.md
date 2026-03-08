@@ -1,54 +1,54 @@
-# 小红书单作品指引
+# Xiaohongshu Single Content Guide
 
-## 先读什么
+## Read This First
 
-- 先读 `references/api-capability-index.md`，再读 `references/api-tags/xiaohongshu-app-v2-api.md`、`references/api-tags/xiaohongshu-app-api.md`、`references/api-tags/xiaohongshu-web-v2-api.md`、`references/api-tags/xiaohongshu-web-api.md`。
-- 当前仓库的已验证路由链是 `APP_V2 -> APP_V1 -> WEB_V2 -> WEB_V7`，并根据笔记类型选 detail route。
+- Use this guide first for Xiaohongshu single-item tasks.
+- The validated route chain in this repository is `APP_V2 -> APP_V1 -> WEB_V2 -> WEB_V7`, with the detail route chosen by note type.
 
-## 优先资源
+## Preferred Resources
 
-- 标题：`title`
-- 文案：`desc` / `content`
-- 作品 ID：`note_id`
-- 作者 ID：平台作者 ID
-- 作者 handle：可读账号标识
-- 视频作品优先检查平台原生字幕，再决定是否调用外部 ASR
+- title: `title`
+- caption: `desc` / `content`
+- work ID: `note_id`
+- author ID: platform author identifier
+- author handle: readable account identifier
+- for video notes, check platform-native subtitles before deciding whether ASR is needed
 
-## 当前优先路由链
+## Preferred Route Chain
 
-1. 主路由：
+1. Primary routes:
    - `GET /api/u1/v1/xiaohongshu/app_v2/get_video_note_detail`
    - `GET /api/u1/v1/xiaohongshu/app_v2/get_image_note_detail`
    - `GET /api/u1/v1/xiaohongshu/app_v2/get_mixed_note_detail`
-   - 典型入参：`note_id` 或 `share_text`
-   - 用途：按内容类型拿最完整的笔记详情。
-2. Fallback 1：`GET /api/u1/v1/xiaohongshu/app/get_note_info`
-   - 典型入参：`note_id` 或 `share_text`
-3. Fallback 2：
+   - Typical input: `note_id` or `share_text`
+   - Purpose: fetch the most complete note detail based on note type.
+2. Fallback 1: `GET /api/u1/v1/xiaohongshu/app/get_note_info`
+   - Typical input: `note_id` or `share_text`
+3. Fallback 2:
    - `GET /api/u1/v1/xiaohongshu/web_v2/fetch_feed_notes_v2`
-     - 必填入参：`note_id`
+     - Required input: `note_id`
    - `GET /api/u1/v1/xiaohongshu/web_v2/fetch_feed_notes_v3`
-     - 必填入参：`short_url`
-4. Fallback 3：`GET /api/u1/v1/xiaohongshu/web/get_note_info_v7`
-   - 典型入参：`note_id` 或 `share_text`
-5. 视频转写：
+     - Required input: `short_url`
+4. Fallback 3: `GET /api/u1/v1/xiaohongshu/web/get_note_info_v7`
+   - Typical input: `note_id` or `share_text`
+5. Video transcription:
    - `POST /api/u2/v1/services/audio/asr/transcription`
    - `POST /api/u2/v1/tasks/{task_id}`
 
-## 需要落到的统一字段
+## Unified Fields To Fill
 
-- 必保：`platform`、`platform_work_id`、`platform_author_id`、`author_handle`、`title`、`caption_raw`、`work_modality`
-- 指标：`digg_count`、`comment_count`、`collect_count`、`share_count`、`play_count`
-- 链路：`source_url`、`share_url`、`cover_image`
-- 视频额外：`video_download_url`、`asr_raw`
+- required fields: `platform`, `platform_work_id`, `platform_author_id`, `author_handle`, `title`, `caption_raw`, `work_modality`
+- engagement metrics: `digg_count`, `comment_count`, `collect_count`, `share_count`, `play_count`
+- source links: `source_url`, `share_url`, `cover_image`
+- video-only fields: `video_download_url`, `asr_raw`
 
-## 选路规则
+## Route Rules
 
-- 用户只给短链时，优先尝试从 `share_text` 解析 `note_id`；解析失败再走 `short_url` 专用 WEB_V2 route。
-- 已经知道 `note_id` 时，优先走 `note_id` 直查，不要先绕分享链。
-- 视频笔记优先使用平台原生字幕；只有字幕缺失且存在 `video_download_url` 时才触发 U2 ASR。
-- 如果 U2 超过 120 秒（2 分钟）仍无结果，按 `references/service-guides/asr-u2-u3-fallback.md` 走 U3 fallback。
+- If the user provides only a short link, try parsing `note_id` from `share_text` first. Use the `short_url`-specific WEB_V2 route only when parsing fails.
+- If `note_id` is already known, query by `note_id` directly instead of going through the share-link path.
+- Prefer platform-native subtitles for video notes. Trigger U2 ASR only when subtitles are missing and a usable `video_download_url` exists.
+- If U2 still has no result after 120 seconds, follow `references/service-guides/asr-u2-u3-fallback.md` and use U3 fallback.
 
-## 当前可运行实现
+## Current Runnable Implementation
 
 - `skills/single-work-analysis/scripts/platform/xiaohongshu/`

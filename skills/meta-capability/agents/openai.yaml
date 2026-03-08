@@ -1,4 +1,4 @@
 interface:
-  display_name: "元能力"
-  short_description: "跨平台内容抓取、提取、查询、整理、分析与执行任务入口"
-  default_prompt: "使用 $meta-capability 处理一个明确的平台对象，例如单条内容、账号主页、评论区、搜索结果、榜单、直播间或商品页，并直接完成抓取、整理或分析。"
+  display_name: "Meta Capability"
+  short_description: "Cross-platform content retrieval, routing, and analysis"
+  default_prompt: "Use $meta-capability to handle a concrete platform object such as a single content item, profile, comment thread, search result, ranking, livestream, or product page."

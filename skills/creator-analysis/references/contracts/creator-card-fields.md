@@ -1,6 +1,6 @@
-# 作者卡字段字典
+# Creator Card Fields
 
-## 固定展示字段
+## Fixed Display Fields
 
 - `platform`
 - `platform_author_id`
@@ -16,8 +16,8 @@
 - `verified`
 - `snapshot_at`
 
-## 关键规则
+## Key Rules
 
-- 作者卡是作者级事实承载体。
-- 作者级分析正文来自 `author_analysis_v2`，不是来自平台原始过程字段。
-- 平台原生 ID 只留在内部引用层，不进入最终作者卡正文。
+- The creator card is the fact container for creator-level data.
+- The creator-level analysis body comes from `author_analysis_v2`, not from platform process fields.
+- Platform-native IDs stay in the internal reference layer and should not appear in the final creator-card body.

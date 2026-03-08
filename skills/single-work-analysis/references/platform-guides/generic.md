@@ -1,17 +1,17 @@
-# 其他平台单作品分析指引
+# Generic Single-Content Guide
 
-## 目标
+## Goal
 
-把陌生平台的单作品映射到统一作品卡字段字典，再完成单作品分析。
+Map an unfamiliar platform's single content item into the unified work-card field dictionary and then complete the single-item analysis.
 
-## 先读什么
+## Read Order
 
-- 先读 `references/api-capability-index.md`，找到对应平台 tag。
-- 再读对应的 `references/api-tags/<tag>.md`，确认 route、入参、请求体和成功响应摘要。
-- 优先筛 `detail / post / note / video / article / comment / download / subtitle` 相关 route。
-- 再决定是否需要额外找评论、字幕、媒体下载或作者补充接口。
+- Start with `references/api-capability-index.md` to find the relevant platform tag.
+- Read the matching `references/api-tags/<tag>.md` for route summaries, inputs, request bodies, and success-response summaries.
+- Prioritize routes related to `detail / post / note / video / article / comment / download / subtitle`.
+- Decide whether extra comment, subtitle, media-download, or author-supplement routes are needed.
 
-## 最小映射清单
+## Minimum Mapping Checklist
 
 - `work_modality`
 - `title`
@@ -21,23 +21,23 @@
 - `author_handle`
 - `source_url`
 - `share_url`
-- 视频作品的 `video_download_url`
-- 互动指标：点赞、评论、收藏、分享、播放
+- for video items: `video_download_url`
+- engagement metrics: digg, comment, collect, share, play
 
-## 选路规则
+## Route Rules
 
-- detail route 至少要能稳定拿到 `platform_work_id`、主文本、作者标识和媒体/封面其一。
-- 视频作品如果 detail route 不返回字幕，必须继续找字幕 route 或可用下载链接，再进入 ASR。
-- 同一个平台若同时有 App / Web / V2 / V3 路由，优先选择字段更全、稳定性更高的版本，并记录 fallback。
-- 不要因为某条 route 能返回一点信息，就跳过对必保字段的核验。
-- 如果 U2 超过 120 秒（2 分钟）仍无结果，按 `references/service-guides/asr-u2-u3-fallback.md` 走 U3 fallback。
+- The detail route must reliably provide `platform_work_id`, main text, author identity, and at least one of media URL or cover image.
+- If the detail route does not return subtitles for a video item, keep searching for a subtitle route or a usable download URL before entering ASR.
+- If the platform offers App / Web / V2 / V3 variants at the same time, prefer the version with fuller fields and more stable behavior, and keep a recorded fallback.
+- Do not skip required-field validation just because one route returns some usable data.
+- If U2 still has no result after 120 seconds, follow `references/service-guides/asr-u2-u3-fallback.md` and use U3 fallback.
 
-## 视频作品额外要求
+## Additional Video Requirements
 
-- 如果有平台字幕，映射到 `subtitle_raw`，再统一到 `asr_raw`。
-- 如果没有字幕，必须先确保 `video_download_url`，再调用 ASR。
+- If platform subtitles exist, map them to `subtitle_raw` first and then normalize into `asr_raw`.
+- If subtitles do not exist, ensure `video_download_url` first and then call ASR.
 
-## 当前可运行实现
+## Current Runnable Implementation
 
 - `skills/single-work-analysis/scripts/platform/`
 - `skills/single-work-analysis/scripts/core/`

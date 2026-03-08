@@ -1,0 +1,4 @@
+interface:
+  display_name: "Creator Analysis"
+  short_description: "Creator, profile, and collection benchmark analysis"
+  default_prompt: "Use $creator-analysis to analyze a creator, account profile, or content collection and return the creator card, work cards, creator benchmark breakdown, and aggregated conclusions."

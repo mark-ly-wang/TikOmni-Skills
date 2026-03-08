@@ -7,7 +7,6 @@ ROOT = Path(__file__).resolve().parents[1]
 DIST = ROOT / "dist"
 DIST.mkdir(parents=True, exist_ok=True)
 ALLOWLIST_FILE = ROOT / ".skill-package-allowlist.txt"
-OUT = DIST / "tikomni-skill.skill"
 
 if not ALLOWLIST_FILE.exists():
     print("[FAIL] .skill-package-allowlist.txt missing")
@@ -20,18 +19,27 @@ for line in ALLOWLIST_FILE.read_text(encoding="utf-8").splitlines():
         continue
     entries.append(line)
 
-with zipfile.ZipFile(OUT, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-    for rel in entries:
-        src = ROOT / rel
+if not entries:
+    print("[FAIL] allowlist is empty")
+    sys.exit(1)
+
+built = []
+for rel in entries:
+    src = ROOT / rel
+    if not src.exists():
+        print(f"[FAIL] allowlist path missing: {rel}")
+        sys.exit(1)
+
+    skill_name = src.name if src.is_dir() else src.stem
+    out = DIST / f"{skill_name}.skill"
+    with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as zf:
         if src.is_dir():
             for f in sorted(src.rglob("*")):
                 if f.is_file():
                     arc = str(f.relative_to(ROOT))
                     zf.write(f, arcname=arc)
-        elif src.is_file():
-            zf.write(src, arcname=rel)
         else:
-            print(f"[FAIL] allowlist path missing: {rel}")
-            sys.exit(1)
+            zf.write(src, arcname=rel)
+    built.append(out.name)
 
-print(f"[OK] built {OUT}")
+print(f"[OK] built {len(built)} skill package(s): {', '.join(built)}")

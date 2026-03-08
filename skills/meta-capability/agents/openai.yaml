@@ -1,0 +1,4 @@
+interface:
+  display_name: "Meta Capability"
+  short_description: "Cross-platform content retrieval, routing, and analysis"
+  default_prompt: "Use $meta-capability to handle a concrete platform object such as a single content item, profile, comment thread, search result, ranking, livestream, or product page."

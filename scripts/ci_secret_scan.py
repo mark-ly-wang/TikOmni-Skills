@@ -4,7 +4,7 @@ import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILL = ROOT / "skills" / "tikomni-skill"
+SKILLS_DIR = ROOT / "skills"
 
 BLOCKED_FILE_PATTERNS = [
     re.compile(r"(^|/)\.env(\..+)?$"),
@@ -14,10 +14,6 @@ BLOCKED_FILE_PATTERNS = [
     re.compile(r"(^|/).*\.p12$"),
     re.compile(r"(^|/).*\.local$"),
 ]
-
-ALLOW_EXACT = {
-    "skills/tikomni-skill/env.example",
-}
 
 SECRET_PATTERNS = [
     re.compile(r"ghp_[A-Za-z0-9]{20,}"),
@@ -37,36 +33,38 @@ TIKOMNI_KEY_PLACEHOLDERS = {
 
 violations = []
 
-for p in SKILL.rglob("*"):
-    if not p.is_file():
-        continue
-    rel = str(p.relative_to(ROOT)).replace('\\', '/')
+skill_dirs = sorted(p for p in SKILLS_DIR.iterdir() if (p / "SKILL.md").is_file())
+if not skill_dirs:
+    print("[FAIL] no skill directories found under skills/")
+    sys.exit(1)
 
-    if rel in ALLOW_EXACT:
-        # content scan is still applied below
-        pass
-    else:
+for skill_dir in skill_dirs:
+    for p in skill_dir.rglob("*"):
+        if not p.is_file():
+            continue
+        rel = str(p.relative_to(ROOT)).replace('\\', '/')
+
         for pat in BLOCKED_FILE_PATTERNS:
             if pat.search(rel):
                 violations.append(f"blocked file present: {rel}")
                 break
 
-    try:
-        content = p.read_text(encoding="utf-8", errors="ignore")
-    except Exception:
-        content = ""
+        try:
+            content = p.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            content = ""
 
-    for sp in SECRET_PATTERNS:
-        if sp.search(content):
-            violations.append(f"secret-like pattern found in {rel}")
-            break
+        for sp in SECRET_PATTERNS:
+            if sp.search(content):
+                violations.append(f"secret-like pattern found in {rel}")
+                break
 
-    for m in TIKOMNI_KEY_LINE.finditer(content):
-        value = m.group(1).strip().strip('"').strip("'")
-        lower = value.lower()
-        if value and lower not in TIKOMNI_KEY_PLACEHOLDERS and "your" not in lower and "replace" not in lower:
-            violations.append(f"real-looking TIKOMNI_API_KEY found in {rel}")
-            break
+        for m in TIKOMNI_KEY_LINE.finditer(content):
+            value = m.group(1).strip().strip('"').strip("'")
+            lower = value.lower()
+            if value and lower not in TIKOMNI_KEY_PLACEHOLDERS and "your" not in lower and "replace" not in lower:
+                violations.append(f"real-looking TIKOMNI_API_KEY found in {rel}")
+                break
 
 if violations:
     print("[FAIL] secret scan failed:")

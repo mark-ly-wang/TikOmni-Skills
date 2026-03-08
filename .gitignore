@@ -8,9 +8,15 @@
 
 # build artifacts
 dist/
+node_modules/
+*.tgz
+.npm/
 
 # local reports (workspace-only, do not publish)
 reports/
+.private/
+RELEASING.md
+RELEASING.zh-CN.md
 
 # python cache artifacts
 __pycache__/

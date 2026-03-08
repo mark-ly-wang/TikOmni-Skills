@@ -1,0 +1,4 @@
+interface:
+  display_name: "Single Work Analysis"
+  short_description: "Single-item extraction, transcription, and benchmark analysis"
+  default_prompt: "Use $single-work-analysis to handle one concrete content item and return the work card, transcript or subtitles, and single-item analysis, benchmark, or breakdown."

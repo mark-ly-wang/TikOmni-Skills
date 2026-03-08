@@ -1,0 +1,325 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tikomni/author-analysis-input-v1.schema.json",
+  "title": "TikOmni Author Analysis Input V1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "author_profile",
+    "sampled_works",
+    "aggregate_stats",
+    "platform_context",
+    "analysis_metadata"
+  ],
+  "$defs": {
+    "distributionItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "count", "ratio"],
+      "properties": {
+        "value": { "type": "string", "minLength": 1 },
+        "count": { "type": "integer", "minimum": 0 },
+        "ratio": { "type": "number", "minimum": 0 }
+      }
+    },
+    "distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["items"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "counting_mode": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/distributionItem" }
+        }
+      }
+    },
+    "engagementPattern": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "count",
+        "avg_digg_count",
+        "avg_comment_count",
+        "avg_collect_count",
+        "avg_share_count",
+        "avg_play_count"
+      ],
+      "properties": {
+        "count": { "type": "integer", "minimum": 0 },
+        "avg_digg_count": { "type": "number", "minimum": 0 },
+        "avg_comment_count": { "type": "number", "minimum": 0 },
+        "avg_collect_count": { "type": "number", "minimum": 0 },
+        "avg_share_count": { "type": "number", "minimum": 0 },
+        "avg_play_count": { "type": "number", "minimum": 0 }
+      }
+    },
+    "bucketDelta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title_keywords",
+        "caption_keywords",
+        "primary_text_keywords",
+        "hook_types",
+        "structure_types",
+        "cta_types",
+        "content_forms",
+        "engagement_pattern"
+      ],
+      "properties": {
+        "title_keywords": { "type": "array", "items": { "$ref": "#/$defs/distributionItem" } },
+        "caption_keywords": { "type": "array", "items": { "$ref": "#/$defs/distributionItem" } },
+        "primary_text_keywords": { "type": "array", "items": { "$ref": "#/$defs/distributionItem" } },
+        "hook_types": { "type": "array", "items": { "$ref": "#/$defs/distributionItem" } },
+        "structure_types": { "type": "array", "items": { "$ref": "#/$defs/distributionItem" } },
+        "cta_types": { "type": "array", "items": { "$ref": "#/$defs/distributionItem" } },
+        "content_forms": { "type": "array", "items": { "$ref": "#/$defs/distributionItem" } },
+        "engagement_pattern": { "$ref": "#/$defs/engagementPattern" }
+      }
+    },
+    "work": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "platform_work_id",
+        "title",
+        "caption_raw",
+        "work_modality",
+        "primary_text",
+        "primary_text_source",
+        "published_date",
+        "publish_days_ago",
+        "duration_ms",
+        "digg_count",
+        "comment_count",
+        "collect_count",
+        "share_count",
+        "play_count",
+        "content_form",
+        "tags",
+        "author_id",
+        "author_name",
+        "performance_score",
+        "performance_score_norm",
+        "bucket",
+        "hook_type",
+        "structure_type",
+        "cta_type",
+        "style_markers",
+        "analysis_eligibility",
+        "analysis_exclusion_reason"
+      ],
+      "properties": {
+        "platform_work_id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "caption_raw": { "type": "string" },
+        "work_modality": { "type": "string", "enum": ["video", "text"] },
+        "primary_text": { "type": "string" },
+        "primary_text_source": { "type": "string", "enum": ["asr_clean", "caption_raw"] },
+        "published_date": { "type": "string" },
+        "publish_time": { "type": ["string", "integer", "number", "null"] },
+        "publish_days_ago": { "type": ["integer", "null"], "minimum": 0 },
+        "duration_ms": { "type": "integer", "minimum": 0 },
+        "digg_count": { "type": "integer", "minimum": 0 },
+        "comment_count": { "type": "integer", "minimum": 0 },
+        "collect_count": { "type": "integer", "minimum": 0 },
+        "share_count": { "type": "integer", "minimum": 0 },
+        "play_count": { "type": "integer", "minimum": 0 },
+        "content_form": {
+          "type": "string",
+          "enum": ["talking_head", "voiceover", "screen_recording", "slideshow", "mixed_edit", "live_clip", "interview_clip"]
+        },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "author_id": { "type": "string", "minLength": 1 },
+        "author_name": { "type": "string", "minLength": 1 },
+        "performance_score": { "type": "number", "minimum": 0 },
+        "performance_score_norm": { "type": "number", "minimum": 0 },
+        "bucket": { "type": "string", "enum": ["Top", "Strong", "Mid", "Bottom"] },
+        "hook_type": {
+          "type": "string",
+          "enum": ["result_hook", "curiosity_hook", "shortcut_hook", "pain_point_hook", "comparison_hook", "proof_hook"]
+        },
+        "structure_type": {
+          "type": "string",
+          "enum": ["hook_demo_result", "benchmark_then_clone", "problem_solution_cta", "proof_then_pitch"]
+        },
+        "cta_type": {
+          "type": "string",
+          "enum": ["comment_cta", "private_message_cta", "follow_cta", "collect_cta", "share_cta", "lead_magnet_cta", "weak_cta", "no_cta"]
+        },
+        "style_markers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["rhetorical_question", "imperative_tone", "strong_assertion", "self_mockery", "quote_like_phrase", "emotional_wording"]
+          }
+        },
+        "analysis_eligibility": { "type": "string", "enum": ["eligible", "incomplete"] },
+        "analysis_exclusion_reason": { "type": "string" },
+        "analysis_artifact_status": { "type": ["string", "null"] },
+        "all_time_score_rank": { "type": "integer", "minimum": 1 },
+        "recent_30d_score_rank": { "type": ["integer", "null"], "minimum": 1 }
+      }
+    }
+  },
+  "properties": {
+    "author_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "platform",
+        "platform_author_id",
+        "nickname",
+        "author_handle",
+        "signature",
+        "fans_count",
+        "liked_count",
+        "collected_count",
+        "works_count",
+        "verified",
+        "ip_location"
+      ],
+      "properties": {
+        "platform": { "type": "string", "minLength": 1 },
+        "platform_author_id": { "type": "string", "minLength": 1 },
+        "nickname": { "type": "string", "minLength": 1 },
+        "author_handle": { "type": "string" },
+        "signature": { "type": "string" },
+        "fans_count": { "type": "integer", "minimum": 0 },
+        "liked_count": { "type": "integer", "minimum": 0 },
+        "collected_count": { "type": "integer", "minimum": 0 },
+        "works_count": { "type": "integer", "minimum": 0 },
+        "verified": { "type": "boolean" },
+        "ip_location": { "type": "string" }
+      }
+    },
+    "sampled_works": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/work" }
+    },
+    "aggregate_stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total_works",
+        "excluded_works_count",
+        "sampled_works_count",
+        "sampling_ratio",
+        "sampling_mode",
+        "analysis_window",
+        "global_title_keyword_distribution",
+        "global_caption_keyword_distribution",
+        "global_primary_text_keyword_distribution",
+        "global_hook_type_distribution",
+        "global_structure_type_distribution",
+        "global_cta_type_distribution",
+        "global_content_form_distribution",
+        "global_work_modality_distribution",
+        "global_performance_distribution",
+        "global_publish_time_distribution",
+        "global_duration_distribution",
+        "global_bucket_distribution",
+        "global_top_vs_mid_vs_bottom_deltas"
+      ],
+      "properties": {
+        "total_works": { "type": "integer", "minimum": 0 },
+        "excluded_works_count": { "type": "integer", "minimum": 0 },
+        "sampled_works_count": { "type": "integer", "minimum": 0 },
+        "sampling_ratio": { "type": "number", "minimum": 0 },
+        "sampling_mode": { "type": "string", "enum": ["standard"] },
+        "analysis_window": { "type": "string" },
+        "global_title_keyword_distribution": { "$ref": "#/$defs/distribution" },
+        "global_caption_keyword_distribution": { "$ref": "#/$defs/distribution" },
+        "global_primary_text_keyword_distribution": { "$ref": "#/$defs/distribution" },
+        "global_hook_type_distribution": { "$ref": "#/$defs/distribution" },
+        "global_structure_type_distribution": { "$ref": "#/$defs/distribution" },
+        "global_cta_type_distribution": { "$ref": "#/$defs/distribution" },
+        "global_content_form_distribution": { "$ref": "#/$defs/distribution" },
+        "global_work_modality_distribution": { "$ref": "#/$defs/distribution" },
+        "global_performance_distribution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["available"],
+          "properties": {
+            "available": { "type": "boolean" },
+            "reason": { "type": "string" },
+            "max": { "type": "number" },
+            "min": { "type": "number" },
+            "p20": { "type": "number" },
+            "p50": { "type": "number" },
+            "p85": { "type": "number" }
+          }
+        },
+        "global_publish_time_distribution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["weekday", "hour", "unavailable_count"],
+          "properties": {
+            "weekday": { "type": "array", "items": { "$ref": "#/$defs/distributionItem" } },
+            "hour": { "type": "array", "items": { "$ref": "#/$defs/distributionItem" } },
+            "unavailable_count": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "global_duration_distribution": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["available"],
+          "properties": {
+            "available": { "type": "boolean" },
+            "reason": { "type": "string" },
+            "items": { "type": "array", "items": { "$ref": "#/$defs/distributionItem" } }
+          }
+        },
+        "global_bucket_distribution": { "$ref": "#/$defs/distribution" },
+        "global_top_vs_mid_vs_bottom_deltas": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["top", "mid", "bottom"],
+          "properties": {
+            "top": { "$ref": "#/$defs/bucketDelta" },
+            "mid": { "$ref": "#/$defs/bucketDelta" },
+            "bottom": { "$ref": "#/$defs/bucketDelta" }
+          }
+        }
+      }
+    },
+    "platform_context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["platform", "content_kind"],
+      "properties": {
+        "platform": { "type": "string", "minLength": 1 },
+        "content_kind": { "type": "string", "minLength": 1 },
+        "primary_work_modality": { "type": ["string", "null"], "enum": ["video", "text", null] }
+      }
+    },
+    "analysis_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "input_object_name",
+        "prompt_contract_path",
+        "input_schema_path",
+        "output_schema_path",
+        "analysis_mode",
+        "total_works",
+        "eligible_works_count",
+        "excluded_works_count",
+        "sampled_works_count"
+      ],
+      "properties": {
+        "input_object_name": { "type": "string", "minLength": 1 },
+        "prompt_contract_path": { "type": "string", "minLength": 1 },
+        "input_schema_path": { "type": "string", "minLength": 1 },
+        "output_schema_path": { "type": "string", "minLength": 1 },
+        "analysis_mode": { "type": "string", "minLength": 1 },
+        "total_works": { "type": "integer", "minimum": 0 },
+        "eligible_works_count": { "type": "integer", "minimum": 0 },
+        "excluded_works_count": { "type": "integer", "minimum": 0 },
+        "sampled_works_count": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

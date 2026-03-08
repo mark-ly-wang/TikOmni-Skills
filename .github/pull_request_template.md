@@ -12,6 +12,7 @@
 - .skill 包变更：
 
 ## 自检清单
+- [ ] 已跑 `npm test`
 - [ ] 已跑 `python3 scripts/ci_skill_validate.py`
 - [ ] 已跑 `python3 scripts/ci_secret_scan.py`
 - [ ] 已跑 `python3 scripts/ci_package_manifest.py`

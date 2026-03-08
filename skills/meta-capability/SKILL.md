@@ -29,16 +29,18 @@ description: Use this skill for TikOmni platform capability discovery, full API 
 ## 工作流程
 
 1. 先读 `references/api-capability-index.md`，确认平台标签、能力类型和对应 tag 文件。
-2. 再按需读 `references/api-tags/*.md`，确认 route、入参、请求体和成功响应摘要。
-3. 再读 `references/implemented-route-map.md`，优先走当前仓库已经验证过的路由链。
-4. 读取 `references/execution-guidelines.md`，确认对象类型、目标字段、输出形式和降级策略。
-5. 如果任务涉及 ASR 超时、公网 URL 不可读或 U3 媒体中转，读取 `references/service-guides/asr-u2-u3-fallback.md`。
-6. 如果任务是单作品深度分析或创作者聚合分析，再转交给专用 skill，但保留已经确认的 route 和字段事实。
+2. 再按需读 `references/api-tags/*.md`，确认 route 摘要、认证方式、关键入参和关键成功响应。
+3. 如果需要精确字段说明、默认值、示例或完整响应结构，再读 `references/api-contracts/*.md`。
+4. 再读 `references/implemented-route-map.md`，优先走当前仓库已经验证过的路由链。
+5. 读取 `references/execution-guidelines.md`，确认对象类型、目标字段、输出形式和降级策略。
+6. 如果任务涉及 ASR 超时、公网 URL 不可读或 U3 媒体中转，读取 `references/service-guides/asr-u2-u3-fallback.md`。
+7. 如果任务是单作品深度分析或创作者聚合分析，再转交给专用 skill，但保留已经确认的 route 和字段事实。
 
 ## References
 
 - API 能力索引：`references/api-capability-index.md`
 - 按 tag 路由详情：`references/api-tags/`
+- 按 tag 完整契约：`references/api-contracts/`
 - 当前已验证路由链：`references/implemented-route-map.md`
 - 通用执行规则：`references/execution-guidelines.md`
 - U2/U3 ASR fallback：`references/service-guides/asr-u2-u3-fallback.md`

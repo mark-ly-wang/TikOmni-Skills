@@ -10,7 +10,7 @@
 ## 用途
 
 - 本文档只记录当前仓库已经有脚本实现并验证过的优先路由链。
-- 它不替代 `api-capability-index.md` + `api-tags/*.md`；后者负责完整目录和 route 细节，这里是“优先怎么调”。
+- 它不替代 `api-capability-index.md` + `api-tags/*.md` + `api-contracts/*.md`；前两者负责目录和路由摘要，后者负责完整契约，这里是“优先怎么调”。
 - 当用户目标已经很明确时，优先走这里列出的路由链；只有链路不满足时再回索引和对应 tag 文件找补充 route。
 
 ## 单作品
@@ -171,7 +171,7 @@ ASR 超时 fallback：
 
 ## 其他平台
 
-- 先在 `api-capability-index.md` 里找对应平台 tag，再读对应 `api-tags/*.md`。
+- 先在 `api-capability-index.md` 里找对应平台 tag，再读对应 `api-tags/*.md`；若字段定义仍不够精确，再继续读对应 `api-contracts/*.md`。
 - 单作品优先找 detail route，再补 media/subtitle/comment route。
 - 创作者主页优先找 profile route + posts route 的组合，不要只拿单段数据。
 - 只有当全量目录里找不到可满足必保字段的 route 时，才宣告当前平台或当前对象不可行。

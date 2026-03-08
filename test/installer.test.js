@@ -12,6 +12,11 @@ const {
   resolveRuntimeDestination
 } = require("../lib/installer");
 
+test("cli entrypoint is executable", () => {
+  const stat = fs.statSync(path.join(__dirname, "..", "bin", "tikomni-skills.js"));
+  assert.notEqual(stat.mode & 0o111, 0);
+});
+
 test("listAvailableSkills returns distributable skills", () => {
   const skills = listAvailableSkills().map((entry) => entry.name);
   assert.deepEqual(skills, [

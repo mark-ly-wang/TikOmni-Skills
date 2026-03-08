@@ -88,22 +88,56 @@
 
 ### 2. 安装 Skills
 
-如果 npm 包已发布，可以直接使用：
+使用 npm 直接安装。
+
+先查看当前可安装的 Skills：
 
 ```bash
 npx @tikomni/skills list
+```
+
+安装到 Codex：
+
+```bash
+# 安装全部 Skills
 npx @tikomni/skills install codex all
+
+# 只安装一个 Skill
+npx @tikomni/skills install codex single-work-analysis
+```
+
+默认目录：`$CODEX_HOME/skills`，默认值 `~/.codex/skills`
+
+安装到 Claude Code：
+
+```bash
+# 安装全部 Skills
+npx @tikomni/skills install claude-code all
+
+# 只安装创作者分析 Skill
 npx @tikomni/skills install claude-code creator-analysis
+```
+
+默认目录：`~/.claude/skills`
+
+安装到 OpenClaw：
+
+```bash
+# 安装全部 Skills
+npx @tikomni/skills install openclaw all
+
+# 安装到自定义目录
 npx @tikomni/skills install openclaw meta-capability --dir "/custom/skills"
 ```
 
-默认安装目录：
+默认目录：优先 `~/.openclaw/workspace/skills`，否则 `~/.openclaw/skills`
 
-- `codex` -> `$CODEX_HOME/skills`，默认 `~/.codex/skills`
-- `claude-code` -> `~/.claude/skills`
-- `openclaw` -> 优先 `~/.openclaw/workspace/skills`，否则 `~/.openclaw/skills`
+常用参数：
 
-如果你暂时不走 npm 分发，也可以手动把目标 Skill 目录复制到对应运行时的 `skills` 目录。
+- `--dir <path>`：显式指定目标 `skills` 目录
+- `--force`：覆盖已存在的同名 Skill 目录
+
+如果你不想使用 npm，也可以手动把目标 Skill 目录复制到对应运行时的 `skills` 目录。
 
 ### 3. 配置环境变量
 

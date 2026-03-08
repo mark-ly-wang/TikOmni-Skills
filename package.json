@@ -1,6 +1,6 @@
 {
   "name": "@tikomni/skills",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TikOmni skill installer CLI for Codex, Claude Code, and OpenClaw",
   "license": "MIT",
   "homepage": "https://github.com/mark-ly-wang/TikOmni-Skills#readme",

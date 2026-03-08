@@ -88,22 +88,56 @@ They matter, but they do not define the full capability boundary of this reposit
 
 ### 2. Install skills
 
-If the npm package has been published, you can install directly with:
+Install directly from npm.
+
+First, list the currently available skills:
 
 ```bash
 npx @tikomni/skills list
+```
+
+Install into Codex:
+
+```bash
+# Install all skills
 npx @tikomni/skills install codex all
+
+# Install one specific skill
+npx @tikomni/skills install codex single-work-analysis
+```
+
+Default target: `$CODEX_HOME/skills`, default `~/.codex/skills`
+
+Install into Claude Code:
+
+```bash
+# Install all skills
+npx @tikomni/skills install claude-code all
+
+# Install only the creator-analysis skill
 npx @tikomni/skills install claude-code creator-analysis
+```
+
+Default target: `~/.claude/skills`
+
+Install into OpenClaw:
+
+```bash
+# Install all skills
+npx @tikomni/skills install openclaw all
+
+# Install into a custom directory
 npx @tikomni/skills install openclaw meta-capability --dir "/custom/skills"
 ```
 
-Default install targets:
+Default target: prefers `~/.openclaw/workspace/skills`, otherwise `~/.openclaw/skills`
 
-- `codex` -> `$CODEX_HOME/skills`, default `~/.codex/skills`
-- `claude-code` -> `~/.claude/skills`
-- `openclaw` -> prefers `~/.openclaw/workspace/skills`, otherwise `~/.openclaw/skills`
+Common flags:
 
-If you are not distributing through npm yet, you can also copy the target skill folder into the runtime's `skills` directory manually.
+- `--dir <path>`: override the target `skills` directory
+- `--force`: overwrite an existing installed skill directory
+
+If you do not want to use npm, you can also copy the target skill folder into the runtime's `skills` directory manually.
 
 ### 3. Configure environment variables
 

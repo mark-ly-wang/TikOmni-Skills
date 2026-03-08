@@ -1,26 +1,26 @@
-# TikTok-Web-API 完整契约
+# TikTok-Web-API Full Contract
 
-- 回到索引：[`api-capability-index.md`](../api-capability-index.md)
-- 回到路由详情：[`api-tags/tiktok-web-api.md`](../api-tags/tiktok-web-api.md)
-- 当前契约文件：`api-contracts/tiktok-web-api.md`
-- 数据源：`https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
-- 获取时间：`2026-03-08T04:31:58+00:00`
-- 路由数：`58`
-- 默认认证：请求头 `Authorization` Bearer
-- 使用方式：当需要精确的认证说明、参数描述、默认值、示例或成功响应字段时，再读本文件。
-- 标签说明：**(TikTok-Web-API数据接口/TikTok-Web-API data endpoints)**
+- Back to index: [`api-capability-index.md`](../api-capability-index.md)
+- Back to route summary: [`api-tags/tiktok-web-api.md`](../api-tags/tiktok-web-api.md)
+- Current contract file: `api-contracts/tiktok-web-api.md`
+- Source: `https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
+- Fetched at: `2026-03-08T06:54:04+00:00`
+- Route count: `58`
+- Default auth: Header `Authorization` Bearer
+- Read this file only when you need precise auth notes, parameter descriptions, defaults, examples, or success-response fields.
+- Tag description: **(TikTok-Web-API数据接口/TikTok-Web-API data endpoints)**
 
-## 路由契约
+## Route Contracts
 
 <a id="get-api-u1-v1-tiktok-web-decrypt-strdata"></a>
 ### `GET /api/u1/v1/tiktok/web/decrypt_strData`
 
-- 摘要：解密strData/Decrypt strData
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`decrypt_strData_api_v1_tiktok_web_decrypt_strData_get`
+- Summary: 解密strData/Decrypt strData
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `decrypt_strData_api_v1_tiktok_web_decrypt_strData_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -38,49 +38,49 @@
 > ### Return:
 > - Decrypted raw fingerprint data, including browser fingerprint info and environment info, etc.
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| encrypted_data | query | string | 是 | 加密后的strData字符串/Encrypted strData string | 无 | 3BvqYbNXLLOcZehvxZVbjpAu7vq82RoWmFSJHLFwzDwJIZevE0AeilQfP55LridxmdGGjknoksqIsLq… | 无 |
+| encrypted_data | query | string | Yes | 加密后的strData字符串/Encrypted strData string | None | 3BvqYbNXLLOcZehvxZVbjpAu7vq82RoWmFSJHLFwzDwJIZevE0AeilQfP55LridxmdGGjknoksqIsLq… | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-device-register"></a>
 ### `GET /api/u1/v1/tiktok/web/device_register`
 
-- 摘要：设备注册/Register device for TikTok Web
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`device_register_api_v1_tiktok_web_device_register_get`
+- Summary: 设备注册/Register device for TikTok Web
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `device_register_api_v1_tiktok_web_device_register_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -106,47 +106,47 @@
 > }
 > ```
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-encrypt-strdata"></a>
 ### `GET /api/u1/v1/tiktok/web/encrypt_strData`
 
-- 摘要：加密strData/Encrypt strData
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`encrypt_strData_api_v1_tiktok_web_encrypt_strData_get`
+- Summary: 加密strData/Encrypt strData
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `encrypt_strData_api_v1_tiktok_web_encrypt_strData_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -164,49 +164,49 @@
 > ### Return:
 > - Encrypted strData
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| data | query | string | 是 | 原始指纹数据字符串（JSON格式或字典字符串）/Raw fingerprint data string (JSON format or dict string) | 无 | {"behavior":{"beResize":[],"beMotion":[{"ts":1701069187299,"x":null,"y":null,"z… | 无 |
+| data | query | string | Yes | 原始指纹数据字符串（JSON格式或字典字符串）/Raw fingerprint data string (JSON format or dict string) | None | {"behavior":{"beResize":[],"beMotion":[{"ts":1701069187299,"x":null,"y":null,"z… | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-batch-check-live-alive"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_batch_check_live_alive`
 
-- 摘要：批量直播间开播状态检测/Batch live room start status check
-- 能力：直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_batch_check_live_alive_api_v1_tiktok_web_fetch_batch_check_live_alive_get`
+- Summary: 批量直播间开播状态检测/Batch live room start status check
+- Capabilities: livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_batch_check_live_alive_api_v1_tiktok_web_fetch_batch_check_live_alive_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -239,49 +239,49 @@
 > # [示例/Example]
 > room_ids = "7530611486784277278,7530633767468288782,7530636465034775310,7530604930088848142"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| room_ids | query | string | 是 | 直播间ID列表，用英文逗号分隔，最多支持50个/Live room ID list separated by commas, up to 50 IDs | 无 | 7530611486784277278,7530633767468288782,7530636465034775310,7530604930088848142 | 无 |
+| room_ids | query | string | Yes | 直播间ID列表，用英文逗号分隔，最多支持50个/Live room ID list separated by commas, up to 50 IDs | None | 7530611486784277278,7530633767468288782,7530636465034775310,7530604930088848142 | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-check-live-alive"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_check_live_alive`
 
-- 摘要：直播间开播状态检测/Live room start status check
-- 能力：直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_check_live_alive_api_v1_tiktok_web_fetch_check_live_alive_get`
+- Summary: 直播间开播状态检测/Live room start status check
+- Capabilities: livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_check_live_alive_api_v1_tiktok_web_fetch_check_live_alive_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -304,49 +304,49 @@
 > # [示例/Example]
 > room_id = "7381444193462078214"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| room_id | query | string | 是 | 直播间ID/Live room ID | 无 | 7381444193462078214 | 无 |
+| room_id | query | string | Yes | 直播间ID/Live room ID | None | 7381444193462078214 | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-explore-post"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_explore_post`
 
-- 摘要：获取探索作品数据/Get explore video data
-- 能力：作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_explore_post_api_v1_tiktok_web_fetch_explore_post_get`
+- Summary: 获取探索作品数据/Get explore video data
+- Capabilities: content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_explore_post_api_v1_tiktok_web_fetch_explore_post_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -428,50 +428,50 @@
 > categoryType = "120"
 > count = 16
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| categoryType | query | string | 否 | 作品分类/Video category | 120 | 无 | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 16 | 无 | 无 |
+| categoryType | query | string | No | 作品分类/Video category | 120 | None | None |
+| count | query | integer | No | 每页数量/Number per page | 16 | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-general-search"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_general_search`
 
-- 摘要：获取综合搜索列表/Get general search list
-- 能力：搜索
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_general_search_api_v1_tiktok_web_fetch_general_search_get`
+- Summary: 获取综合搜索列表/Get general search list
+- Capabilities: search
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_general_search_api_v1_tiktok_web_fetch_general_search_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -522,156 +522,156 @@
 > offset = 0
 > search_id = ""
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| keyword | query | string | 是 | 搜索关键词/Search keyword | 无 | TikTok | 无 |
-| offset | query | integer | 否 | 翻页游标/Page cursor | 0 | 无 | 无 |
-| search_id | query | string | 否 | 搜索id，翻页时需要提供/Search id, need to provide when paging | 无 | 无 | 无 |
-| cookie | query | string | 否 | 用户cookie(按需提供)/User cookie(if needed) | 无 | 无 | 无 |
+| keyword | query | string | Yes | 搜索关键词/Search keyword | None | TikTok | None |
+| offset | query | integer | No | 翻页游标/Page cursor | 0 | None | None |
+| search_id | query | string | No | 搜索id，翻页时需要提供/Search id, need to provide when paging | None | None | None |
+| cookie | query | string | No | 用户cookie(按需提供)/User cookie(if needed) | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="post-api-u1-v1-tiktok-web-fetch-gift-name-by-id"></a>
 ### `POST /api/u1/v1/tiktok/web/fetch_gift_name_by_id`
 
-- 摘要：根据Gift ID查询礼物名称/Get gift name by gift ID
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_gift_name_by_id_api_v1_tiktok_web_fetch_gift_name_by_id_post`
+- Summary: 根据Gift ID查询礼物名称/Get gift name by gift ID
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_gift_name_by_id_api_v1_tiktok_web_fetch_gift_name_by_id_post`
 
-#### 说明
+#### Notes
 
 > 根据TikTok的Gift ID查询对应的礼物名称 | Get gift name by TikTok gift ID
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-- required：是
+- required: Yes
 
 ##### `application/json`
 
-- Schema 摘要：`gift_id*`:string
+- Schema summary: `gift_id*`:string
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| gift_id | string | 是 | 礼物ID \| Gift ID | 无 | 10001 | 无 |
+| gift_id | string | Yes | 礼物ID \| Gift ID | None | 10001 | None |
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="post-api-u1-v1-tiktok-web-fetch-gift-names-by-ids"></a>
 ### `POST /api/u1/v1/tiktok/web/fetch_gift_names_by_ids`
 
-- 摘要：批量查询Gift ID对应的礼物名称($0.025/次,建议50个)/Batch get gift names by gift IDs ($0.025/call, suggest 50)
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_gift_names_by_ids_api_v1_tiktok_web_fetch_gift_names_by_ids_post`
+- Summary: 批量查询Gift ID对应的礼物名称($0.025/次,建议50个)/Batch get gift names by gift IDs ($0.025/call, suggest 50)
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_gift_names_by_ids_api_v1_tiktok_web_fetch_gift_names_by_ids_post`
 
-#### 说明
+#### Notes
 
 > 批量查询多个TikTok Gift ID对应的礼物名称。计费：$0.025每次调用。建议每次查询50个ID以获得最佳性价比，超过50个时自动处理前50个 | Batch get gift names by multiple TikTok gift IDs. Pricing: $0.025 per call. Recommend querying 50 IDs at once for best value, auto-process first 50 IDs if more than 50
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-- required：是
+- required: Yes
 
 ##### `application/json`
 
-- Schema 摘要：`gift_ids*`[string]
+- Schema summary: `gift_ids*`[string]
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| gift_ids | array<string> | 是 | 礼物ID列表，建议50个/次获得最佳性价比($0.025)，超过50个时自动处理前50个 \| Gift ID list, recommend 50/call for best value ($0.025), auto-process first 50 if more than 50 | 无 | ["10001", "10002", "10003"] | 无 |
+| gift_ids | array<string> | Yes | 礼物ID列表，建议50个/次获得最佳性价比($0.025)，超过50个时自动处理前50个 \| Gift ID list, recommend 50/call for best value ($0.025), auto-process first 50 if more than 50 | None | ["10001", "10002", "10003"] | None |
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="post-api-u1-v1-tiktok-web-fetch-home-feed"></a>
 ### `POST /api/u1/v1/tiktok/web/fetch_home_feed`
 
-- 摘要：首页推荐作品/Home Feed
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_home_feed_api_v1_tiktok_web_fetch_home_feed_post`
+- Summary: 首页推荐作品/Home Feed
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_home_feed_api_v1_tiktok_web_fetch_home_feed_post`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -711,56 +711,56 @@
 > count = 15
 > Cookie = "Your_Cookie"
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-- required：否
+- required: No
 
 ##### `application/json`
 
-- Schema 摘要：`count`:integer, `cookie`:string
+- Schema summary: `count`:integer, `cookie`:string
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| count | integer | 否 | 每页数量/Number per page | 15 | 无 | 无 |
-| cookie | string | 否 | 用户自己的cookie，可选参数，用于接口返回数据的个性化推荐。/ User's own cookie, optional parameter, used for personalized recommendations of interface return data. | 无 | 无 | 无 |
+| count | integer | No | 每页数量/Number per page | 15 | None | None |
+| cookie | string | No | 用户自己的cookie，可选参数，用于接口返回数据的个性化推荐。/ User's own cookie, optional parameter, used for personalized recommendations of interface return data. | None | None | None |
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-live-gift-list"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_live_gift_list`
 
-- 摘要：获取直播间礼物列表/Get live room gift list
-- 能力：直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_live_gift_list_api_v1_tiktok_web_fetch_live_gift_list_get`
+- Summary: 获取直播间礼物列表/Get live room gift list
+- Capabilities: livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_live_gift_list_api_v1_tiktok_web_fetch_live_gift_list_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -799,49 +799,49 @@
 > # [示例/Example]
 > room_id = "7381444193462078214"  # 可选/Optional
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| room_id | query | string | 否 | 直播间ID，可选参数/Live room ID, optional parameter | 无 | 7381444193462078214 | 无 |
+| room_id | query | string | No | 直播间ID，可选参数/Live room ID, optional parameter | None | 7381444193462078214 | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-live-im-fetch"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_live_im_fetch`
 
-- 摘要：TikTok直播间弹幕参数获取/tiktok live room danmaku parameters
-- 能力：直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_live_im_fetch_api_v1_tiktok_web_fetch_live_im_fetch_get`
+- Summary: TikTok直播间弹幕参数获取/tiktok live room danmaku parameters
+- Capabilities: livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_live_im_fetch_api_v1_tiktok_web_fetch_live_im_fetch_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -863,50 +863,50 @@
 > ### Return:
 > - Danmaku parameter data
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| room_id | query | string | 是 | 直播间号/Live room id | 无 | 7382517534467115826 | 无 |
-| user_unique_id | query | string | 是 | 用户唯一ID/User unique ID | 无 | 7382524529011246630 | 无 |
+| room_id | query | string | Yes | 直播间号/Live room id | None | 7382517534467115826 | None |
+| user_unique_id | query | string | Yes | 用户唯一ID/User unique ID | None | 7382524529011246630 | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-live-recommend"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_live_recommend`
 
-- 摘要：获取直播间首页推荐列表/Get live room homepage recommendation list
-- 能力：直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_live_recommend_api_v1_tiktok_web_fetch_live_recommend_get`
+- Summary: 获取直播间首页推荐列表/Get live room homepage recommendation list
+- Capabilities: livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_live_recommend_api_v1_tiktok_web_fetch_live_recommend_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -943,49 +943,49 @@
 > # [示例/Example]
 > related_live_tag = "VALORANT"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| related_live_tag | query | string | 是 | 相关直播标签/Related live tag | 无 | VALORANT | 无 |
+| related_live_tag | query | string | Yes | 相关直播标签/Related live tag | None | VALORANT | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-post-comment"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_post_comment`
 
-- 摘要：获取作品的评论列表/Get video comments
-- 能力：评论 / 作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_post_comment_api_v1_tiktok_web_fetch_post_comment_get`
+- Summary: 获取作品的评论列表/Get video comments
+- Capabilities: comments / content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_post_comment_api_v1_tiktok_web_fetch_post_comment_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1015,52 +1015,52 @@
 > count = 20
 > current_region = ""
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| aweme_id | query | string | 是 | 作品id/Video id | 无 | 7304809083817774382 | 无 |
-| cursor | query | integer | 否 | 翻页游标/Page cursor | 0 | 无 | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 20 | 无 | 无 |
-| current_region | query | string | 否 | 当前地区/Current region | 无 | 无 | 无 |
+| aweme_id | query | string | Yes | 作品id/Video id | None | 7304809083817774382 | None |
+| cursor | query | integer | No | 翻页游标/Page cursor | 0 | None | None |
+| count | query | integer | No | 每页数量/Number per page | 20 | None | None |
+| current_region | query | string | No | 当前地区/Current region | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-post-comment-reply"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_post_comment_reply`
 
-- 摘要：获取作品的评论回复列表/Get video comment replies
-- 能力：评论 / 评论回复 / 作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_post_comment_reply_api_v1_tiktok_web_fetch_post_comment_reply_get`
+- Summary: 获取作品的评论回复列表/Get video comment replies
+- Capabilities: comments / comment replies / content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_post_comment_reply_api_v1_tiktok_web_fetch_post_comment_reply_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1093,53 +1093,53 @@
 > count = 20
 > current_region = ""
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| item_id | query | string | 是 | 作品id/Video id | 无 | 7304809083817774382 | 无 |
-| comment_id | query | string | 是 | 评论id/Comment id | 无 | 7304877760886588191 | 无 |
-| cursor | query | integer | 否 | 翻页游标/Page cursor | 0 | 无 | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 20 | 无 | 无 |
-| current_region | query | string | 否 | 当前地区/Current region | 无 | 无 | 无 |
+| item_id | query | string | Yes | 作品id/Video id | None | 7304809083817774382 | None |
+| comment_id | query | string | Yes | 评论id/Comment id | None | 7304877760886588191 | None |
+| cursor | query | integer | No | 翻页游标/Page cursor | 0 | None | None |
+| count | query | integer | No | 每页数量/Number per page | 20 | None | None |
+| current_region | query | string | No | 当前地区/Current region | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-post-detail"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_post_detail`
 
-- 摘要：获取单个作品数据/Get single video data
-- 能力：作品详情 / 详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_post_detail_api_v1_tiktok_web_fetch_post_detail_get`
+- Summary: 获取单个作品数据/Get single video data
+- Capabilities: content details / details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_post_detail_api_v1_tiktok_web_fetch_post_detail_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1176,49 +1176,49 @@
 > # [示例/Example]
 > itemId = "7339393672959757570"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| itemId | query | string | 是 | 作品id/Video id | 无 | 7339393672959757570 | 无 |
+| itemId | query | string | Yes | 作品id/Video id | None | 7339393672959757570 | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-post-detail-v2"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_post_detail_v2`
 
-- 摘要：获取单个作品数据 V2/Get single video data V2
-- 能力：作品详情 / 详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_post_detail_v2_api_v1_tiktok_web_fetch_post_detail_v2_get`
+- Summary: 获取单个作品数据 V2/Get single video data V2
+- Capabilities: content details / details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_post_detail_v2_api_v1_tiktok_web_fetch_post_detail_v2_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1255,49 +1255,49 @@
 > # [示例/Example]
 > itemId = "7339393672959757570"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| itemId | query | string | 是 | 作品id/Video id | 无 | 7339393672959757570 | 无 |
+| itemId | query | string | Yes | 作品id/Video id | None | 7339393672959757570 | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-search-keyword-suggest"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_search_keyword_suggest`
 
-- 摘要：搜索关键字推荐/Search keyword suggest
-- 能力：搜索
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_search_keyword_suggest_api_v1_tiktok_web_fetch_search_keyword_suggest_get`
+- Summary: 搜索关键字推荐/Search keyword suggest
+- Capabilities: search
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_search_keyword_suggest_api_v1_tiktok_web_fetch_search_keyword_suggest_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1318,49 +1318,49 @@
 > # [示例/Example]
 > keyword = "TikTok"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| keyword | query | string | 是 | 搜索关键词/Search keyword | 无 | TikTok | 无 |
+| keyword | query | string | Yes | 搜索关键词/Search keyword | None | TikTok | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-search-live"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_search_live`
 
-- 摘要：搜索直播/Search live
-- 能力：搜索 / 直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_search_live_api_v1_tiktok_web_fetch_search_live_get`
+- Summary: 搜索直播/Search live
+- Capabilities: search / livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_search_live_api_v1_tiktok_web_fetch_search_live_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1398,53 +1398,53 @@
 > offset = 0
 > search_id = ""
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| keyword | query | string | 是 | 搜索关键词/Search keyword | 无 | TikTok | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 20 | 无 | 无 |
-| offset | query | integer | 否 | 翻页游标/Page cursor | 0 | 无 | 无 |
-| search_id | query | string | 否 | 搜索id，翻页时需要提供/Search id, need to provide when paging | 无 | 无 | 无 |
-| cookie | query | string | 否 | 用户cookie(按需提供)/User cookie(if needed) | 无 | 无 | 无 |
+| keyword | query | string | Yes | 搜索关键词/Search keyword | None | TikTok | None |
+| count | query | integer | No | 每页数量/Number per page | 20 | None | None |
+| offset | query | integer | No | 翻页游标/Page cursor | 0 | None | None |
+| search_id | query | string | No | 搜索id，翻页时需要提供/Search id, need to provide when paging | None | None | None |
+| cookie | query | string | No | 用户cookie(按需提供)/User cookie(if needed) | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-search-photo"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_search_photo`
 
-- 摘要：搜索照片/Search photo
-- 能力：搜索 / 热点/榜单
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_search_photo_api_v1_tiktok_web_fetch_search_photo_get`
+- Summary: 搜索照片/Search photo
+- Capabilities: search / trends / rankings
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_search_photo_api_v1_tiktok_web_fetch_search_photo_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1483,53 +1483,53 @@
 > offset = 0
 > search_id = ""
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| keyword | query | string | 是 | 搜索关键词/Search keyword | 无 | TikTok | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 20 | 无 | 无 |
-| offset | query | integer | 否 | 翻页游标/Page offset | 0 | 无 | 无 |
-| search_id | query | string | 否 | 搜索id，翻页时需要提供/Search id, need to provide when paging | 无 | 无 | 无 |
-| cookie | query | string | 否 | 用户cookie(按需提供)/User cookie(if needed) | 无 | 无 | 无 |
+| keyword | query | string | Yes | 搜索关键词/Search keyword | None | TikTok | None |
+| count | query | integer | No | 每页数量/Number per page | 20 | None | None |
+| offset | query | integer | No | 翻页游标/Page offset | 0 | None | None |
+| search_id | query | string | No | 搜索id，翻页时需要提供/Search id, need to provide when paging | None | None | None |
+| cookie | query | string | No | 用户cookie(按需提供)/User cookie(if needed) | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-search-user"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_search_user`
 
-- 摘要：搜索用户/Search user
-- 能力：搜索 / 主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_search_user_api_v1_tiktok_web_fetch_search_user_get`
+- Summary: 搜索用户/Search user
+- Capabilities: search / profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_search_user_api_v1_tiktok_web_fetch_search_user_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1568,52 +1568,52 @@
 > cursor = 0
 > search_id = ""
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| keyword | query | string | 是 | 搜索关键词/Search keyword | 无 | TikTok | 无 |
-| cursor | query | integer | 否 | 翻页游标/Page cursor | 0 | 无 | 无 |
-| search_id | query | string | 否 | 搜索id，翻页时需要提供/Search id, need to provide when paging | 无 | 无 | 无 |
-| cookie | query | string | 否 | 用户cookie(按需提供)/User cookie(if needed) | 无 | 无 | 无 |
+| keyword | query | string | Yes | 搜索关键词/Search keyword | None | TikTok | None |
+| cursor | query | integer | No | 翻页游标/Page cursor | 0 | None | None |
+| search_id | query | string | No | 搜索id，翻页时需要提供/Search id, need to provide when paging | None | None | None |
+| cookie | query | string | No | 用户cookie(按需提供)/User cookie(if needed) | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-search-video"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_search_video`
 
-- 摘要：搜索视频/Search video
-- 能力：搜索 / 作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_search_video_api_v1_tiktok_web_fetch_search_video_get`
+- Summary: 搜索视频/Search video
+- Capabilities: search / content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_search_video_api_v1_tiktok_web_fetch_search_video_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1651,53 +1651,53 @@
 > offset = 0
 > search_id = ""
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| keyword | query | string | 是 | 搜索关键词/Search keyword | 无 | TikTok | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 20 | 无 | 无 |
-| offset | query | integer | 否 | 翻页游标/Page cursor | 0 | 无 | 无 |
-| search_id | query | string | 否 | 搜索id，翻页时需要提供/Search id, need to provide when paging | 无 | 无 | 无 |
-| cookie | query | string | 否 | 用户cookie(按需提供)/User cookie(if needed) | 无 | 无 | 无 |
+| keyword | query | string | Yes | 搜索关键词/Search keyword | None | TikTok | None |
+| count | query | integer | No | 每页数量/Number per page | 20 | None | None |
+| offset | query | integer | No | 翻页游标/Page cursor | 0 | None | None |
+| search_id | query | string | No | 搜索id，翻页时需要提供/Search id, need to provide when paging | None | None | None |
+| cookie | query | string | No | 用户cookie(按需提供)/User cookie(if needed) | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-sso-login-auth"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_sso_login_auth`
 
-- 摘要：认证SSO登录/Authenticate SSO login
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_sso_login_auth_api_v1_tiktok_web_fetch_sso_login_auth_get`
+- Summary: 认证SSO登录/Authenticate SSO login
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_sso_login_auth_api_v1_tiktok_web_fetch_sso_login_auth_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1733,52 +1733,52 @@
 > region = "US"
 > proxy = "None"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| device_id | query | string | 是 | 设备ID/Device ID | 无 | 7481276116461831688 | 无 |
-| verifyFp | query | string | 是 | verifyFp | 无 | verify_m8909xlr_d7UEdRqf_mA73_4So4_B0RT_L1gFyzsKr7IL | 无 |
-| region | query | string | 是 | 地区/Region | 无 | US | 无 |
-| proxy | query | string | 是 | 代理/Proxy | 无 | None | 无 |
+| device_id | query | string | Yes | 设备ID/Device ID | None | 7481276116461831688 | None |
+| verifyFp | query | string | Yes | verifyFp | None | verify_m8909xlr_d7UEdRqf_mA73_4So4_B0RT_L1gFyzsKr7IL | None |
+| region | query | string | Yes | 地区/Region | None | US | None |
+| proxy | query | string | Yes | 代理/Proxy | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-sso-login-qrcode"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_sso_login_qrcode`
 
-- 摘要：获取SSO登录二维码/Get SSO login QR code
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_sso_login_qrcode_api_v1_tiktok_web_fetch_sso_login_qrcode_get`
+- Summary: 获取SSO登录二维码/Get SSO login QR code
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_sso_login_qrcode_api_v1_tiktok_web_fetch_sso_login_qrcode_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1815,51 +1815,51 @@
 > region = "US"
 > proxy = "None"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| device_id | query | string | 是 | 设备ID/Device ID | 无 | 7481276116461831688 | 无 |
-| region | query | string | 是 | 地区/Region | 无 | US | 无 |
-| proxy | query | string | 是 | 代理/Proxy | 无 | None | 无 |
+| device_id | query | string | Yes | 设备ID/Device ID | None | 7481276116461831688 | None |
+| region | query | string | Yes | 地区/Region | None | US | None |
+| proxy | query | string | Yes | 代理/Proxy | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-sso-login-status"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_sso_login_status`
 
-- 摘要：获取SSO登录状态/Get SSO login status
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_sso_login_status_api_v1_tiktok_web_fetch_sso_login_status_get`
+- Summary: 获取SSO登录状态/Get SSO login status
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_sso_login_status_api_v1_tiktok_web_fetch_sso_login_status_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1910,53 +1910,53 @@
 > region = "US"
 > proxy = "None"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| token | query | string | 是 | 登录令牌/Login token | 无 | jiHRabSoJdwNrsvJvlRKj4hecTstR2xsn2NmtmKMN8o=_useast5 | 无 |
-| device_id | query | string | 是 | 设备ID/Device ID | 无 | 7481276116461831688 | 无 |
-| verifyFp | query | string | 是 | verifyFp | 无 | verify_m8909xlr_d7UEdRqf_mA73_4So4_B0RT_L1gFyzsKr7IL | 无 |
-| region | query | string | 是 | 地区/Region | 无 | US | 无 |
-| proxy | query | string | 是 | 代理/Proxy | 无 | None | 无 |
+| token | query | string | Yes | 登录令牌/Login token | None | jiHRabSoJdwNrsvJvlRKj4hecTstR2xsn2NmtmKMN8o=_useast5 | None |
+| device_id | query | string | Yes | 设备ID/Device ID | None | 7481276116461831688 | None |
+| verifyFp | query | string | Yes | verifyFp | None | verify_m8909xlr_d7UEdRqf_mA73_4So4_B0RT_L1gFyzsKr7IL | None |
+| region | query | string | Yes | 地区/Region | None | US | None |
+| proxy | query | string | Yes | 代理/Proxy | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-tag-detail"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_tag_detail`
 
-- 摘要：Tag详情/Tag Detail
-- 能力：详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_tag_detail_api_v1_tiktok_web_fetch_tag_detail_get`
+- Summary: Tag详情/Tag Detail
+- Capabilities: details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_tag_detail_api_v1_tiktok_web_fetch_tag_detail_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1977,49 +1977,49 @@
 > # [示例/Example]
 > tag_name = "tiktok"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| tag_name | query | string | 是 | Tag名称/Tag name | 无 | tiktok | 无 |
+| tag_name | query | string | Yes | Tag名称/Tag name | None | tiktok | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-tag-post"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_tag_post`
 
-- 摘要：Tag作品/Tag Post
-- 能力：作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_tag_post_api_v1_tiktok_web_fetch_tag_post_get`
+- Summary: Tag作品/Tag Post
+- Capabilities: content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_tag_post_api_v1_tiktok_web_fetch_tag_post_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2062,51 +2062,51 @@
 > count = 30
 > cursor = 0
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| challengeID | query | string | 是 | Tag ID | 无 | 7551 | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 30 | 无 | 无 |
-| cursor | query | integer | 否 | 翻页游标/Page cursor | 0 | 无 | 无 |
+| challengeID | query | string | Yes | Tag ID | None | 7551 | None |
+| count | query | integer | No | 每页数量/Number per page | 30 | None | None |
+| cursor | query | integer | No | 翻页游标/Page cursor | 0 | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-tiktok-live-data"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_tiktok_live_data`
 
-- 摘要：通过直播链接获取直播间信息/Get live room information via live link
-- 能力：直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_tiktok_live_data_api_v1_tiktok_web_fetch_tiktok_live_data_get`
+- Summary: 通过直播链接获取直播间信息/Get live room information via live link
+- Capabilities: livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_tiktok_live_data_api_v1_tiktok_web_fetch_tiktok_live_data_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2129,49 +2129,49 @@
 > # [示例/Example]
 > live_room_url = "https://www.tiktok.com/@.caseoh_daily/live"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| live_room_url | query | string | 是 | 直播间链接/Live room link | 无 | https://www.tiktok.com/@.caseoh_daily/live | 无 |
+| live_room_url | query | string | Yes | 直播间链接/Live room link | None | https://www.tiktok.com/@.caseoh_daily/live | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-tiktok-web-guest-cookie"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_tiktok_web_guest_cookie`
 
-- 摘要：获取游客 Cookie/Get the guest Cookie
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_tiktok_web_guest_cookie_api_v1_tiktok_web_fetch_tiktok_web_guest_cookie_get`
+- Summary: 获取游客 Cookie/Get the guest Cookie
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_tiktok_web_guest_cookie_api_v1_tiktok_web_fetch_tiktok_web_guest_cookie_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2209,49 +2209,49 @@
 > }
 > ```
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| user_agent | query | string | 是 | 用户浏览器代理/User browser agent | 无 | Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko… | 无 |
+| user_agent | query | string | Yes | 用户浏览器代理/User browser agent | None | Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko… | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-trending-post"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_trending_post`
 
-- 摘要：获取每日热门内容作品数据/Get daily trending video data
-- 能力：热点/榜单 / 作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_trending_post_api_v1_tiktok_web_fetch_trending_post_get`
+- Summary: 获取每日热门内容作品数据/Get daily trending video data
+- Capabilities: trends / rankings / content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_trending_post_api_v1_tiktok_web_fetch_trending_post_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2267,47 +2267,47 @@
 >
 > # [示例/Example]
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-trending-searchwords"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_trending_searchwords`
 
-- 摘要：获取每日趋势搜索关键词/Get daily trending search words
-- 能力：搜索 / 热点/榜单
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_trending_searchwords_api_v1_tiktok_web_fetch_trending_searchwords_get`
+- Summary: 获取每日趋势搜索关键词/Get daily trending search words
+- Capabilities: search / trends / rankings
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_trending_searchwords_api_v1_tiktok_web_fetch_trending_searchwords_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2323,47 +2323,47 @@
 >
 > # [示例/Example]
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-user-collect"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_user_collect`
 
-- 摘要：获取用户的收藏列表/Get user favorites
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_collect_api_v1_tiktok_web_fetch_user_collect_get`
+- Summary: 获取用户的收藏列表/Get user favorites
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_collect_api_v1_tiktok_web_fetch_user_collect_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2414,53 +2414,53 @@
 > count = 30
 > coverFormat = 2
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| cookie | query | string | 是 | 用户cookie/User cookie | 无 | Your_Cookie | 无 |
-| secUid | query | string | 是 | 用户secUid/User secUid | 无 | Your_SecUid | 无 |
-| cursor | query | integer | 否 | 翻页游标/Page cursor | 0 | 无 | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 30 | 无 | 无 |
-| coverFormat | query | integer | 否 | 封面格式/Cover format | 2 | 无 | 无 |
+| cookie | query | string | Yes | 用户cookie/User cookie | None | Your_Cookie | None |
+| secUid | query | string | Yes | 用户secUid/User secUid | None | Your_SecUid | None |
+| cursor | query | integer | No | 翻页游标/Page cursor | 0 | None | None |
+| count | query | integer | No | 每页数量/Number per page | 30 | None | None |
+| coverFormat | query | integer | No | 封面格式/Cover format | 2 | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-user-fans"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_user_fans`
 
-- 摘要：获取用户的粉丝列表/Get user followers
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_fans_api_v1_tiktok_web_fetch_user_fans_get`
+- Summary: 获取用户的粉丝列表/Get user followers
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_fans_api_v1_tiktok_web_fetch_user_fans_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2506,52 +2506,52 @@
 > maxCursor = 0
 > minCursor = 0
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| secUid | query | string | 是 | 用户secUid/User secUid | 无 | MS4wLjABAAAAv7iSuuXDJGDvJkmH_vz1qkDZYo1apxgzaxdBSeIuPiM | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 30 | 无 | 无 |
-| maxCursor | query | integer | 否 | 最大游标/Max cursor | 0 | 无 | 无 |
-| minCursor | query | integer | 否 | 最小游标/Min cursor | 0 | 无 | 无 |
+| secUid | query | string | Yes | 用户secUid/User secUid | None | MS4wLjABAAAAv7iSuuXDJGDvJkmH_vz1qkDZYo1apxgzaxdBSeIuPiM | None |
+| count | query | integer | No | 每页数量/Number per page | 30 | None | None |
+| maxCursor | query | integer | No | 最大游标/Max cursor | 0 | None | None |
+| minCursor | query | integer | No | 最小游标/Min cursor | 0 | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-user-follow"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_user_follow`
 
-- 摘要：获取用户的关注列表/Get user followings
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_follow_api_v1_tiktok_web_fetch_user_follow_get`
+- Summary: 获取用户的关注列表/Get user followings
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_follow_api_v1_tiktok_web_fetch_user_follow_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2597,52 +2597,52 @@
 > maxCursor = 0
 > minCursor = 0
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| secUid | query | string | 是 | 用户secUid/User secUid | 无 | MS4wLjABAAAAv7iSuuXDJGDvJkmH_vz1qkDZYo1apxgzaxdBSeIuPiM | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 30 | 无 | 无 |
-| maxCursor | query | integer | 否 | 最大游标/Max cursor | 0 | 无 | 无 |
-| minCursor | query | integer | 否 | 最小游标/Min cursor | 0 | 无 | 无 |
+| secUid | query | string | Yes | 用户secUid/User secUid | None | MS4wLjABAAAAv7iSuuXDJGDvJkmH_vz1qkDZYo1apxgzaxdBSeIuPiM | None |
+| count | query | integer | No | 每页数量/Number per page | 30 | None | None |
+| maxCursor | query | integer | No | 最大游标/Max cursor | 0 | None | None |
+| minCursor | query | integer | No | 最小游标/Min cursor | 0 | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-user-like"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_user_like`
 
-- 摘要：获取用户的点赞列表/Get user likes
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_like_api_v1_tiktok_web_fetch_user_like_get`
+- Summary: 获取用户的点赞列表/Get user likes
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_like_api_v1_tiktok_web_fetch_user_like_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2698,53 +2698,53 @@
 > count = 20
 > coverFormat = 2
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| secUid | query | string | 是 | 用户secUid/User secUid | 无 | MS4wLjABAAAAq1iRXNduFZpY301UkVpJ1eQT60_NiWS9QQSeNqmNQEDJp0pOF8cpleNEdiJx5_IU | 无 |
-| cursor | query | integer | 否 | 翻页游标/Page cursor | 0 | 无 | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 20 | 无 | 无 |
-| coverFormat | query | integer | 否 | 封面格式/Cover format | 2 | 无 | 无 |
-| post_item_list_request_type | query | integer | 否 | 排序方式/Sort type | 0 | 无 | 无 |
+| secUid | query | string | Yes | 用户secUid/User secUid | None | MS4wLjABAAAAq1iRXNduFZpY301UkVpJ1eQT60_NiWS9QQSeNqmNQEDJp0pOF8cpleNEdiJx5_IU | None |
+| cursor | query | integer | No | 翻页游标/Page cursor | 0 | None | None |
+| count | query | integer | No | 每页数量/Number per page | 20 | None | None |
+| coverFormat | query | integer | No | 封面格式/Cover format | 2 | None | None |
+| post_item_list_request_type | query | integer | No | 排序方式/Sort type | 0 | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-user-live-detail"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_user_live_detail`
 
-- 摘要：获取用户的直播详情/Get user live details
-- 能力：主页/账号 / 详情 / 直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_live_detail_api_v1_tiktok_web_fetch_user_live_detail_get`
+- Summary: 获取用户的直播详情/Get user live details
+- Capabilities: profiles / accounts / details / livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_live_detail_api_v1_tiktok_web_fetch_user_live_detail_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2781,49 +2781,49 @@
 > # [示例/Example]
 > uniqueId = "tiktok"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| uniqueId | query | string | 是 | 用户uniqueId/User uniqueId | 无 | tiktok | 无 |
+| uniqueId | query | string | Yes | 用户uniqueId/User uniqueId | None | tiktok | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-user-mix"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_user_mix`
 
-- 摘要：获取用户的合辑列表/Get user mix list
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_mix_api_v1_tiktok_web_fetch_user_mix_get`
+- Summary: 获取用户的合辑列表/Get user mix list
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_mix_api_v1_tiktok_web_fetch_user_mix_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2866,51 +2866,51 @@
 > cursor = 0
 > count = 30
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| mixId | query | string | 是 | 合辑id/Mix id | 无 | 7101538765474106158 | 无 |
-| cursor | query | integer | 否 | 翻页游标/Page cursor | 0 | 无 | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 30 | 无 | 无 |
+| mixId | query | string | Yes | 合辑id/Mix id | None | 7101538765474106158 | None |
+| cursor | query | integer | No | 翻页游标/Page cursor | 0 | None | None |
+| count | query | integer | No | 每页数量/Number per page | 30 | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-user-play-list"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_user_play_list`
 
-- 摘要：获取用户的播放列表/Get user play list
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_play_list_api_v1_tiktok_web_fetch_user_play_list_get`
+- Summary: 获取用户的播放列表/Get user play list
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_play_list_api_v1_tiktok_web_fetch_user_play_list_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2953,51 +2953,51 @@
 > cursor = 0
 > count = 30
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| secUid | query | string | 是 | 用户secUid/User secUid | 无 | MS4wLjABAAAAv7iSuuXDJGDvJkmH_vz1qkDZYo1apxgzaxdBSeIuPiM | 无 |
-| cursor | query | integer | 否 | 翻页游标/Page cursor | 0 | 无 | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 30 | 无 | 无 |
+| secUid | query | string | Yes | 用户secUid/User secUid | None | MS4wLjABAAAAv7iSuuXDJGDvJkmH_vz1qkDZYo1apxgzaxdBSeIuPiM | None |
+| cursor | query | integer | No | 翻页游标/Page cursor | 0 | None | None |
+| count | query | integer | No | 每页数量/Number per page | 30 | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-user-post"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_user_post`
 
-- 摘要：获取用户的作品列表/Get user posts
-- 能力：主页/账号 / 作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_post_api_v1_tiktok_web_fetch_user_post_get`
+- Summary: 获取用户的作品列表/Get user posts
+- Capabilities: profiles / accounts / content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_post_api_v1_tiktok_web_fetch_user_post_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -3052,53 +3052,53 @@
 > count = 20
 > coverFormat = 2
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| secUid | query | string | 是 | 用户secUid/User secUid | 无 | MS4wLjABAAAAv7iSuuXDJGDvJkmH_vz1qkDZYo1apxgzaxdBSeIuPiM | 无 |
-| cursor | query | integer | 否 | 翻页游标/Page cursor | 0 | 0 | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 20 | 20 | 无 |
-| coverFormat | query | integer | 否 | 封面格式/Cover format | 2 | 2 | 无 |
-| post_item_list_request_type | query | integer | 否 | 排序方式/Sort type | 0 | 0 | 无 |
+| secUid | query | string | Yes | 用户secUid/User secUid | None | MS4wLjABAAAAv7iSuuXDJGDvJkmH_vz1qkDZYo1apxgzaxdBSeIuPiM | None |
+| cursor | query | integer | No | 翻页游标/Page cursor | 0 | 0 | None |
+| count | query | integer | No | 每页数量/Number per page | 20 | 20 | None |
+| coverFormat | query | integer | No | 封面格式/Cover format | 2 | 2 | None |
+| post_item_list_request_type | query | integer | No | 排序方式/Sort type | 0 | 0 | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-user-profile"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_user_profile`
 
-- 摘要：获取用户的个人信息/Get user profile
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_profile_api_v1_tiktok_web_fetch_user_profile_get`
+- Summary: 获取用户的个人信息/Get user profile
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_profile_api_v1_tiktok_web_fetch_user_profile_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -3124,50 +3124,50 @@
 > secUid = "MS4wLjABAAAAv7iSuuXDJGDvJkmH_vz1qkDZYo1apxgzaxdBSeIuPiM"
 > uniqueId = "tiktok"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| uniqueId | query | string | 否 | 用户uniqueId/User uniqueId | 无 | tiktok | 无 |
-| secUid | query | string | 否 | 用户secUid/User secUid | 无 | 无 | 无 |
+| uniqueId | query | string | No | 用户uniqueId/User uniqueId | None | tiktok | None |
+| secUid | query | string | No | 用户secUid/User secUid | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-fetch-user-repost"></a>
 ### `GET /api/u1/v1/tiktok/web/fetch_user_repost`
 
-- 摘要：获取用户的转发作品列表/Get user reposts
-- 能力：主页/账号 / 作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_repost_api_v1_tiktok_web_fetch_user_repost_get`
+- Summary: 获取用户的转发作品列表/Get user reposts
+- Capabilities: profiles / accounts / content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_repost_api_v1_tiktok_web_fetch_user_repost_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -3213,52 +3213,52 @@
 > count = 20
 > coverFormat = 2
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| secUid | query | string | 是 | 用户secUid/User secUid | 无 | MS4wLjABAAAAv7iSuuXDJGDvJkmH_vz1qkDZYo1apxgzaxdBSeIuPiM | 无 |
-| cursor | query | integer | 否 | 翻页游标/Page cursor | 0 | 0 | 无 |
-| count | query | integer | 否 | 每页数量/Number per page | 20 | 20 | 无 |
-| coverFormat | query | integer | 否 | 封面格式/Cover format | 2 | 2 | 无 |
+| secUid | query | string | Yes | 用户secUid/User secUid | None | MS4wLjABAAAAv7iSuuXDJGDvJkmH_vz1qkDZYo1apxgzaxdBSeIuPiM | None |
+| cursor | query | integer | No | 翻页游标/Page cursor | 0 | 0 | None |
+| count | query | integer | No | 每页数量/Number per page | 20 | 20 | None |
+| coverFormat | query | integer | No | 封面格式/Cover format | 2 | 2 | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-generate-fingerprint"></a>
 ### `GET /api/u1/v1/tiktok/web/generate_fingerprint`
 
-- 摘要：生成浏览器指纹/Generate browser fingerprint
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`generate_fingerprint_api_v1_tiktok_web_generate_fingerprint_get`
+- Summary: 生成浏览器指纹/Generate browser fingerprint
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `generate_fingerprint_api_v1_tiktok_web_generate_fingerprint_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -3286,49 +3286,49 @@
 > ### Return:
 > - Browser fingerprint data
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| browser_type | query | string | 否 | 无 | 无 | 无 | 无 |
+| browser_type | query | string | No | None | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-generate-hashed-id"></a>
 ### `GET /api/u1/v1/tiktok/web/generate_hashed_id`
 
-- 摘要：生成哈希ID/Generate hashed ID
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`generate_hashed_id_api_v1_tiktok_web_generate_hashed_id_get`
+- Summary: 生成哈希ID/Generate hashed ID
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `generate_hashed_id_api_v1_tiktok_web_generate_hashed_id_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -3349,49 +3349,49 @@
 > # [示例/Example]
 > email = "test@example.com"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| email | query | string | 是 | 邮箱地址/Email address | 无 | test@example.com | 无 |
+| email | query | string | Yes | 邮箱地址/Email address | None | test@example.com | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-generate-real-mstoken"></a>
 ### `GET /api/u1/v1/tiktok/web/generate_real_msToken`
 
-- 摘要：生成真实msToken/Generate real msToken
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`generate_real_msToken_api_v1_tiktok_web_generate_real_msToken_get`
+- Summary: 生成真实msToken/Generate real msToken
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `generate_real_msToken_api_v1_tiktok_web_generate_real_msToken_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -3421,50 +3421,50 @@
 > ### Return:
 > - Real msToken
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| random_strData | query | boolean | 否 | 无 | false | 无 | 无 |
-| browser_type | query | string | 否 | 无 | 无 | 无 | 无 |
+| random_strData | query | boolean | No | None | false | None | None |
+| browser_type | query | string | No | None | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-generate-ttwid"></a>
 ### `GET /api/u1/v1/tiktok/web/generate_ttwid`
 
-- 摘要：生成ttwid/Generate ttwid
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`generate_ttwid_api_v1_tiktok_web_generate_ttwid_get`
+- Summary: 生成ttwid/Generate ttwid
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `generate_ttwid_api_v1_tiktok_web_generate_ttwid_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -3482,49 +3482,49 @@
 > ### Return:
 > - ttwid
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| user_agent | query | string | 否 | 无 | Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0 | 无 | 无 |
+| user_agent | query | string | No | None | Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:125.0) Gecko/20100101 Firefox/125.0 | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-generate-webid"></a>
 ### `GET /api/u1/v1/tiktok/web/generate_webid`
 
-- 摘要：生成web_id/Generate web_id
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`generate_webid_api_v1_tiktok_web_generate_webid_get`
+- Summary: 生成web_id/Generate web_id
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `generate_webid_api_v1_tiktok_web_generate_webid_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -3556,54 +3556,54 @@
 > - e: Error code (0 means success)
 > - ssid: Session ID
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| cookie | query | string | 否 | 无 | 无 | 无 | 无 |
-| user_agent | query | string | 否 | 无 | Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:145.0) Gecko/20100101 Firefox/… | 无 | 无 |
-| url | query | string | 否 | 无 | https://www.tiktok.com/explore | 无 | 无 |
-| referer | query | string | 否 | 无 | 无 | 无 | 无 |
-| user_unique_id | query | string | 否 | 无 | 无 | 无 | 无 |
-| app_id | query | integer | 否 | 无 | 1988 | 无 | 无 |
+| cookie | query | string | No | None | None | None | None |
+| user_agent | query | string | No | None | Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:145.0) Gecko/20100101 Firefox/… | None | None |
+| url | query | string | No | None | https://www.tiktok.com/explore | None | None |
+| referer | query | string | No | None | None | None | None |
+| user_unique_id | query | string | No | None | None | None | None |
+| app_id | query | integer | No | None | 1988 | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="post-api-u1-v1-tiktok-web-generate-xbogus"></a>
 ### `POST /api/u1/v1/tiktok/web/generate_xbogus`
 
-- 摘要：生成 XBogus/Generate XBogus
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`generate_xbogus_api_v1_tiktok_web_generate_xbogus_post`
+- Summary: 生成 XBogus/Generate XBogus
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `generate_xbogus_api_v1_tiktok_web_generate_xbogus_post`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -3631,56 +3631,56 @@
 >     "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.212 Safari/537.36"
 > }
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-- required：是
+- required: Yes
 
 ##### `application/json`
 
-- Schema 摘要：`url*`:string, `user_agent*`:string
+- Schema summary: `url*`:string, `user_agent*`:string
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| url | string | 是 | 请求的API URL，不需要进行编码 \| The requested API URL, no need to encode | 无 | https://www.douyin.com/aweme/v1/web/aweme/detail/?aweme_id=7148736076176215311&… | 无 |
-| user_agent | string | 是 | 请求API时的User-Agent \| User-Agent when requesting the API | 无 | Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko… | 无 |
+| url | string | Yes | 请求的API URL，不需要进行编码 \| The requested API URL, no need to encode | None | https://www.douyin.com/aweme/v1/web/aweme/detail/?aweme_id=7148736076176215311&… | None |
+| user_agent | string | Yes | 请求API时的User-Agent \| User-Agent when requesting the API | None | Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko… | None |
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="post-api-u1-v1-tiktok-web-generate-xgnarly"></a>
 ### `POST /api/u1/v1/tiktok/web/generate_xgnarly`
 
-- 摘要：生成 XGnarly /Generate XGnarly
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`generate_xgnarly_api_v1_tiktok_web_generate_xgnarly_post`
+- Summary: 生成 XGnarly /Generate XGnarly
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `generate_xgnarly_api_v1_tiktok_web_generate_xgnarly_post`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -3711,57 +3711,57 @@
 >     "body": ""
 > }
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-- required：是
+- required: Yes
 
 ##### `application/json`
 
-- Schema 摘要：`url*`:string, `user_agent*`:string, `body`:string
+- Schema summary: `url*`:string, `user_agent*`:string, `body`:string
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| url | string | 是 | 请求的API URL，不需要进行URL编码 \| The requested API URL, no need to URL encode | 无 | 无 | 无 |
-| user_agent | string | 是 | 请求API时的User-Agent \| User-Agent when requesting the API | 无 | 无 | 无 |
-| body | string | 否 | 请求的API参数，适用于POST请求 \| The API parameters of the request, applicable for POST requests | 无 | 无 | 无 |
+| url | string | Yes | 请求的API URL，不需要进行URL编码 \| The requested API URL, no need to URL encode | None | None | None |
+| user_agent | string | Yes | 请求API时的User-Agent \| User-Agent when requesting the API | None | None | None |
+| body | string | No | 请求的API参数，适用于POST请求 \| The API parameters of the request, applicable for POST requests | None | None | None |
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="post-api-u1-v1-tiktok-web-generate-xgnarly-and-xbogus"></a>
 ### `POST /api/u1/v1/tiktok/web/generate_xgnarly_and_xbogus`
 
-- 摘要：生成 XGnarly 和 XBogus /Generate XGnarly and XBogus
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`generate_xgnarly_and_xbogus_api_v1_tiktok_web_generate_xgnarly_and_xbogus_post`
+- Summary: 生成 XGnarly 和 XBogus /Generate XGnarly and XBogus
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `generate_xgnarly_and_xbogus_api_v1_tiktok_web_generate_xgnarly_and_xbogus_post`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -3795,56 +3795,56 @@
 >     "body": ""
 > }
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-- required：是
+- required: Yes
 
 ##### `application/json`
 
-- Schema 摘要：`url*`:string, `body`:string
+- Schema summary: `url*`:string, `body`:string
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| url | string | 是 | 包含域名和参数的请求的API URL，不需要进行URL编码 \| The requested API URL, no need to URL encode | 无 | 无 | 无 |
-| body | string | 否 | 请求的API参数，适用于POST请求 \| The API parameters of the request, applicable for POST requests | 无 | 无 | 无 |
+| url | string | Yes | 包含域名和参数的请求的API URL，不需要进行URL编码 \| The requested API URL, no need to URL encode | None | None | None |
+| body | string | No | 请求的API参数，适用于POST请求 \| The API parameters of the request, applicable for POST requests | None | None | None |
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="post-api-u1-v1-tiktok-web-get-all-aweme-id"></a>
 ### `POST /api/u1/v1/tiktok/web/get_all_aweme_id`
 
-- 摘要：提取列表作品id/Extract list video id
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_all_aweme_id_api_v1_tiktok_web_get_all_aweme_id_post`
+- Summary: 提取列表作品id/Extract list video id
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_all_aweme_id_api_v1_tiktok_web_get_all_aweme_id_post`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -3865,55 +3865,55 @@
 > # [示例/Example]
 > url = ["https://www.tiktok.com/@owlcitymusic/video/7218694761253735723"]
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-- required：是
+- required: Yes
 
 ##### `application/json`
 
-- Schema 摘要：[string]
+- Schema summary: [string]
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| [] | array<string> | 是 | 作品链接/Video link | 无 | 无 | 无 |
+| [] | array<string> | Yes | 作品链接/Video link | None | None | None |
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="post-api-u1-v1-tiktok-web-get-all-sec-user-id"></a>
 ### `POST /api/u1/v1/tiktok/web/get_all_sec_user_id`
 
-- 摘要：提取列表用户sec_user_id/Extract list user sec_user_id
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_all_sec_user_id_api_v1_tiktok_web_get_all_sec_user_id_post`
+- Summary: 提取列表用户sec_user_id/Extract list user sec_user_id
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_all_sec_user_id_api_v1_tiktok_web_get_all_sec_user_id_post`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -3934,55 +3934,55 @@
 > # [示例/Example]
 > url = ["https://www.tiktok.com/@tiktok"]
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-- required：是
+- required: Yes
 
 ##### `application/json`
 
-- Schema 摘要：[string]
+- Schema summary: [string]
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| [] | array<string> | 是 | 用户主页链接/User homepage link | 无 | 无 | 无 |
+| [] | array<string> | Yes | 用户主页链接/User homepage link | None | None | None |
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="post-api-u1-v1-tiktok-web-get-all-unique-id"></a>
 ### `POST /api/u1/v1/tiktok/web/get_all_unique_id`
 
-- 摘要：获取列表unique_id/Get list unique_id
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_all_unique_id_api_v1_tiktok_web_get_all_unique_id_post`
+- Summary: 获取列表unique_id/Get list unique_id
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_all_unique_id_api_v1_tiktok_web_get_all_unique_id_post`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -4003,55 +4003,55 @@
 > # [示例/Example]
 > url = ["https://www.tiktok.com/@tiktok"]
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-- required：是
+- required: Yes
 
 ##### `application/json`
 
-- Schema 摘要：[string]
+- Schema summary: [string]
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| [] | array<string> | 是 | 用户主页链接/User homepage link | 无 | 无 | 无 |
+| [] | array<string> | Yes | 用户主页链接/User homepage link | None | None | None |
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-get-aweme-id"></a>
 ### `GET /api/u1/v1/tiktok/web/get_aweme_id`
 
-- 摘要：提取单个作品id/Extract single video id
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_aweme_id_api_v1_tiktok_web_get_aweme_id_get`
+- Summary: 提取单个作品id/Extract single video id
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_aweme_id_api_v1_tiktok_web_get_aweme_id_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -4072,49 +4072,49 @@
 > # [示例/Example]
 > url = "https://www.tiktok.com/@owlcitymusic/video/7218694761253735723"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| url | query | string | 是 | 作品链接/Video link | 无 | https://www.tiktok.com/@owlcitymusic/video/7218694761253735723 | 无 |
+| url | query | string | Yes | 作品链接/Video link | None | https://www.tiktok.com/@owlcitymusic/video/7218694761253735723 | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-get-live-room-id"></a>
 ### `GET /api/u1/v1/tiktok/web/get_live_room_id`
 
-- 摘要：根据直播间链接提取直播间ID/Extract live room ID from live room link
-- 能力：直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_live_room_id_api_v1_tiktok_web_get_live_room_id_get`
+- Summary: 根据直播间链接提取直播间ID/Extract live room ID from live room link
+- Capabilities: livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_live_room_id_api_v1_tiktok_web_get_live_room_id_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -4139,49 +4139,49 @@
 > # [示例/Example]
 > live_room_url = "https://www.tiktok.com/@maksukaracun/live"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| live_room_url | query | string | 是 | 直播间链接/Live room link | 无 | https://www.tiktok.com/@maksukaracun/live | 无 |
+| live_room_url | query | string | Yes | 直播间链接/Live room link | None | https://www.tiktok.com/@maksukaracun/live | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-get-sec-user-id"></a>
 ### `GET /api/u1/v1/tiktok/web/get_sec_user_id`
 
-- 摘要：提取用户sec_user_id/Extract user sec_user_id
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_sec_user_id_api_v1_tiktok_web_get_sec_user_id_get`
+- Summary: 提取用户sec_user_id/Extract user sec_user_id
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_sec_user_id_api_v1_tiktok_web_get_sec_user_id_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -4202,49 +4202,49 @@
 > # [示例/Example]
 > url = "https://www.tiktok.com/@tiktok"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| url | query | string | 是 | 用户主页链接/User homepage link | 无 | https://www.tiktok.com/@tiktok | 无 |
+| url | query | string | Yes | 用户主页链接/User homepage link | None | https://www.tiktok.com/@tiktok | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-get-unique-id"></a>
 ### `GET /api/u1/v1/tiktok/web/get_unique_id`
 
-- 摘要：获取用户unique_id/Get user unique_id
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_unique_id_api_v1_tiktok_web_get_unique_id_get`
+- Summary: 获取用户unique_id/Get user unique_id
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_unique_id_api_v1_tiktok_web_get_unique_id_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -4265,49 +4265,49 @@
 > # [示例/Example]
 > url = "https://www.tiktok.com/@tiktok"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| url | query | string | 是 | 用户主页链接/User homepage link | 无 | https://www.tiktok.com/@tiktok | 无 |
+| url | query | string | Yes | 用户主页链接/User homepage link | None | https://www.tiktok.com/@tiktok | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-get-user-id"></a>
 ### `GET /api/u1/v1/tiktok/web/get_user_id`
 
-- 摘要：提取用户user_id/Extract user user_id
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_user_id_api_v1_tiktok_web_get_user_id_get`
+- Summary: 提取用户user_id/Extract user user_id
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_user_id_api_v1_tiktok_web_get_user_id_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -4328,49 +4328,49 @@
 > # [示例/Example]
 > url = "https://www.tiktok.com/@tiktok"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| url | query | string | 是 | 用户主页链接/User homepage link | 无 | https://www.tiktok.com/@tiktok | 无 |
+| url | query | string | Yes | 用户主页链接/User homepage link | None | https://www.tiktok.com/@tiktok | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-tiktok-web-tiktok-live-room"></a>
 ### `GET /api/u1/v1/tiktok/web/tiktok_live_room`
 
-- 摘要：提取直播间弹幕/Extract live room danmaku
-- 能力：直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`tiktok_live_room_api_v1_tiktok_web_tiktok_live_room_get`
+- Summary: 提取直播间弹幕/Extract live room danmaku
+- Capabilities: livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `tiktok_live_room_api_v1_tiktok_web_tiktok_live_room_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -4412,37 +4412,37 @@
 > ### Return:
 > - WebSocket connection information of the danmaku data, you need to use WebSocket connection to get the danmaku data, this interface does not return the danmaku data.
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| live_room_url | query | string | 是 | 直播间链接/Live room link | 无 | https://www.tiktok.com/@mpl.id.official/live | 无 |
-| danmaku_type | query | string | 是 | 消息类型/Message type | 无 | WebcastChatMessage | 无 |
+| live_room_url | query | string | Yes | 直播间链接/Live room link | None | https://www.tiktok.com/@mpl.id.official/live | None |
+| danmaku_type | query | string | Yes | 消息类型/Message type | None | WebcastChatMessage | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |

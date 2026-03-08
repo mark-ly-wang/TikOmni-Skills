@@ -1,26 +1,26 @@
-# YouTube-Web-V2-API 完整契约
+# YouTube-Web-V2-API Full Contract
 
-- 回到索引：[`api-capability-index.md`](../api-capability-index.md)
-- 回到路由详情：[`api-tags/youtube-web-v2-api.md`](../api-tags/youtube-web-v2-api.md)
-- 当前契约文件：`api-contracts/youtube-web-v2-api.md`
-- 数据源：`https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
-- 获取时间：`2026-03-08T04:31:58+00:00`
-- 路由数：`16`
-- 默认认证：请求头 `Authorization` Bearer
-- 使用方式：当需要精确的认证说明、参数描述、默认值、示例或成功响应字段时，再读本文件。
-- 标签说明：**(YouTube Web V2数据接口/YouTube-Web-V2-API endpoints)**
+- Back to index: [`api-capability-index.md`](../api-capability-index.md)
+- Back to route summary: [`api-tags/youtube-web-v2-api.md`](../api-tags/youtube-web-v2-api.md)
+- Current contract file: `api-contracts/youtube-web-v2-api.md`
+- Source: `https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
+- Fetched at: `2026-03-08T06:54:04+00:00`
+- Route count: `16`
+- Default auth: Header `Authorization` Bearer
+- Read this file only when you need precise auth notes, parameter descriptions, defaults, examples, or success-response fields.
+- Tag description: **(YouTube Web V2数据接口/YouTube-Web-V2-API endpoints)**
 
-## 路由契约
+## Route Contracts
 
 <a id="get-api-u1-v1-youtube-web-v2-get-channel-description"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_channel_description`
 
-- 摘要：获取频道描述信息/Get channel description
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_channel_description_api_v1_youtube_web_v2_get_channel_description_get`
+- Summary: 获取频道描述信息/Get channel description
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_channel_description_api_v1_youtube_web_v2_get_channel_description_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -250,53 +250,53 @@
 > ## 步骤3 - 第二次请求获取高级信息（使用返回的continuation_token）
 > GET /youtube_web/get_channel_description?continuation_token=xxx&need_format=true
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| channel_id | query | string | 否 | 频道ID（格式如：UCeu6U67OzJhV1KwBansH3Dg），可通过get_channel_id接口从频道URL获取/Channel ID, can be obtained from channel URL via get_channel_id endpoint | 无 | UCeu6U67OzJhV1KwBansH3Dg | 无 |
-| continuation_token | query | string | 否 | 翻页标志（用于获取频道注册时间等高级信息）/Continuation token for getting advanced info like channel creation date | 无 | 无 | 无 |
-| language_code | query | string | 否 | 语言代码（如zh-CN, en-US等）/Language code | zh-CN | zh-CN | 无 |
-| country_code | query | string | 否 | 国家代码（如US, JP等）/Country code | US | US | 无 |
-| need_format | query | boolean | 否 | 是否需要清洗数据，提取关键内容，移除冗余数据/Whether to clean and format the data | true | 无 | 无 |
+| channel_id | query | string | No | 频道ID（格式如：UCeu6U67OzJhV1KwBansH3Dg），可通过get_channel_id接口从频道URL获取/Channel ID, can be obtained from channel URL via get_channel_id endpoint | None | UCeu6U67OzJhV1KwBansH3Dg | None |
+| continuation_token | query | string | No | 翻页标志（用于获取频道注册时间等高级信息）/Continuation token for getting advanced info like channel creation date | None | None | None |
+| language_code | query | string | No | 语言代码（如zh-CN, en-US等）/Language code | zh-CN | zh-CN | None |
+| country_code | query | string | No | 国家代码（如US, JP等）/Country code | US | US | None |
+| need_format | query | boolean | No | 是否需要清洗数据，提取关键内容，移除冗余数据/Whether to clean and format the data | true | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-channel-id"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_channel_id`
 
-- 摘要：从频道URL获取频道ID /Get channel ID from URL
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_channel_id_api_v1_youtube_web_v2_get_channel_id_get`
+- Summary: 从频道URL获取频道ID /Get channel ID from URL
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_channel_id_api_v1_youtube_web_v2_get_channel_id_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -323,49 +323,49 @@
 > # [示例/Example]
 > channel_url = "https://www.youtube.com/@CozyCraftYT"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| channel_url | query | string | 是 | 频道URL/Channel URL，支持多种格式如：https://www.youtube.com/@username, https://www.youtube.com/channel/UCxxxxxx, https://www.youtube.com/c/channelname | 无 | https://www.youtube.com/@CozyCraftYT | 无 |
+| channel_url | query | string | Yes | 频道URL/Channel URL，支持多种格式如：https://www.youtube.com/@username, https://www.youtube.com/channel/UCxxxxxx, https://www.youtube.com/c/channelname | None | https://www.youtube.com/@CozyCraftYT | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-channel-shorts"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_channel_shorts`
 
-- 摘要：获取频道短视频列表/Get channel shorts
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_channel_shorts_api_v1_youtube_web_v2_get_channel_shorts_get`
+- Summary: 获取频道短视频列表/Get channel shorts
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_channel_shorts_api_v1_youtube_web_v2_get_channel_shorts_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -464,52 +464,52 @@
 > ### [示例/Example]
 > #### 获取短视频列表: channel_id = "UCuAXFkgsw1L7xaCfnd5JJOw"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| channel_id | query | string | 否 | 频道ID/Channel ID (e.g., UCuAXFkgsw1L7xaCfnd5JJOw) | 无 | UCuAXFkgsw1L7xaCfnd5JJOw | 无 |
-| channel_url | query | string | 否 | 频道URL/Channel URL (如果提供channel_id则忽略/Ignored if channel_id is provided) | 无 | https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw | 无 |
-| continuation_token | query | string | 否 | 分页token/Pagination token | 无 | 无 | 无 |
-| need_format | query | boolean | 否 | 是否格式化数据/Whether to format data | true | 无 | 无 |
+| channel_id | query | string | No | 频道ID/Channel ID (e.g., UCuAXFkgsw1L7xaCfnd5JJOw) | None | UCuAXFkgsw1L7xaCfnd5JJOw | None |
+| channel_url | query | string | No | 频道URL/Channel URL (如果提供channel_id则忽略/Ignored if channel_id is provided) | None | https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw | None |
+| continuation_token | query | string | No | 分页token/Pagination token | None | None | None |
+| need_format | query | boolean | No | 是否格式化数据/Whether to format data | true | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-channel-url"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_channel_url`
 
-- 摘要：从频道ID获取频道URL/Get channel URL from channel ID
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_channel_url_api_v1_youtube_web_v2_get_channel_url_get`
+- Summary: 从频道ID获取频道URL/Get channel URL from channel ID
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_channel_url_api_v1_youtube_web_v2_get_channel_url_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -552,49 +552,49 @@
 > # [示例/Example]
 > channel_id = "UCeu6U67OzJhV1KwBansH3Dg"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| channel_id | query | string | 是 | 频道ID/Channel ID (格式如：UCeu6U67OzJhV1KwBansH3Dg) | 无 | UCeu6U67OzJhV1KwBansH3Dg | 无 |
+| channel_id | query | string | Yes | 频道ID/Channel ID (格式如：UCeu6U67OzJhV1KwBansH3Dg) | None | UCeu6U67OzJhV1KwBansH3Dg | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-channel-videos"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_channel_videos`
 
-- 摘要：获取频道视频 /Get channel videos
-- 能力：主页/账号 / 作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_channel_videos_api_v1_youtube_web_v2_get_channel_videos_get`
+- Summary: 获取频道视频 /Get channel videos
+- Capabilities: profiles / accounts / content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_channel_videos_api_v1_youtube_web_v2_get_channel_videos_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -776,53 +776,53 @@
 > ## 获取下一页 / Get next page
 > GET /youtube_web/get_channel_videos?channel_id=UCJHBJ7F-nAIlMGolm0Hu4vg&continuation_token=xxxxx&need_format=true
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| channel_id | query | string | 是 | 频道ID/Channel ID | 无 | UCJHBJ7F-nAIlMGolm0Hu4vg | 无 |
-| language_code | query | string | 否 | 语言代码（如zh-CN, en-US等）/Language code | zh-CN | zh-CN | 无 |
-| country_code | query | string | 否 | 国家代码（如US, JP等）/Country code | US | US | 无 |
-| continuation_token | query | string | 否 | 分页token，用于获取下一页/Pagination token for next page | 无 | 无 | 无 |
-| need_format | query | boolean | 否 | 是否需要清洗数据，提取关键内容，移除冗余数据/Whether to clean and format the data | true | 无 | 无 |
+| channel_id | query | string | Yes | 频道ID/Channel ID | None | UCJHBJ7F-nAIlMGolm0Hu4vg | None |
+| language_code | query | string | No | 语言代码（如zh-CN, en-US等）/Language code | zh-CN | zh-CN | None |
+| country_code | query | string | No | 国家代码（如US, JP等）/Country code | US | US | None |
+| continuation_token | query | string | No | 分页token，用于获取下一页/Pagination token for next page | None | None | None |
+| need_format | query | boolean | No | 是否需要清洗数据，提取关键内容，移除冗余数据/Whether to clean and format the data | true | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-general-search"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_general_search`
 
-- 摘要：综合搜索（支持过滤条件）/General search with filters
-- 能力：搜索
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_general_search_api_v1_youtube_web_v2_get_general_search_get`
+- Summary: 综合搜索（支持过滤条件）/General search with filters
+- Capabilities: search
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_general_search_api_v1_youtube_web_v2_get_general_search_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -939,58 +939,58 @@
 > ## 搜索今天上传的4K编程直播
 > GET /youtube_web/get_general_search?search_query=programming&upload_time=today&feature=4k&content_type=video
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| search_query | query | string | 是 | 搜索关键字/Search keyword | 无 | Python编程 | 无 |
-| language_code | query | string | 否 | 语言代码（如zh-CN, en-US等）/Language code | zh-CN | 无 | 无 |
-| country_code | query | string | 否 | 国家代码（如US, CN等）/Country code | US | 无 | 无 |
-| time_zone | query | string | 否 | 时区（如America/Los_Angeles, Asia/Shanghai等）/Time zone | America/Los_Angeles | 无 | 无 |
-| upload_time | query | string enum[hour, today, week, month, year] | 否 | 上传时间过滤 \| Upload time filter | 无 | 无 | 无 |
-| duration | query | string enum[short, medium, long] | 否 | 视频时长过滤 \| Duration filter | 无 | 无 | 无 |
-| content_type | query | string enum[video, channel, playlist, movie] | 否 | 内容类型过滤 \| Content type filter | 无 | 无 | 无 |
-| feature | query | string enum[live, 4k, hd, subtitles, creative_commons, 360, ...] | 否 | 特征过滤 \| Feature filter | 无 | 无 | 无 |
-| sort_by | query | string enum[relevance, upload_date, view_count, rating] | 否 | 排序方式 \| Sort by | 无 | 无 | 无 |
-| continuation_token | query | string | 否 | 翻页令牌/Pagination token | 无 | 无 | 无 |
+| search_query | query | string | Yes | 搜索关键字/Search keyword | None | Python编程 | None |
+| language_code | query | string | No | 语言代码（如zh-CN, en-US等）/Language code | zh-CN | None | None |
+| country_code | query | string | No | 国家代码（如US, CN等）/Country code | US | None | None |
+| time_zone | query | string | No | 时区（如America/Los_Angeles, Asia/Shanghai等）/Time zone | America/Los_Angeles | None | None |
+| upload_time | query | string enum[hour, today, week, month, year] | No | 上传时间过滤 \| Upload time filter | None | None | None |
+| duration | query | string enum[short, medium, long] | No | 视频时长过滤 \| Duration filter | None | None | None |
+| content_type | query | string enum[video, channel, playlist, movie] | No | 内容类型过滤 \| Content type filter | None | None | None |
+| feature | query | string enum[live, 4k, hd, subtitles, creative_commons, 360, ...] | No | 特征过滤 \| Feature filter | None | None | None |
+| sort_by | query | string enum[relevance, upload_date, view_count, rating] | No | 排序方式 \| Sort by | None | None | None |
+| continuation_token | query | string | No | 翻页令牌/Pagination token | None | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-related-videos"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_related_videos`
 
-- 摘要：获取视频相似内容/Get related videos
-- 能力：作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_related_videos_api_v1_youtube_web_v2_get_related_videos_get`
+- Summary: 获取视频相似内容/Get related videos
+- Capabilities: content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_related_videos_api_v1_youtube_web_v2_get_related_videos_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1091,51 +1091,51 @@
 > ### [示例/Example]
 > #### 获取推荐视频: video_id = "dQw4w9WgXcQ"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| video_id | query | string | 否 | 视频ID/Video ID | 无 | dQw4w9WgXcQ | 无 |
-| video_url | query | string | 否 | 视频URL/Video URL (如果提供video_id则忽略此参数/Ignored if video_id is provided) | 无 | https://www.youtube.com/watch?v=dQw4w9WgXcQ | 无 |
-| need_format | query | boolean | 否 | 是否格式化数据。true: 返回格式化的结构化数据，false: 返回原始API结构/Whether to format data. true: return formatted structured data, false: return raw API structure | true | 无 | 无 |
+| video_id | query | string | No | 视频ID/Video ID | None | dQw4w9WgXcQ | None |
+| video_url | query | string | No | 视频URL/Video URL (如果提供video_id则忽略此参数/Ignored if video_id is provided) | None | https://www.youtube.com/watch?v=dQw4w9WgXcQ | None |
+| need_format | query | boolean | No | 是否格式化数据。true: 返回格式化的结构化数据，false: 返回原始API结构/Whether to format data. true: return formatted structured data, false: return raw API structure | true | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-search-suggestions"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_search_suggestions`
 
-- 摘要：获取搜索推荐词/Get search suggestions
-- 能力：搜索
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_search_suggestions_api_v1_youtube_web_v2_get_search_suggestions_get`
+- Summary: 获取搜索推荐词/Get search suggestions
+- Capabilities: search
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_search_suggestions_api_v1_youtube_web_v2_get_search_suggestions_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1204,51 +1204,51 @@
 > ### [示例/Example]
 > #### 获取推荐词: keyword = "Rick Astley"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| keyword | query | string | 是 | 搜索关键词/Search keyword | 无 | Rick Astley | 无 |
-| language | query | string | 否 | 语言代码/Language code (e.g., en, zh-cn, ja) | en | en | 无 |
-| region | query | string | 否 | 地区代码/Region code (e.g., US, SG, CN, JP) | US | US | 无 |
+| keyword | query | string | Yes | 搜索关键词/Search keyword | None | Rick Astley | None |
+| language | query | string | No | 语言代码/Language code (e.g., en, zh-cn, ja) | en | en | None |
+| region | query | string | No | 地区代码/Region code (e.g., US, SG, CN, JP) | US | US | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-shorts-search"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_shorts_search`
 
-- 摘要：YouTube Shorts短视频搜索/YouTube Shorts search
-- 能力：搜索
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_shorts_search_api_v1_youtube_web_v2_get_shorts_search_get`
+- Summary: YouTube Shorts短视频搜索/YouTube Shorts search
+- Capabilities: search
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_shorts_search_api_v1_youtube_web_v2_get_shorts_search_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1572,56 +1572,56 @@
 > ## 翻页获取更多Shorts
 > GET /youtube_web/get_shorts_search?search_query=编程&continuation_token=EqcBEgPkuKzor4YybhmgGk...
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| search_query | query | string | 是 | 搜索关键字/Search keyword | 无 | Python编程 | 无 |
-| language_code | query | string | 否 | 语言代码（如zh-CN, en-US等）/Language code | en-US | en-US | 无 |
-| country_code | query | string | 否 | 国家代码（如US, CN等）/Country code | US | US | 无 |
-| time_zone | query | string | 否 | 时区（如America/Los_Angeles, Asia/Shanghai等）/Time zone | America/Los_Angeles | America/Los_Angeles | 无 |
-| upload_time | query | string enum[hour, today, week, month, year] | 否 | 上传时间过滤 \| Upload time filter for Shorts | 无 | 无 | 无 |
-| sort_by | query | string enum[relevance, upload_date, view_count, rating] | 否 | 排序方式 \| Sort by for Shorts | 无 | 无 | 无 |
-| continuation_token | query | string | 否 | 翻页令牌/Pagination token | 无 | 无 | 无 |
-| filter_mixed_content | query | boolean | 否 | 是否过滤混合内容（长视频），默认True / Filter mixed content (long videos), default True | true | true | 无 |
+| search_query | query | string | Yes | 搜索关键字/Search keyword | None | Python编程 | None |
+| language_code | query | string | No | 语言代码（如zh-CN, en-US等）/Language code | en-US | en-US | None |
+| country_code | query | string | No | 国家代码（如US, CN等）/Country code | US | US | None |
+| time_zone | query | string | No | 时区（如America/Los_Angeles, Asia/Shanghai等）/Time zone | America/Los_Angeles | America/Los_Angeles | None |
+| upload_time | query | string enum[hour, today, week, month, year] | No | 上传时间过滤 \| Upload time filter for Shorts | None | None | None |
+| sort_by | query | string enum[relevance, upload_date, view_count, rating] | No | 排序方式 \| Sort by for Shorts | None | None | None |
+| continuation_token | query | string | No | 翻页令牌/Pagination token | None | None | None |
+| filter_mixed_content | query | boolean | No | 是否过滤混合内容（长视频），默认True / Filter mixed content (long videos), default True | true | true | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-signed-stream-url"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_signed_stream_url`
 
-- 摘要：获取已签名的视频流URL/Get signed video stream URL
-- 能力：直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_signed_stream_url_api_v1_youtube_web_v2_get_signed_stream_url_get`
+- Summary: 获取已签名的视频流URL/Get signed video stream URL
+- Capabilities: livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_signed_stream_url_api_v1_youtube_web_v2_get_signed_stream_url_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1667,51 +1667,51 @@
 > video_id = "dQw4w9WgXcQ"
 > itag = 18  # 360p mp4 with audio
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| video_id | query | string | 否 | 视频ID/Video ID | 无 | dQw4w9WgXcQ | 无 |
-| video_url | query | string | 否 | 视频URL/Video URL (如果提供video_id则忽略此参数/Ignored if video_id is provided) | 无 | https://www.youtube.com/watch?v=dQw4w9WgXcQ | 无 |
-| itag | query | integer | 是 | 格式标识符 itag (从 get_video_streams 接口获取)/Format identifier itag (obtained from get_video_streams endpoint) | 无 | 18 | 无 |
+| video_id | query | string | No | 视频ID/Video ID | None | dQw4w9WgXcQ | None |
+| video_url | query | string | No | 视频URL/Video URL (如果提供video_id则忽略此参数/Ignored if video_id is provided) | None | https://www.youtube.com/watch?v=dQw4w9WgXcQ | None |
+| itag | query | integer | Yes | 格式标识符 itag (从 get_video_streams 接口获取)/Format identifier itag (obtained from get_video_streams endpoint) | None | 18 | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-video-comment-replies"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_video_comment_replies`
 
-- 摘要：获取视频二级评论/Get video sub comments
-- 能力：评论 / 作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_video_comment_replies_api_v1_youtube_web_v2_get_video_comment_replies_get`
+- Summary: 获取视频二级评论/Get video sub comments
+- Capabilities: comments / content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_video_comment_replies_api_v1_youtube_web_v2_get_video_comment_replies_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -1793,52 +1793,52 @@
 > # [示例/Example]
 > id = "LuIL5JATZsc"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| continuation_token | query | string | 是 | 回复的continuation token（从一级评论的reply_continuation_token字段获取）/Reply continuation token from first-level comment | 无 | 无 | 无 |
-| language_code | query | string | 否 | 语言代码（如zh-CN, en-US等）/Language code | zh-CN | zh-CN | 无 |
-| country_code | query | string | 否 | 国家代码（如US, JP等）/Country code | US | US | 无 |
-| need_format | query | boolean | 否 | 是否需要清洗数据，提取关键内容，移除冗余数据/Whether to clean and format the data | true | 无 | 无 |
+| continuation_token | query | string | Yes | 回复的continuation token（从一级评论的reply_continuation_token字段获取）/Reply continuation token from first-level comment | None | None | None |
+| language_code | query | string | No | 语言代码（如zh-CN, en-US等）/Language code | zh-CN | zh-CN | None |
+| country_code | query | string | No | 国家代码（如US, JP等）/Country code | US | US | None |
+| need_format | query | boolean | No | 是否需要清洗数据，提取关键内容，移除冗余数据/Whether to clean and format the data | true | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-video-comments"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_video_comments`
 
-- 摘要：获取视频评论/Get video comments
-- 能力：评论 / 作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_video_comments_api_v1_youtube_web_v2_get_video_comments_get`
+- Summary: 获取视频评论/Get video comments
+- Capabilities: comments / content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_video_comments_api_v1_youtube_web_v2_get_video_comments_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2045,54 +2045,54 @@
 > ## 翻页获取更多评论
 > GET /youtube_web/get_video_comments?video_id=oaSNBz4qMQY&continuation_token=xxx&need_format=true
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| video_id | query | string | 是 | 视频ID/Video ID | 无 | LuIL5JATZsc | 无 |
-| language_code | query | string | 否 | 语言代码（如zh-CN, en-US等）/Language code | zh-CN | zh-CN | 无 |
-| country_code | query | string | 否 | 国家代码（如US, JP等）/Country code | US | US | 无 |
-| sort_by | query | string enum[top, newest] | 否 | 排序方式 \| Sort by | top | 无 | 无 |
-| continuation_token | query | string | 否 | 翻页令牌/Pagination token | 无 | 无 | 无 |
-| need_format | query | boolean | 否 | 是否需要清洗数据，提取关键内容，移除冗余数据/Whether to clean and format the data | true | 无 | 无 |
+| video_id | query | string | Yes | 视频ID/Video ID | None | LuIL5JATZsc | None |
+| language_code | query | string | No | 语言代码（如zh-CN, en-US等）/Language code | zh-CN | zh-CN | None |
+| country_code | query | string | No | 国家代码（如US, JP等）/Country code | US | US | None |
+| sort_by | query | string enum[top, newest] | No | 排序方式 \| Sort by | top | None | None |
+| continuation_token | query | string | No | 翻页令牌/Pagination token | None | None | None |
+| need_format | query | boolean | No | 是否需要清洗数据，提取关键内容，移除冗余数据/Whether to clean and format the data | true | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-video-info"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_video_info`
 
-- 摘要：获取视频详情 /Get video information
-- 能力：作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_video_info_api_v1_youtube_web_v2_get_video_info_get`
+- Summary: 获取视频详情 /Get video information
+- Capabilities: content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_video_info_api_v1_youtube_web_v2_get_video_info_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2221,51 +2221,51 @@
 > ## 指定语言 / Specify language
 > GET /youtube_web/get_video_info?video_id=oaSNBz4qMQY&language_code=en-US
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| video_id | query | string | 是 | 视频ID/Video ID | 无 | oaSNBz4qMQY | 无 |
-| language_code | query | string | 否 | 语言代码（如zh-CN, en-US等）/Language code | zh-CN | zh-CN | 无 |
-| need_format | query | boolean | 否 | 是否需要清洗数据，提取关键内容，移除冗余数据/Whether to clean and format the data | true | 无 | 无 |
+| video_id | query | string | Yes | 视频ID/Video ID | None | oaSNBz4qMQY | None |
+| language_code | query | string | No | 语言代码（如zh-CN, en-US等）/Language code | zh-CN | zh-CN | None |
+| need_format | query | boolean | No | 是否需要清洗数据，提取关键内容，移除冗余数据/Whether to clean and format the data | true | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-video-streams"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_video_streams`
 
-- 摘要：获取视频流信息/Get video streams info
-- 能力：作品详情 / 直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_video_streams_api_v1_youtube_web_v2_get_video_streams_get`
+- Summary: 获取视频流信息/Get video streams info
+- Capabilities: content details / livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_video_streams_api_v1_youtube_web_v2_get_video_streams_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### ⚠️ 重要说明:
@@ -2347,50 +2347,50 @@
 > #### Step 1 - 获取格式信息: video_id = "dQw4w9WgXcQ"
 > #### Step 2 - 获取播放地址: use get_signed_stream_url with selected itag
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| video_id | query | string | 否 | 视频ID/Video ID | 无 | dQw4w9WgXcQ | 无 |
-| video_url | query | string | 否 | 视频URL/Video URL (如果提供video_id则忽略此参数/Ignored if video_id is provided) | 无 | https://www.youtube.com/watch?v=dQw4w9WgXcQ | 无 |
+| video_id | query | string | No | 视频ID/Video ID | None | dQw4w9WgXcQ | None |
+| video_url | query | string | No | 视频URL/Video URL (如果提供video_id则忽略此参数/Ignored if video_id is provided) | None | https://www.youtube.com/watch?v=dQw4w9WgXcQ | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-get-video-streams-v2"></a>
 ### `GET /api/u1/v1/youtube/web_v2/get_video_streams_v2`
 
-- 摘要：获取视频流信息 V2/Get video streams info V2
-- 能力：作品详情 / 直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_video_streams_v2_api_v1_youtube_web_v2_get_video_streams_v2_get`
+- Summary: 获取视频流信息 V2/Get video streams info V2
+- Capabilities: content details / livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_video_streams_v2_api_v1_youtube_web_v2_get_video_streams_v2_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### ✅ 特性:
@@ -2473,50 +2473,50 @@
 > ### [示例/Example]
 > #### 获取所有格式和URL: video_id = "dQw4w9WgXcQ"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| video_id | query | string | 否 | 视频ID/Video ID | 无 | dQw4w9WgXcQ | 无 |
-| video_url | query | string | 否 | 视频URL/Video URL (如果提供video_id则忽略此参数/Ignored if video_id is provided) | 无 | https://www.youtube.com/watch?v=dQw4w9WgXcQ | 无 |
+| video_id | query | string | No | 视频ID/Video ID | None | dQw4w9WgXcQ | None |
+| video_url | query | string | No | 视频URL/Video URL (如果提供video_id则忽略此参数/Ignored if video_id is provided) | None | https://www.youtube.com/watch?v=dQw4w9WgXcQ | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |
 
 <a id="get-api-u1-v1-youtube-web-v2-search-channels"></a>
 ### `GET /api/u1/v1/youtube/web_v2/search_channels`
 
-- 摘要：搜索频道/Search channels
-- 能力：搜索 / 主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`search_channels_api_v1_youtube_web_v2_search_channels_get`
+- Summary: 搜索频道/Search channels
+- Capabilities: search / profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `search_channels_api_v1_youtube_web_v2_search_channels_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 > ### 用途:
@@ -2623,38 +2623,38 @@
 > ### [示例/Example]
 > #### 搜索频道: keyword = "Rick Astley"
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | In | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| keyword | query | string | 否 | 搜索关键词/Search keyword | 无 | Rick Astley | 无 |
-| continuation_token | query | string | 否 | 分页token/Pagination token | 无 | 无 | 无 |
-| need_format | query | boolean | 否 | 是否格式化数据/Whether to format data | true | 无 | 无 |
+| keyword | query | string | No | 搜索关键词/Search keyword | None | Rick Astley | None |
+| continuation_token | query | string | No | 分页token/Pagination token | None | None | None |
+| need_format | query | boolean | No | 是否格式化数据/Whether to format data | true | None | None |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 | 200 | 无 | 无 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 | 无 | 无 | 无 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | 无 | 无 |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | 无 | 无 |
-| support | string | 否 | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | 无 | 无 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 | 无 | 无 | 无 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 | 无 | 无 | 无 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | 无 | 无 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | 无 | 无 | 无 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | 无 | 无 |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | 无 | 无 |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL | 无 | 无 | 无 |
-| router | string | 否 | The endpoint that generated this response \| 生成此响应的端点 | 无 | 无 | 无 |
-| params | 动态对象 | 否 | The parameters used in the request \| 请求中使用的参数 | 无 | 无 | 无 |
-| data | null | 否 | The response data \| 响应数据 | 无 | 无 | 无 |
+| code | integer | No | HTTP status code \| HTTP状态码 | 200 | None | None |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 | None | None | None |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) | Request successful. This request will incur a charge. | None | None |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) | 请求成功，本次请求将被计费。 | None | None |
+| support | string | No | Support message \| 支持消息 | Discord: https://discord.gg/aMEAS8Xsvz | None | None |
+| time | string | No | The time the response was generated \| 生成响应的时间 | None | None | None |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 | None | None | None |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 | America/Los_Angeles | None | None |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 | None | None | None |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) | This request will be cached. You can access the cached result directly using th… | None | None |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) | 本次请求将被缓存，你可以使用下面的 URL 直接访问缓存结果，有效期为 24 小时，访问缓存不会产生额外费用。 | None | None |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL | None | None | None |
+| router | string | No | The endpoint that generated this response \| 生成此响应的端点 | None | None | None |
+| params | dynamic object | No | The parameters used in the request \| 请求中使用的参数 | None | None | None |
+| data | null | No | The response data \| 响应数据 | None | None | None |

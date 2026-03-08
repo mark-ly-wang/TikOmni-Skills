@@ -1,26 +1,26 @@
-# TikHub-Downloader-API 完整契约
+# TikHub-Downloader-API Full Contract
 
-- 回到索引：[`api-capability-index.md`](../api-capability-index.md)
-- 回到路由详情：[`api-tags/tikhub-downloader-api.md`](../api-tags/tikhub-downloader-api.md)
-- 当前契约文件：`api-contracts/tikhub-downloader-api.md`
-- 数据源：`https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
-- 获取时间：`2026-03-08T04:31:58+00:00`
-- 路由数：`2`
-- 默认认证：请求头 `Authorization` Bearer
-- 使用方式：当需要精确的认证说明、参数描述、默认值、示例或成功响应字段时，再读本文件。
-- 标签说明：**(TikHub下载器接口/TikHub-Downloader-API endpoints)**
+- Back to index: [`api-capability-index.md`](../api-capability-index.md)
+- Back to route summary: [`api-tags/tikhub-downloader-api.md`](../api-tags/tikhub-downloader-api.md)
+- Current contract file: `api-contracts/tikhub-downloader-api.md`
+- Source: `https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
+- Fetched at: `2026-03-08T06:54:04+00:00`
+- Route count: `2`
+- Default auth: Header `Authorization` Bearer
+- Read this file only when you need precise auth notes, parameter descriptions, defaults, examples, or success-response fields.
+- Tag description: **(TikHub下载器接口/TikHub-Downloader-API endpoints)**
 
-## 路由契约
+## Route Contracts
 
 <a id="get-api-u1-v1-tikhub-downloader-redirect-download"></a>
 ### `GET /api/u1/v1/tikhub/downloader/redirect_download`
 
-- 摘要：重定向到最新版本的下载链接 / Redirect to the latest version download link
-- 能力：下载/媒体
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`redirect_download_api_v1_tikhub_downloader_redirect_download_get`
+- Summary: 重定向到最新版本的下载链接 / Redirect to the latest version download link
+- Capabilities: media / download
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `redirect_download_api_v1_tikhub_downloader_redirect_download_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 >
@@ -54,27 +54,27 @@
 > - Mac users: Redirect to `.zip` download URL.
 > - Other users: Redirect to the GitHub Release page.
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
-无成功响应声明
+No declared success response
 
 <a id="get-api-u1-v1-tikhub-downloader-version"></a>
 ### `GET /api/u1/v1/tikhub/downloader/version`
 
-- 摘要：检查TikHub下载器的版本更新 / Check for TikHub Downloader version updates
-- 能力：下载/媒体
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`update_check_api_v1_tikhub_downloader_version_get`
+- Summary: 检查TikHub下载器的版本更新 / Check for TikHub Downloader version updates
+- Capabilities: media / download
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `update_check_api_v1_tikhub_downloader_version_get`
 
-#### 说明
+#### Notes
 
 > # [中文]
 >
@@ -110,25 +110,25 @@
 > - `download_url`: Download link.
 > - `upload_note`: Update note.
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`latest_version`:string, `update_date`:string, `download_url`:string, `latest_download_url_win`:string, `latest_download_url_mac`:string, `upload_note`:string
+- Schema summary: `latest_version`:string, `update_date`:string, `download_url`:string, `latest_download_url_win`:string, `latest_download_url_mac`:string, `upload_note`:string
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| latest_version | string | 否 | 无 | 1.0.0 | 无 | 无 |
-| update_date | string | 否 | 无 | 2025-03-17 | 无 | 无 |
-| download_url | string | 否 | 无 | https://github.com/TikHub/TikHub-Multi-Functional-Downloader/releases/tag/V1.0.0 | 无 | 无 |
-| latest_download_url_win | string | 否 | 无 | https://github.com/TikHub/TikHub-Multi-Functional-Downloader/releases/download/… | 无 | 无 |
-| latest_download_url_mac | string | 否 | 无 | https://github.com/TikHub/TikHub-Multi-Functional-Downloader/archive/refs/tags/… | 无 | 无 |
-| upload_note | string | 否 | 无 | Bug fixes and performance improvements | 无 | 无 |
+| latest_version | string | No | None | 1.0.0 | None | None |
+| update_date | string | No | None | 2025-03-17 | None | None |
+| download_url | string | No | None | https://github.com/TikHub/TikHub-Multi-Functional-Downloader/releases/tag/V1.0.0 | None | None |
+| latest_download_url_win | string | No | None | https://github.com/TikHub/TikHub-Multi-Functional-Downloader/releases/download/… | None | None |
+| latest_download_url_mac | string | No | None | https://github.com/TikHub/TikHub-Multi-Functional-Downloader/archive/refs/tags/… | None | None |
+| upload_note | string | No | None | Bug fixes and performance improvements | None | None |

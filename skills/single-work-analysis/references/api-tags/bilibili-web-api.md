@@ -1,1267 +1,1267 @@
-# Bilibili-Web-API 路由详情
+# Bilibili-Web-API Route Summary
 
-- 回到索引：[`api-capability-index.md`](../api-capability-index.md)
-- 当前 tag 文件：`api-tags/bilibili-web-api.md`
-- 完整契约：[`api-contracts/bilibili-web-api.md`](../api-contracts/bilibili-web-api.md)
-- 数据源：`https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
-- 获取时间：`2026-03-08T04:31:58+00:00`
-- 路由数：`30`
-- 常见能力：作品详情 / 主页/账号 / 直播 / 详情 / 通用能力 / 评论
-- 默认认证：请求头 `Authorization` Bearer
-- 常见入参：`bv_id`, `uid`, `pn`, `cid`, `dynamic_id`, `order`, `room_id`, `a_id`, `c_id`, `url`
-- 标签说明：**(哔哩哔哩Web数据接口/Bilibili-Web-API data endpoints)**
+- Back to index: [`api-capability-index.md`](../api-capability-index.md)
+- Current tag file: `api-tags/bilibili-web-api.md`
+- Full contract: [`api-contracts/bilibili-web-api.md`](../api-contracts/bilibili-web-api.md)
+- Source: `https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
+- Fetched at: `2026-03-08T06:54:04+00:00`
+- Route count: `30`
+- Common capabilities: content details / profiles / accounts / livestream / details / general / comments
+- Default auth: Header `Authorization` Bearer
+- Common inputs: `bv_id`, `uid`, `pn`, `cid`, `dynamic_id`, `order`, `room_id`, `a_id`, `c_id`, `url`
+- Tag description: **(哔哩哔哩Web数据接口/Bilibili-Web-API data endpoints)**
 
-## 路由列表
+## Routes
 
 ### `GET /api/u1/v1/bilibili/web/bv_to_aid`
 
-- 摘要：通过bv号获得视频aid号/Generate aid by bvid
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_one_video_api_v1_bilibili_web_bv_to_aid_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-bv-to-aid`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-bv-to-aid)
+- Summary: 通过bv号获得视频aid号/Generate aid by bvid
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_one_video_api_v1_bilibili_web_bv_to_aid_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-bv-to-aid`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-bv-to-aid)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| bv_id | query | string | 是 | 作品id/Video id |
+| bv_id | query | string | Yes | 作品id/Video id |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_all_live_areas`
 
-- 摘要：获取所有直播分区列表/Get a list of all live areas
-- 能力：直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_collect_folders_api_v1_bilibili_web_fetch_all_live_areas_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-all-live-areas`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-all-live-areas)
+- Summary: 获取所有直播分区列表/Get a list of all live areas
+- Capabilities: livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_collect_folders_api_v1_bilibili_web_fetch_all_live_areas_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-all-live-areas`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-all-live-areas)
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_collect_folders`
 
-- 摘要：获取用户所有收藏夹信息/Get user collection folders
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_collect_folders_api_v1_bilibili_web_fetch_collect_folders_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-collect-folders`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-collect-folders)
+- Summary: 获取用户所有收藏夹信息/Get user collection folders
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_collect_folders_api_v1_bilibili_web_fetch_collect_folders_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-collect-folders`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-collect-folders)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| uid | query | string | 是 | 用户UID |
+| uid | query | string | Yes | 用户UID |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_com_popular`
 
-- 摘要：获取综合热门视频信息/Get comprehensive popular video information
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_collect_folders_api_v1_bilibili_web_fetch_com_popular_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-com-popular`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-com-popular)
+- Summary: 获取综合热门视频信息/Get comprehensive popular video information
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_collect_folders_api_v1_bilibili_web_fetch_com_popular_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-com-popular`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-com-popular)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| pn | query | integer | 否 | 页码/Page number |
+| pn | query | integer | No | 页码/Page number |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_comment_reply`
 
-- 摘要：获取视频下指定评论的回复/Get reply to the specified comment
-- 能力：评论 / 评论回复
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_collect_folders_api_v1_bilibili_web_fetch_comment_reply_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-comment-reply`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-comment-reply)
+- Summary: 获取视频下指定评论的回复/Get reply to the specified comment
+- Capabilities: comments / comment replies
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_collect_folders_api_v1_bilibili_web_fetch_comment_reply_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-comment-reply`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-comment-reply)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| bv_id | query | string | 是 | 作品id/Video id |
-| pn | query | integer | 否 | 页码/Page number |
-| rpid | query | string | 是 | 回复id/Reply id |
+| bv_id | query | string | Yes | 作品id/Video id |
+| pn | query | integer | No | 页码/Page number |
+| rpid | query | string | Yes | 回复id/Reply id |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_dynamic_detail`
 
-- 摘要：获取动态详情/Get dynamic detail
-- 能力：详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_dynamic_detail_api_v1_bilibili_web_fetch_dynamic_detail_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-dynamic-detail`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-dynamic-detail)
+- Summary: 获取动态详情/Get dynamic detail
+- Capabilities: details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_dynamic_detail_api_v1_bilibili_web_fetch_dynamic_detail_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-dynamic-detail`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-dynamic-detail)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| dynamic_id | query | string | 是 | 动态id/Dynamic id |
+| dynamic_id | query | string | Yes | 动态id/Dynamic id |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_dynamic_detail_v2`
 
-- 摘要：获取动态详情v2/Get dynamic detail v2
-- 能力：详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_dynamic_detail_v2_api_v1_bilibili_web_fetch_dynamic_detail_v2_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-dynamic-detail-v2`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-dynamic-detail-v2)
+- Summary: 获取动态详情v2/Get dynamic detail v2
+- Capabilities: details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_dynamic_detail_v2_api_v1_bilibili_web_fetch_dynamic_detail_v2_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-dynamic-detail-v2`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-dynamic-detail-v2)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| dynamic_id | query | string | 是 | 动态id/Dynamic id |
+| dynamic_id | query | string | Yes | 动态id/Dynamic id |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_general_search`
 
-- 摘要：获取综合搜索信息/Get general search data
-- 能力：搜索
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_general_search_api_v1_bilibili_web_fetch_general_search_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-general-search`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-general-search)
+- Summary: 获取综合搜索信息/Get general search data
+- Capabilities: search
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_general_search_api_v1_bilibili_web_fetch_general_search_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-general-search`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-general-search)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| keyword | query | string | 是 | 搜索关键词/Search keyword |
-| order | query | string | 是 | 排序方式/Order method |
-| page | query | integer | 是 | 页码/Page number |
-| page_size | query | integer | 是 | 每页数量/Number per page |
-| duration | query | integer | 否 | 时长筛选/Duration filter |
-| pubtime_begin_s | query | integer | 否 | 开始日期/Start date (10-digit timestamp) |
-| pubtime_end_s | query | integer | 否 | 结束日期/End date (10-digit timestamp) |
+| keyword | query | string | Yes | 搜索关键词/Search keyword |
+| order | query | string | Yes | 排序方式/Order method |
+| page | query | integer | Yes | 页码/Page number |
+| page_size | query | integer | Yes | 每页数量/Number per page |
+| duration | query | integer | No | 时长筛选/Duration filter |
+| pubtime_begin_s | query | integer | No | 开始日期/Start date (10-digit timestamp) |
+| pubtime_end_s | query | integer | No | 结束日期/End date (10-digit timestamp) |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_get_user_id`
 
-- 摘要：提取用户ID/Extract user ID
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_get_user_id_api_v1_bilibili_web_fetch_get_user_id_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-get-user-id`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-get-user-id)
+- Summary: 提取用户ID/Extract user ID
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_get_user_id_api_v1_bilibili_web_fetch_get_user_id_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-get-user-id`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-get-user-id)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| share_link | query | string | 是 | 用户分享链接/User share link |
+| share_link | query | string | Yes | 用户分享链接/User share link |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_hot_search`
 
-- 摘要：获取热门搜索信息/Get hot search data
-- 能力：搜索 / 热点/榜单
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_hot_search_api_v1_bilibili_web_fetch_hot_search_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-hot-search`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-hot-search)
+- Summary: 获取热门搜索信息/Get hot search data
+- Capabilities: search / trends / rankings
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_hot_search_api_v1_bilibili_web_fetch_hot_search_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-hot-search`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-hot-search)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| limit | query | 动态对象 | 是 | 返回数量/Return number |
+| limit | query | dynamic object | Yes | 返回数量/Return number |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_live_room_detail`
 
-- 摘要：获取指定直播间信息/Get information of specified live room
-- 能力：详情 / 直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_collect_folders_api_v1_bilibili_web_fetch_live_room_detail_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-live-room-detail`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-live-room-detail)
+- Summary: 获取指定直播间信息/Get information of specified live room
+- Capabilities: details / livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_collect_folders_api_v1_bilibili_web_fetch_live_room_detail_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-live-room-detail`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-live-room-detail)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| room_id | query | string | 是 | 直播间ID/Live room ID |
+| room_id | query | string | Yes | 直播间ID/Live room ID |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_live_streamers`
 
-- 摘要：获取指定分区正在直播的主播/Get live streamers of specified live area
-- 能力：直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_collect_folders_api_v1_bilibili_web_fetch_live_streamers_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-live-streamers`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-live-streamers)
+- Summary: 获取指定分区正在直播的主播/Get live streamers of specified live area
+- Capabilities: livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_collect_folders_api_v1_bilibili_web_fetch_live_streamers_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-live-streamers`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-live-streamers)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| area_id | query | string | 是 | 直播分区id/Live area ID |
-| pn | query | integer | 否 | 页码/Page number |
+| area_id | query | string | Yes | 直播分区id/Live area ID |
+| pn | query | integer | No | 页码/Page number |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_live_videos`
 
-- 摘要：获取直播间视频流/Get live video data of specified room
-- 能力：作品详情 / 直播
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_collect_folders_api_v1_bilibili_web_fetch_live_videos_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-live-videos`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-live-videos)
+- Summary: 获取直播间视频流/Get live video data of specified room
+- Capabilities: content details / livestream
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_collect_folders_api_v1_bilibili_web_fetch_live_videos_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-live-videos`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-live-videos)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| room_id | query | string | 是 | 直播间ID/Live room ID |
+| room_id | query | string | Yes | 直播间ID/Live room ID |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_one_video`
 
-- 摘要：获取单个视频详情信息/Get single video data
-- 能力：作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_one_video_api_v1_bilibili_web_fetch_one_video_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-one-video`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-one-video)
+- Summary: 获取单个视频详情信息/Get single video data
+- Capabilities: content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_one_video_api_v1_bilibili_web_fetch_one_video_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-one-video`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-one-video)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| bv_id | query | string | 是 | 作品id/Video id |
+| bv_id | query | string | Yes | 作品id/Video id |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_one_video_v2`
 
-- 摘要：获取单个视频详情信息V2/Get single video data V2
-- 能力：作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_one_video_v2_api_v1_bilibili_web_fetch_one_video_v2_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-one-video-v2`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-one-video-v2)
+- Summary: 获取单个视频详情信息V2/Get single video data V2
+- Capabilities: content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_one_video_v2_api_v1_bilibili_web_fetch_one_video_v2_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-one-video-v2`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-one-video-v2)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| a_id | query | string | 是 | 作品id/Video id |
-| c_id | query | string | 是 | 作品cid/Video cid |
+| a_id | query | string | Yes | 作品id/Video id |
+| c_id | query | string | Yes | 作品cid/Video cid |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_one_video_v3`
 
-- 摘要：获取单个视频详情信息V3/Get single video data V3
-- 能力：作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_one_video_v3_api_v1_bilibili_web_fetch_one_video_v3_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-one-video-v3`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-one-video-v3)
+- Summary: 获取单个视频详情信息V3/Get single video data V3
+- Capabilities: content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_one_video_v3_api_v1_bilibili_web_fetch_one_video_v3_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-one-video-v3`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-one-video-v3)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| url | query | string | 是 | 视频链接/Video URL |
+| url | query | string | Yes | 视频链接/Video URL |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_user_collection_videos`
 
-- 摘要：获取指定收藏夹内视频数据/Gets video data from a collection folder
-- 能力：主页/账号 / 作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_collection_videos_api_v1_bilibili_web_fetch_user_collection_videos_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-collection-videos`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-collection-videos)
+- Summary: 获取指定收藏夹内视频数据/Gets video data from a collection folder
+- Capabilities: profiles / accounts / content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_collection_videos_api_v1_bilibili_web_fetch_user_collection_videos_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-collection-videos`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-collection-videos)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| folder_id | query | string | 是 | 收藏夹id/collection folder id |
-| pn | query | integer | 否 | 页码/Page number |
+| folder_id | query | string | Yes | 收藏夹id/collection folder id |
+| pn | query | integer | No | 页码/Page number |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_user_dynamic`
 
-- 摘要：获取指定用户动态/Get dynamic information of specified user
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_collect_folders_api_v1_bilibili_web_fetch_user_dynamic_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-dynamic`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-dynamic)
+- Summary: 获取指定用户动态/Get dynamic information of specified user
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_collect_folders_api_v1_bilibili_web_fetch_user_dynamic_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-dynamic`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-dynamic)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| uid | query | string | 是 | 用户UID |
-| offset | query | string | 否 | 开始索引/offset |
+| uid | query | string | Yes | 用户UID |
+| offset | query | string | No | 开始索引/offset |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_user_post_videos`
 
-- 摘要：获取用户主页作品数据/Get user homepage video data
-- 能力：主页/账号 / 作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_post_videos_api_v1_bilibili_web_fetch_user_post_videos_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-post-videos`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-post-videos)
+- Summary: 获取用户主页作品数据/Get user homepage video data
+- Capabilities: profiles / accounts / content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_post_videos_api_v1_bilibili_web_fetch_user_post_videos_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-post-videos`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-post-videos)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| uid | query | string | 是 | 用户UID |
-| pn | query | integer | 否 | 页码/Page number |
-| order | query | string | 否 | 排序方式/Order method |
+| uid | query | string | Yes | 用户UID |
+| pn | query | integer | No | 页码/Page number |
+| order | query | string | No | 排序方式/Order method |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_user_profile`
 
-- 摘要：获取指定用户的信息/Get information of specified user
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_collect_folders_api_v1_bilibili_web_fetch_user_profile_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-profile`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-profile)
+- Summary: 获取指定用户的信息/Get information of specified user
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_collect_folders_api_v1_bilibili_web_fetch_user_profile_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-profile`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-profile)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| uid | query | string | 是 | 用户UID |
+| uid | query | string | Yes | 用户UID |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_user_relation_stat`
 
-- 摘要：获取用户关系状态统计/Get user relation stat (following and followers)
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_relation_stat_api_v1_bilibili_web_fetch_user_relation_stat_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-relation-stat`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-relation-stat)
+- Summary: 获取用户关系状态统计/Get user relation stat (following and followers)
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_relation_stat_api_v1_bilibili_web_fetch_user_relation_stat_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-relation-stat`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-relation-stat)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| uid | query | string | 是 | 用户UID/User UID |
+| uid | query | string | Yes | 用户UID/User UID |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_user_up_stat`
 
-- 摘要：获取UP主状态统计/Get UP stat (total likes and views)
-- 能力：主页/账号
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_user_up_stat_api_v1_bilibili_web_fetch_user_up_stat_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-up-stat`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-up-stat)
+- Summary: 获取UP主状态统计/Get UP stat (total likes and views)
+- Capabilities: profiles / accounts
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_user_up_stat_api_v1_bilibili_web_fetch_user_up_stat_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-up-stat`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-user-up-stat)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| uid | query | string | 是 | 用户UID/User UID |
+| uid | query | string | Yes | 用户UID/User UID |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_video_comments`
 
-- 摘要：获取指定视频的评论/Get comments on the specified video
-- 能力：评论 / 作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_collect_folders_api_v1_bilibili_web_fetch_video_comments_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-comments`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-comments)
+- Summary: 获取指定视频的评论/Get comments on the specified video
+- Capabilities: comments / content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_collect_folders_api_v1_bilibili_web_fetch_video_comments_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-comments`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-comments)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| bv_id | query | string | 是 | 作品id/Video id |
-| pn | query | integer | 否 | 页码/Page number |
+| bv_id | query | string | Yes | 作品id/Video id |
+| pn | query | integer | No | 页码/Page number |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_video_danmaku`
 
-- 摘要：获取视频实时弹幕/Get Video Danmaku
-- 能力：作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_one_video_api_v1_bilibili_web_fetch_video_danmaku_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-danmaku`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-danmaku)
+- Summary: 获取视频实时弹幕/Get Video Danmaku
+- Capabilities: content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_one_video_api_v1_bilibili_web_fetch_video_danmaku_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-danmaku`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-danmaku)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| cid | query | string | 是 | 作品cid/Video cid |
+| cid | query | string | Yes | 作品cid/Video cid |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_video_detail`
 
-- 摘要：获取单个视频详情/Get single video detail
-- 能力：作品详情 / 详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_video_detail_api_v1_bilibili_web_fetch_video_detail_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-detail`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-detail)
+- Summary: 获取单个视频详情/Get single video detail
+- Capabilities: content details / details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_video_detail_api_v1_bilibili_web_fetch_video_detail_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-detail`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-detail)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| aid | query | string | 是 | 作品id/Video id |
+| aid | query | string | Yes | 作品id/Video id |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_video_parts`
 
-- 摘要：通过bv号获得视频分p信息/Get Video Parts By bvid
-- 能力：作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_one_video_api_v1_bilibili_web_fetch_video_parts_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-parts`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-parts)
+- Summary: 通过bv号获得视频分p信息/Get Video Parts By bvid
+- Capabilities: content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_one_video_api_v1_bilibili_web_fetch_video_parts_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-parts`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-parts)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| bv_id | query | string | 是 | 作品id/Video id |
+| bv_id | query | string | Yes | 作品id/Video id |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_video_play_info`
 
-- 摘要：获取单个视频播放信息/Get single video play info
-- 能力：作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_video_play_info_api_v1_bilibili_web_fetch_video_play_info_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-play-info`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-play-info)
+- Summary: 获取单个视频播放信息/Get single video play info
+- Capabilities: content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_video_play_info_api_v1_bilibili_web_fetch_video_play_info_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-play-info`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-play-info)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| url | query | string | 是 | 视频链接/Video URL |
+| url | query | string | Yes | 视频链接/Video URL |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_video_playurl`
 
-- 摘要：获取视频流地址/Get video playurl
-- 能力：作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_one_video_api_v1_bilibili_web_fetch_video_playurl_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-playurl`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-playurl)
+- Summary: 获取视频流地址/Get video playurl
+- Capabilities: content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_one_video_api_v1_bilibili_web_fetch_video_playurl_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-playurl`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-playurl)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| bv_id | query | string | 是 | 作品id/Video id |
-| cid | query | string | 是 | 作品cid/Video cid |
+| bv_id | query | string | Yes | 作品id/Video id |
+| cid | query | string | Yes | 作品cid/Video cid |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `GET /api/u1/v1/bilibili/web/fetch_video_subtitle`
 
-- 摘要：获取视频字幕信息/Get video subtitle info
-- 能力：字幕/转写 / 作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_video_subtitle_api_v1_bilibili_web_fetch_video_subtitle_get`
-- 完整契约：[`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-subtitle`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-subtitle)
+- Summary: 获取视频字幕信息/Get video subtitle info
+- Capabilities: subtitles / transcription / content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_video_subtitle_api_v1_bilibili_web_fetch_video_subtitle_get`
+- Full contract: [`api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-subtitle`](../api-contracts/bilibili-web-api.md#get-api-u1-v1-bilibili-web-fetch-video-subtitle)
 
-#### 参数
+#### Parameters
 
-| 字段 | 位置 | 类型 | 必填 | 说明 |
+| Field | In | Type | Required | Description |
 | --- | --- | --- | --- | --- |
-| a_id | query | string | 是 | 作品id/Video id |
-| c_id | query | string | 是 | 作品cid/Video cid |
+| a_id | query | string | Yes | 作品id/Video id |
+| c_id | query | string | Yes | 作品cid/Video cid |
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.
 
 ### `POST /api/u1/v1/bilibili/web/fetch_vip_video_playurl`
 
-- 摘要：获取大会员清晰度视频流地址/Get VIP video playurl
-- 能力：作品详情
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`fetch_vip_video_playurl_api_v1_bilibili_web_fetch_vip_video_playurl_post`
-- 完整契约：[`api-contracts/bilibili-web-api.md#post-api-u1-v1-bilibili-web-fetch-vip-video-playurl`](../api-contracts/bilibili-web-api.md#post-api-u1-v1-bilibili-web-fetch-vip-video-playurl)
+- Summary: 获取大会员清晰度视频流地址/Get VIP video playurl
+- Capabilities: content details
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `fetch_vip_video_playurl_api_v1_bilibili_web_fetch_vip_video_playurl_post`
+- Full contract: [`api-contracts/bilibili-web-api.md#post-api-u1-v1-bilibili-web-fetch-vip-video-playurl`](../api-contracts/bilibili-web-api.md#post-api-u1-v1-bilibili-web-fetch-vip-video-playurl)
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-- required：是
+- required: Yes
 
 ##### `application/json`
 
-- Schema 摘要：`bv_id*`:string, `cid*`:string, `cookie*`:string
+- Schema summary: `bv_id*`:string, `cid*`:string, `cookie*`:string
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| bv_id | string | 是 | 作品id/Video id |
-| cid | string | 是 | 作品cid/Video cid |
-| cookie | string | 是 | 大会员用户Cookie/VIP User Cookie |
+| bv_id | string | Yes | 作品id/Video id |
+| cid | string | Yes | 作品cid/Video cid |
+| cookie | string | Yes | 大会员用户Cookie/VIP User Cookie |
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
+- Schema summary: `code`:integer, `request_id`:string, `message`:string, `message_zh`:string, `support`:string, `time`:string, `time_stamp`:integer, `time_zone`:string, ...
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| code | integer | 否 | HTTP status code \| HTTP状态码 |
-| request_id | string | 否 | Unique request identifier \| 唯一请求标识符 |
-| message | string | 否 | Response message (EN-US) \| 响应消息 (English) |
-| message_zh | string | 否 | Response message (ZH-CN) \| 响应消息 (中文) |
-| support | string | 否 | Support message \| 支持消息 |
-| time | string | 否 | The time the response was generated \| 生成响应的时间 |
-| time_stamp | integer | 否 | The timestamp the response was generated \| 生成响应的时间戳 |
-| time_zone | string | 否 | The timezone of the response time \| 响应时间的时区 |
-| docs | string | 否 | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
-| cache_message | string | 否 | Cache message (EN-US) \| 缓存消息 (English) |
-| cache_message_zh | string | 否 | Cache message (ZH-CN) \| 缓存消息 (中文) |
-| cache_url | string | 否 | The URL to access the cached result \| 访问缓存结果的 URL |
+| code | integer | No | HTTP status code \| HTTP状态码 |
+| request_id | string | No | Unique request identifier \| 唯一请求标识符 |
+| message | string | No | Response message (EN-US) \| 响应消息 (English) |
+| message_zh | string | No | Response message (ZH-CN) \| 响应消息 (中文) |
+| support | string | No | Support message \| 支持消息 |
+| time | string | No | The time the response was generated \| 生成响应的时间 |
+| time_stamp | integer | No | The timestamp the response was generated \| 生成响应的时间戳 |
+| time_zone | string | No | The timezone of the response time \| 响应时间的时区 |
+| docs | string | No | Link to the API Swagger documentation for this endpoint \| 此端点的 API Swagger 文档链接 |
+| cache_message | string | No | Cache message (EN-US) \| 缓存消息 (English) |
+| cache_message_zh | string | No | Cache message (ZH-CN) \| 缓存消息 (中文) |
+| cache_url | string | No | The URL to access the cached result \| 访问缓存结果的 URL |
 
-- 字段已截断：当前层仅展示前 `12` 行。
+- Fields truncated: this layer shows only the first `12` rows.

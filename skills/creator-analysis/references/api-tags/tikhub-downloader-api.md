@@ -1,65 +1,65 @@
-# TikHub-Downloader-API 路由详情
+# TikHub-Downloader-API Route Summary
 
-- 回到索引：[`api-capability-index.md`](../api-capability-index.md)
-- 当前 tag 文件：`api-tags/tikhub-downloader-api.md`
-- 完整契约：[`api-contracts/tikhub-downloader-api.md`](../api-contracts/tikhub-downloader-api.md)
-- 数据源：`https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
-- 获取时间：`2026-03-08T04:31:58+00:00`
-- 路由数：`2`
-- 常见能力：下载/媒体
-- 默认认证：请求头 `Authorization` Bearer
-- 常见入参：无
-- 标签说明：**(TikHub下载器接口/TikHub-Downloader-API endpoints)**
+- Back to index: [`api-capability-index.md`](../api-capability-index.md)
+- Current tag file: `api-tags/tikhub-downloader-api.md`
+- Full contract: [`api-contracts/tikhub-downloader-api.md`](../api-contracts/tikhub-downloader-api.md)
+- Source: `https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
+- Fetched at: `2026-03-08T06:54:04+00:00`
+- Route count: `2`
+- Common capabilities: media / download
+- Default auth: Header `Authorization` Bearer
+- Common inputs: None
+- Tag description: **(TikHub下载器接口/TikHub-Downloader-API endpoints)**
 
-## 路由列表
+## Routes
 
 ### `GET /api/u1/v1/tikhub/downloader/redirect_download`
 
-- 摘要：重定向到最新版本的下载链接 / Redirect to the latest version download link
-- 能力：下载/媒体
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`redirect_download_api_v1_tikhub_downloader_redirect_download_get`
-- 完整契约：[`api-contracts/tikhub-downloader-api.md#get-api-u1-v1-tikhub-downloader-redirect-download`](../api-contracts/tikhub-downloader-api.md#get-api-u1-v1-tikhub-downloader-redirect-download)
+- Summary: 重定向到最新版本的下载链接 / Redirect to the latest version download link
+- Capabilities: media / download
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `redirect_download_api_v1_tikhub_downloader_redirect_download_get`
+- Full contract: [`api-contracts/tikhub-downloader-api.md#get-api-u1-v1-tikhub-downloader-redirect-download`](../api-contracts/tikhub-downloader-api.md#get-api-u1-v1-tikhub-downloader-redirect-download)
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
-无成功响应声明
+No declared success response
 
 ### `GET /api/u1/v1/tikhub/downloader/version`
 
-- 摘要：检查TikHub下载器的版本更新 / Check for TikHub Downloader version updates
-- 能力：下载/媒体
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`update_check_api_v1_tikhub_downloader_version_get`
-- 完整契约：[`api-contracts/tikhub-downloader-api.md#get-api-u1-v1-tikhub-downloader-version`](../api-contracts/tikhub-downloader-api.md#get-api-u1-v1-tikhub-downloader-version)
+- Summary: 检查TikHub下载器的版本更新 / Check for TikHub Downloader version updates
+- Capabilities: media / download
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `update_check_api_v1_tikhub_downloader_version_get`
+- Full contract: [`api-contracts/tikhub-downloader-api.md#get-api-u1-v1-tikhub-downloader-version`](../api-contracts/tikhub-downloader-api.md#get-api-u1-v1-tikhub-downloader-version)
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`latest_version`:string, `update_date`:string, `download_url`:string, `latest_download_url_win`:string, `latest_download_url_mac`:string, `upload_note`:string
+- Schema summary: `latest_version`:string, `update_date`:string, `download_url`:string, `latest_download_url_win`:string, `latest_download_url_mac`:string, `upload_note`:string
 
-| 字段 | 类型 | 必填 | 说明 |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| latest_version | string | 否 | 无 |
-| update_date | string | 否 | 无 |
-| download_url | string | 否 | 无 |
-| latest_download_url_win | string | 否 | 无 |
-| latest_download_url_mac | string | 否 | 无 |
-| upload_note | string | 否 | 无 |
+| latest_version | string | No | None |
+| update_date | string | No | None |
+| download_url | string | No | None |
+| latest_download_url_win | string | No | None |
+| latest_download_url_mac | string | No | None |
+| upload_note | string | No | None |

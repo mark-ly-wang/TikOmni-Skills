@@ -39,73 +39,73 @@ TAG_SECTION_FIELD_DEPTH = 2
 CONTRACT_SECTION_FIELD_LIMIT = 120
 CONTRACT_SECTION_FIELD_DEPTH = 4
 ABILITY_RULES: Sequence[Tuple[str, str]] = (
-    ("transcription", "ASR/字幕转写"),
-    ("asr", "ASR/字幕转写"),
-    ("subtitle", "字幕/转写"),
-    ("upload", "媒体上传/公网URL"),
-    ("ingest", "媒体上传/公网URL"),
-    ("comment", "评论"),
-    ("reply", "评论回复"),
-    ("search", "搜索"),
-    ("suggest", "搜索"),
-    ("hot", "热点/榜单"),
-    ("billboard", "热点/榜单"),
-    ("trend", "热点/榜单"),
-    ("creator", "创作者"),
-    ("author", "创作者"),
-    ("user", "主页/账号"),
-    ("profile", "主页/账号"),
-    ("channel", "主页/账号"),
-    ("home", "主页/账号"),
-    ("video", "作品详情"),
-    ("note", "作品详情"),
-    ("post", "作品详情"),
-    ("article", "作品详情"),
-    ("detail", "详情"),
-    ("download", "下载/媒体"),
-    ("media", "下载/媒体"),
-    ("audio", "音频/媒体"),
-    ("tts", "字幕/转写"),
-    ("shop", "电商"),
-    ("product", "电商"),
-    ("goods", "电商"),
-    ("ads", "广告"),
-    ("ad_", "广告"),
-    ("creative", "广告"),
-    ("analytics", "数据分析"),
-    ("insight", "数据分析"),
-    ("report", "数据分析"),
-    ("live", "直播"),
-    ("stream", "直播"),
-    ("hashtag", "话题"),
-    ("challenge", "话题"),
-    ("topic", "话题"),
-    ("music", "音乐/音频"),
+    ("transcription", "ASR / transcription"),
+    ("asr", "ASR / transcription"),
+    ("subtitle", "subtitles / transcription"),
+    ("upload", "media upload / public URL"),
+    ("ingest", "media upload / public URL"),
+    ("comment", "comments"),
+    ("reply", "comment replies"),
+    ("search", "search"),
+    ("suggest", "search"),
+    ("hot", "trends / rankings"),
+    ("billboard", "trends / rankings"),
+    ("trend", "trends / rankings"),
+    ("creator", "creators"),
+    ("author", "creators"),
+    ("user", "profiles / accounts"),
+    ("profile", "profiles / accounts"),
+    ("channel", "profiles / accounts"),
+    ("home", "profiles / accounts"),
+    ("video", "content details"),
+    ("note", "content details"),
+    ("post", "content details"),
+    ("article", "content details"),
+    ("detail", "details"),
+    ("download", "media / download"),
+    ("media", "media / download"),
+    ("audio", "audio / media"),
+    ("tts", "subtitles / transcription"),
+    ("shop", "commerce"),
+    ("product", "commerce"),
+    ("goods", "commerce"),
+    ("ads", "ads"),
+    ("ad_", "ads"),
+    ("creative", "ads"),
+    ("analytics", "analytics"),
+    ("insight", "analytics"),
+    ("report", "analytics"),
+    ("live", "livestream"),
+    ("stream", "livestream"),
+    ("hashtag", "topics"),
+    ("challenge", "topics"),
+    ("topic", "topics"),
+    ("music", "music / audio"),
 )
 SERVICE_GUIDE_ROUTES: Sequence[Tuple[str, str, str, str]] = (
     (
-        "U2 提交 ASR 任务",
+        "Submit U2 ASR job",
         "POST",
         "/api/u2/v1/services/audio/asr/transcription",
-        "默认主路径。先用 U1 返回的无水印下载链接或下载链接直接提交 ASR，不允许先走 U3。",
+        "Default primary path. Submit the no-watermark or download URL returned by U1 directly to U2 ASR. Do not start with U3.",
     ),
     (
-        "U2 轮询任务状态",
+        "Poll U2 job status",
         "POST",
         "/api/u2/v1/tasks/{task_id}",
-        "用于观察任务完成度。90 秒仍未完成时进入软观察，120 秒（2 分钟）仍无结果时触发 U3 fallback。",
+        "Observe job completion. Stay in soft observation after 90 seconds. Trigger U3 fallback only if there is still no result after 120 seconds.",
     ),
     (
-        "U3 申请上传/中转",
+        "Request U3 upload / relay",
         "POST",
         "/api/u3/v1/uploads",
-        "仅在 U2 超过 120 秒仍无结果时使用。它的目标是把私有或非公网可读源链接转成公网可读 URL。",
+        "Use only if U2 still has no result after 120 seconds. Its purpose is to convert a private or non-publicly-readable source link into a public URL.",
     ),
     (
-        "U3 完成上传并获取公网 URL",
+        "Complete U3 upload and get a public URL",
         "POST",
         "/api/u3/v1/uploads/{upload_id}/complete",
-        "完成后应拿到公网可读 URL，再次回调 U2 ASR。若仍失败，则保留事实卡并返回 incomplete。",
+        "Completion should return a public URL. Submit that URL to U2 ASR again. If it still fails, keep the fact card and return incomplete.",
     ),
 )
 
@@ -115,7 +115,7 @@ def fetch_remote_spec(url: str) -> Dict[str, Any]:
     with urlopen(request, timeout=60) as response:
         payload = json.load(response)
     if not isinstance(payload, dict) or not isinstance(payload.get("paths"), dict):
-        raise ValueError(f"远端 OpenAPI 结构无效: {url}")
+        raise ValueError(f"invalid_remote_openapi_structure:{url}")
     return payload
 
 
@@ -128,7 +128,7 @@ def load_spec() -> Tuple[Dict[str, Any], Dict[str, str]]:
             "fetched_at": fetched_at,
         }
     except (OSError, URLError, ValueError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"远端 OpenAPI 拉取失败: {exc}") from exc
+        raise RuntimeError(f"failed_to_fetch_remote_openapi:{exc}") from exc
 
 
 def resolve_ref(spec: Dict[str, Any], ref: str) -> Dict[str, Any]:
@@ -225,7 +225,7 @@ def clip_text(text: str, limit: int) -> str:
 def markdown_escape(text: Any) -> str:
     normalized = normalize_inline_text(text)
     if not normalized:
-        return "无"
+        return "None"
     return normalized.replace("|", "\\|").replace("\n", "<br>")
 
 
@@ -287,7 +287,7 @@ def operation_anchor(method: str, path: str) -> str:
 def schema_type_name(spec: Dict[str, Any], schema: Optional[Dict[str, Any]]) -> str:
     resolved = deref_schema(spec, schema)
     if not resolved:
-        return "未声明"
+        return "Not declared"
     raw_type = resolved.get("type")
     if isinstance(raw_type, list):
         rendered_types = [str(item).strip() for item in raw_type if str(item).strip()]
@@ -306,7 +306,7 @@ def schema_type_name(spec: Dict[str, Any], schema: Optional[Dict[str, Any]]) -> 
     elif schema_type:
         base = schema_type
     else:
-        base = "动态对象"
+        base = "dynamic object"
 
     schema_format = normalize_inline_text(resolved.get("format"))
     if schema_format:
@@ -352,7 +352,7 @@ def summarize_schema_fields(
     resolved = deref_schema(spec, schema)
     properties = resolved.get("properties")
     if not isinstance(properties, dict) or not properties:
-        return "动态对象"
+        return "dynamic object"
     required = set(resolved.get("required") or [])
     fields: List[str] = []
     for index, (name, field_schema) in enumerate(properties.items()):
@@ -372,7 +372,7 @@ def summarize_schema(
 ) -> str:
     resolved = deref_schema(spec, schema)
     if not resolved:
-        return "无结构声明"
+        return "No declared structure"
     schema_type = str(resolved.get("type") or "").strip()
     if schema_type == "object" or isinstance(resolved.get("properties"), dict):
         return summarize_schema_fields(spec, resolved, depth=depth, limit=limit)
@@ -396,21 +396,21 @@ def describe_security_scheme(spec: Dict[str, Any], scheme_name: str) -> str:
     description = normalize_inline_text(scheme.get("description"))
 
     if scheme_type == "http" and http_scheme.lower() == "bearer":
-        detail = "请求头 `Authorization: Bearer {token}`"
+        detail = "Header `Authorization: Bearer {token}`"
         if "cookie" in description.lower() and "authorization" in description.lower():
-            detail += "；文档说明还可用 Cookie `Authorization` 兜底"
-        return f"{detail}（`{scheme_name}`）"
+            detail += "; docs also allow Cookie `Authorization` as fallback"
+        return f"{detail} (`{scheme_name}`)"
 
     if scheme_type == "apiKey":
         location = scheme_in or "query"
         target = f"`{param_name}`" if param_name else "`<unnamed>`"
-        return f"{location} {target}（`{scheme_name}`）"
+        return f"{location} {target} (`{scheme_name}`)"
 
     if scheme_type:
         detail = f"{scheme_type}"
         if http_scheme:
             detail = f"{detail}:{http_scheme}"
-        return f"{detail}（`{scheme_name}`）"
+        return f"{detail} (`{scheme_name}`)"
     return f"`{scheme_name}`"
 
 
@@ -424,25 +424,25 @@ def effective_security(spec: Dict[str, Any], op: Dict[str, Any]) -> List[Dict[st
 def summarize_security(spec: Dict[str, Any], op: Dict[str, Any]) -> str:
     requirements = effective_security(spec, op)
     if not requirements:
-        return "无认证要求"
+        return "No auth required"
 
     options: List[str] = []
     for requirement in requirements:
         if not isinstance(requirement, dict):
             continue
         if not requirement:
-            options.append("无认证要求")
+            options.append("No auth required")
             continue
         parts = [describe_security_scheme(spec, scheme_name) for scheme_name in requirement.keys()]
         if parts:
             options.append(" + ".join(parts))
     unique_options = list(dict.fromkeys(options))
-    return " 或 ".join(unique_options) if unique_options else "无认证要求"
+    return " or ".join(unique_options) if unique_options else "No auth required"
 
 
 def compact_security_label(summary: str) -> str:
     if "Authorization: Bearer {token}" in summary:
-        return "请求头 `Authorization` Bearer"
+        return "Header `Authorization` Bearer"
     return summary
 
 
@@ -475,7 +475,7 @@ def merge_parameters(
 
 def summarize_params(params: Sequence[Dict[str, Any]]) -> str:
     if not params:
-        return "无"
+        return "None"
     grouped: Dict[str, List[str]] = defaultdict(list)
     for param in params:
         if not isinstance(param, dict):
@@ -487,7 +487,7 @@ def summarize_params(params: Sequence[Dict[str, Any]]) -> str:
         marker = "*" if param.get("required") else ""
         grouped[location].append(f"`{name}{marker}`")
     parts = [f"{location}: {', '.join(values)}" for location, values in grouped.items()]
-    return "; ".join(parts) if parts else "无"
+    return "; ".join(parts) if parts else "None"
 
 
 def extract_parameter_rows(spec: Dict[str, Any], params: Sequence[Dict[str, Any]]) -> List[Dict[str, str]]:
@@ -502,14 +502,14 @@ def extract_parameter_rows(spec: Dict[str, Any], params: Sequence[Dict[str, Any]
         schema = resolved.get("schema") if isinstance(resolved.get("schema"), dict) else {}
         rows.append(
             {
-                "字段": name,
-                "位置": str(resolved.get("in") or "query"),
-                "类型": schema_type_name(spec, schema),
-                "必填": "是" if resolved.get("required") else "否",
-                "说明": normalize_inline_text(resolved.get("description") or schema.get("description")) or "无",
-                "默认值": format_value(schema.get("default")),
-                "示例": format_value(first_non_empty(resolved.get("example"), schema.get("example"))),
-                "枚举": format_enum(schema.get("enum")) or "无",
+                "Field": name,
+                "In": str(resolved.get("in") or "query"),
+                "Type": schema_type_name(spec, schema),
+                "Required": "Yes" if resolved.get("required") else "No",
+                "Description": normalize_inline_text(resolved.get("description") or schema.get("description")) or "None",
+                "Default": format_value(schema.get("default")),
+                "Example": format_value(first_non_empty(resolved.get("example"), schema.get("example"))),
+                "Enum": format_enum(schema.get("enum")) or "None",
             }
         )
     return rows
@@ -534,16 +534,16 @@ def collect_schema_rows(
             return
 
         resolved = deref_schema(spec, field_schema)
-        description = normalize_inline_text(field_schema.get("description") or resolved.get("description")) or "无"
+        description = normalize_inline_text(field_schema.get("description") or resolved.get("description")) or "None"
         rows.append(
             {
-                "字段": path,
-                "类型": schema_type_name(spec, field_schema),
-                "必填": "是" if required else "否",
-                "说明": description,
-                "默认值": format_value(first_non_empty(field_schema.get("default"), resolved.get("default"))),
-                "示例": format_value(first_non_empty(field_schema.get("example"), resolved.get("example"))),
-                "枚举": format_enum(first_non_empty(field_schema.get("enum"), resolved.get("enum"))) or "无",
+                "Field": path,
+                "Type": schema_type_name(spec, field_schema),
+                "Required": "Yes" if required else "No",
+                "Description": description,
+                "Default": format_value(first_non_empty(field_schema.get("default"), resolved.get("default"))),
+                "Example": format_value(first_non_empty(field_schema.get("example"), resolved.get("example"))),
+                "Enum": format_enum(first_non_empty(field_schema.get("enum"), resolved.get("enum"))) or "None",
             }
         )
 
@@ -625,10 +625,10 @@ def pick_media_entries(content: Any) -> List[Tuple[str, Dict[str, Any]]]:
 def summarize_request_body(spec: Dict[str, Any], request_body: Dict[str, Any]) -> str:
     resolved_body = deref_object(spec, request_body)
     if not resolved_body:
-        return "无"
+        return "None"
     entries = pick_media_entries(resolved_body.get("content"))
     if not entries:
-        return "无"
+        return "None"
     media_type, media_spec = entries[0]
     schema = media_spec.get("schema")
     if not isinstance(schema, dict):
@@ -664,12 +664,12 @@ def pick_success_response(spec: Dict[str, Any], responses: Any) -> Tuple[str, Di
 def summarize_success_response(spec: Dict[str, Any], responses: Any) -> str:
     chosen_code, chosen_response = pick_success_response(spec, responses)
     if not chosen_code:
-        return "无成功响应声明"
+        return "No declared success response"
     if not chosen_response:
-        return f"{chosen_code}: 无结构声明"
+        return f"{chosen_code}: No declared structure"
     entries = pick_media_entries(chosen_response.get("content"))
     if not entries:
-        return f"{chosen_code}: 无响应体"
+        return f"{chosen_code}: No response body"
     media_type, media_spec = entries[0]
     schema = media_spec.get("schema")
     if not isinstance(schema, dict):
@@ -717,7 +717,7 @@ def infer_abilities(path: str) -> List[str]:
             continue
         if token in lowered and label not in abilities:
             abilities.append(label)
-    return abilities or ["通用能力"]
+    return abilities or ["general"]
 
 
 def collect_common_inputs(spec: Dict[str, Any], operations: Sequence[Tuple[str, str, Dict[str, Any]]]) -> str:
@@ -740,7 +740,7 @@ def collect_common_inputs(spec: Dict[str, Any], operations: Sequence[Tuple[str, 
         for field_name in list((resolved.get("properties") or {}).keys())[:10]:
             counter[str(field_name)] += 1
     if not counter:
-        return "无"
+        return "None"
     return ", ".join(f"`{name}`" for name, _ in counter.most_common(10))
 
 
@@ -749,7 +749,7 @@ def collect_common_security(spec: Dict[str, Any], operations: Sequence[Tuple[str
     for _, _, op in operations:
         counter[summarize_security(spec, op)] += 1
     if not counter:
-        return "无认证要求"
+        return "No auth required"
     return " / ".join(compact_security_label(summary) for summary, _ in counter.most_common(2))
 
 
@@ -767,7 +767,7 @@ def render_markdown_table(
     for row in rows:
         rendered_cells: List[str] = []
         for header in headers:
-            value = row.get(header, "") or "无"
+            value = row.get(header, "") or "None"
             if header in clip_limits:
                 value = clip_text(value, clip_limits[header])
             rendered_cells.append(markdown_escape(value))
@@ -782,16 +782,16 @@ def render_parameter_section(
     detailed: bool,
 ) -> List[str]:
     rows = extract_parameter_rows(spec, params)
-    lines = ["#### 参数", ""]
+    lines = ["#### Parameters", ""]
     if not rows:
-        lines.extend(["无", ""])
+        lines.extend(["None", ""])
         return lines
 
-    headers = ["字段", "位置", "类型", "必填", "说明"]
-    clip_limits = {"说明": 120}
+    headers = ["Field", "In", "Type", "Required", "Description"]
+    clip_limits = {"Description": 120}
     if detailed:
-        headers.extend(["默认值", "示例", "枚举"])
-        clip_limits = {"说明": 180, "默认值": 80, "示例": 80, "枚举": 80}
+        headers.extend(["Default", "Example", "Enum"])
+        clip_limits = {"Description": 180, "Default": 80, "Example": 80, "Enum": 80}
     lines.extend(render_markdown_table(headers, rows, clip_limits=clip_limits))
     lines.append("")
     return lines
@@ -804,12 +804,12 @@ def render_request_body_section(
     detailed: bool,
 ) -> List[str]:
     resolved_body = deref_object(spec, request_body)
-    lines = ["#### 请求体", ""]
+    lines = ["#### Request Body", ""]
     if not resolved_body:
-        lines.extend(["无", ""])
+        lines.extend(["None", ""])
         return lines
 
-    lines.append(f"- required：{'是' if resolved_body.get('required') else '否'}")
+    lines.append(f"- required: {'Yes' if resolved_body.get('required') else 'No'}")
     lines.append("")
     sections = collect_content_sections(
         spec,
@@ -818,28 +818,28 @@ def render_request_body_section(
         max_rows=CONTRACT_SECTION_FIELD_LIMIT if detailed else TAG_SECTION_FIELD_LIMIT,
     )
     if not sections:
-        lines.extend(["无结构声明", ""])
+        lines.extend(["No declared structure", ""])
         return lines
 
-    headers = ["字段", "类型", "必填", "说明"]
-    clip_limits = {"说明": 120}
+    headers = ["Field", "Type", "Required", "Description"]
+    clip_limits = {"Description": 120}
     if detailed:
-        headers.extend(["默认值", "示例", "枚举"])
-        clip_limits = {"说明": 180, "默认值": 80, "示例": 80, "枚举": 80}
+        headers.extend(["Default", "Example", "Enum"])
+        clip_limits = {"Description": 180, "Default": 80, "Example": 80, "Enum": 80}
 
     for section in sections:
         lines.append(f"##### `{section['media_type']}`")
         lines.append("")
-        lines.append(f"- Schema 摘要：{section['summary']}")
+        lines.append(f"- Schema summary: {section['summary']}")
         lines.append("")
         if section["rows"]:
             lines.extend(render_markdown_table(headers, section["rows"], clip_limits=clip_limits))
             lines.append("")
         else:
-            lines.extend(["无字段表", ""])
+            lines.extend(["No field table", ""])
         if section["truncated"]:
             lines.append(
-                f"- 字段已截断：当前层仅展示前 `{CONTRACT_SECTION_FIELD_LIMIT if detailed else TAG_SECTION_FIELD_LIMIT}` 行。"
+                f"- Fields truncated: this layer shows only the first `{CONTRACT_SECTION_FIELD_LIMIT if detailed else TAG_SECTION_FIELD_LIMIT}` rows."
             )
             lines.append("")
     return lines
@@ -852,12 +852,12 @@ def render_success_response_section(
     detailed: bool,
 ) -> List[str]:
     status_code, response = pick_success_response(spec, responses)
-    lines = ["#### 成功响应", ""]
+    lines = ["#### Success Response", ""]
     if not status_code:
-        lines.extend(["无成功响应声明", ""])
+        lines.extend(["No declared success response", ""])
         return lines
     if not response:
-        lines.extend([f"`{status_code}`：无结构声明", ""])
+        lines.extend([f"`{status_code}`: No declared structure", ""])
         return lines
 
     sections = collect_content_sections(
@@ -867,28 +867,28 @@ def render_success_response_section(
         max_rows=CONTRACT_SECTION_FIELD_LIMIT if detailed else TAG_SECTION_FIELD_LIMIT,
     )
     if not sections:
-        lines.extend([f"`{status_code}`：无响应体", ""])
+        lines.extend([f"`{status_code}`: No response body", ""])
         return lines
 
-    headers = ["字段", "类型", "必填", "说明"]
-    clip_limits = {"说明": 120}
+    headers = ["Field", "Type", "Required", "Description"]
+    clip_limits = {"Description": 120}
     if detailed:
-        headers.extend(["默认值", "示例", "枚举"])
-        clip_limits = {"说明": 180, "默认值": 80, "示例": 80, "枚举": 80}
+        headers.extend(["Default", "Example", "Enum"])
+        clip_limits = {"Description": 180, "Default": 80, "Example": 80, "Enum": 80}
 
     for section in sections:
         lines.append(f"##### `{status_code} {section['media_type']}`")
         lines.append("")
-        lines.append(f"- Schema 摘要：{section['summary']}")
+        lines.append(f"- Schema summary: {section['summary']}")
         lines.append("")
         if section["rows"]:
             lines.extend(render_markdown_table(headers, section["rows"], clip_limits=clip_limits))
             lines.append("")
         else:
-            lines.extend(["无字段表", ""])
+            lines.extend(["No field table", ""])
         if section["truncated"]:
             lines.append(
-                f"- 字段已截断：当前层仅展示前 `{CONTRACT_SECTION_FIELD_LIMIT if detailed else TAG_SECTION_FIELD_LIMIT}` 行。"
+                f"- Fields truncated: this layer shows only the first `{CONTRACT_SECTION_FIELD_LIMIT if detailed else TAG_SECTION_FIELD_LIMIT}` rows."
             )
             lines.append("")
     return lines
@@ -942,44 +942,44 @@ def build_index_markdown(
     op_count = sum(len(items) for items in grouped.values())
     global_security = summarize_security(spec, {})
     lines: List[str] = [
-        "# TikOmni API 能力索引",
+        "# TikOmni API Capability Index",
         "",
-        "## 用途",
+        "## Purpose",
         "",
-        "- 本文档是自动生成的轻量入口，用来先锁定 tag、能力和认证方式。",
-        f"- 当前数据源：`{source_meta['mode']}`",
-        f"- 来源：`{source_meta['source']}`",
-        f"- 获取时间：`{source_meta['fetched_at']}`",
-        "- route 选择先读这里；当需要字段说明、默认值、示例或完整响应结构时，再进入 `api-tags/` 与 `api-contracts/`。",
-        "- 涉及 ASR 超时、公网 URL 不可读、U3 媒体中转时，再读 `service-guides/asr-u2-u3-fallback.md`。",
+        "- This auto-generated lightweight entry point helps identify the right tag, capability area, and auth pattern first.",
+        f"- Source mode: `{source_meta['mode']}`",
+        f"- Source: `{source_meta['source']}`",
+        f"- Fetched at: `{source_meta['fetched_at']}`",
+        "- Start route selection here. Read `api-tags/` and `api-contracts/` only when you need field definitions, defaults, examples, or full response structures.",
+        "- If the task involves ASR timeout, non-public media URLs, or U3 media relay, also read `service-guides/asr-u2-u3-fallback.md`.",
         "",
-        "## 全局认证",
+        "## Global Auth",
         "",
-        f"- 默认认证：{global_security}",
-        "- 如果个别 route 覆盖或关闭了默认认证，以对应 `api-tags/` 与 `api-contracts/` 条目为准。",
+        f"- Default auth: {global_security}",
+        "- If a route overrides or disables the default auth requirement, trust the corresponding `api-tags/` and `api-contracts/` entries.",
         "",
-        "## 读取顺序",
+        "## Read Order",
         "",
-        "1. 先按平台和对象类型选 tag。",
-        "2. 再打开对应 `api-tags/<tag>.md` 看路由摘要、认证方式和关键字段。",
-        "3. 如果需要精确字段说明、默认值、示例或成功响应结构，再打开 `api-contracts/<tag>.md`。",
-        "4. 如果任务涉及音频转写、90 秒软观察或 120 秒（2 分钟）硬 fallback，再读 U2/U3 组合 guide。",
+        "1. Choose a tag by platform and object type.",
+        "2. Open `api-tags/<tag>.md` for route summaries, auth requirements, and key fields.",
+        "3. Open `api-contracts/<tag>.md` only when you need exact field definitions, defaults, examples, or full success-response structures.",
+        "4. If the task involves transcription, the 90-second soft observation window, or the 120-second hard fallback, read the U2/U3 guide.",
         "",
-        "## 统计",
+        "## Stats",
         "",
-        f"- 标签组数量：`{len(grouped)}`",
-        f"- 路由数量：`{op_count}`",
-        f"- 生成目标：`{len(REFERENCE_ROOTS)}` 个 skill reference",
+        f"- Tag groups: `{len(grouped)}`",
+        f"- Routes: `{op_count}`",
+        f"- Generated targets: `{len(REFERENCE_ROOTS)}` skill reference sets",
         "",
-        "## 特殊链路",
+        "## Special Flows",
         "",
-        f"- ASR 与 U3 fallback：[`{SERVICE_GUIDES_DIRNAME}/{ASR_FALLBACK_GUIDE_FILENAME}`](./{SERVICE_GUIDES_DIRNAME}/{ASR_FALLBACK_GUIDE_FILENAME})",
-        f"- ASR tag：[`{tag_file_relpath('ASR-API')}`](./{tag_file_relpath('ASR-API')})" if "ASR-API" in grouped else "- ASR tag：当前 OpenAPI 未声明 `ASR-API`。",
-        f"- U3 媒体中转 tag：[`{tag_file_relpath('Media-Ingest-API')}`](./{tag_file_relpath('Media-Ingest-API')})" if "Media-Ingest-API" in grouped else "- U3 媒体中转 tag：当前 OpenAPI 未声明 `Media-Ingest-API`。",
+        f"- ASR and U3 fallback: [`{SERVICE_GUIDES_DIRNAME}/{ASR_FALLBACK_GUIDE_FILENAME}`](./{SERVICE_GUIDES_DIRNAME}/{ASR_FALLBACK_GUIDE_FILENAME})",
+        f"- ASR tag: [`{tag_file_relpath('ASR-API')}`](./{tag_file_relpath('ASR-API')})" if "ASR-API" in grouped else "- ASR tag: `ASR-API` is not declared in the current OpenAPI.",
+        f"- U3 media relay tag: [`{tag_file_relpath('Media-Ingest-API')}`](./{tag_file_relpath('Media-Ingest-API')})" if "Media-Ingest-API" in grouped else "- U3 media relay tag: `Media-Ingest-API` is not declared in the current OpenAPI.",
         "",
-        "## 标签概览",
+        "## Tag Overview",
         "",
-        "| Tag | 文件 | 契约 | Ops | 认证 | 常见能力 | 常见入参 |",
+        "| Tag | File | Contract | Ops | Auth | Common Capabilities | Common Inputs |",
         "| --- | --- | --- | ---: | --- | --- | --- |",
     ]
 
@@ -988,7 +988,7 @@ def build_index_markdown(
         ability_counter: Counter[str] = Counter()
         for _, path, _ in operations:
             ability_counter.update(infer_abilities(path))
-        top_abilities = " / ".join(label for label, _ in ability_counter.most_common(4)) or "通用能力"
+        top_abilities = " / ".join(label for label, _ in ability_counter.most_common(4)) or "general"
         common_inputs = collect_common_inputs(spec, operations)
         auth = collect_common_security(spec, operations)
         file_link = f"[`{tag_file_relpath(tag)}`](./{tag_file_relpath(tag)})"
@@ -1008,31 +1008,31 @@ def build_tag_markdown(
     ability_counter: Counter[str] = Counter()
     for _, path, _ in operations:
         ability_counter.update(infer_abilities(path))
-    top_abilities = " / ".join(label for label, _ in ability_counter.most_common(6)) or "通用能力"
+    top_abilities = " / ".join(label for label, _ in ability_counter.most_common(6)) or "general"
     desc = str(tag_meta.get("description") or "").strip().replace("\n", " ")
     common_auth = collect_common_security(spec, operations)
     contract_link = contract_file_relpath(tag)
 
     lines: List[str] = [
-        f"# {tag} 路由详情",
+        f"# {tag} Route Summary",
         "",
-        f"- 回到索引：[`{INDEX_FILENAME}`](../{INDEX_FILENAME})",
-        f"- 当前 tag 文件：`{tag_file_relpath(tag)}`",
-        f"- 完整契约：[`{contract_link}`](../{contract_link})",
-        f"- 数据源：`{source_meta['source']}`",
-        f"- 获取时间：`{source_meta['fetched_at']}`",
-        f"- 路由数：`{len(operations)}`",
-        f"- 常见能力：{top_abilities}",
-        f"- 默认认证：{common_auth}",
-        f"- 常见入参：{collect_common_inputs(spec, operations)}",
+        f"- Back to index: [`{INDEX_FILENAME}`](../{INDEX_FILENAME})",
+        f"- Current tag file: `{tag_file_relpath(tag)}`",
+        f"- Full contract: [`{contract_link}`](../{contract_link})",
+        f"- Source: `{source_meta['source']}`",
+        f"- Fetched at: `{source_meta['fetched_at']}`",
+        f"- Route count: `{len(operations)}`",
+        f"- Common capabilities: {top_abilities}",
+        f"- Default auth: {common_auth}",
+        f"- Common inputs: {collect_common_inputs(spec, operations)}",
     ]
     if desc:
-        lines.append(f"- 标签说明：{desc}")
+        lines.append(f"- Tag description: {desc}")
 
     if tag in {"ASR-API", "Media-Ingest-API"}:
-        lines.append(f"- 相关组合 guide：[`{SERVICE_GUIDES_DIRNAME}/{ASR_FALLBACK_GUIDE_FILENAME}`](../{SERVICE_GUIDES_DIRNAME}/{ASR_FALLBACK_GUIDE_FILENAME})")
+        lines.append(f"- Related service guide: [`{SERVICE_GUIDES_DIRNAME}/{ASR_FALLBACK_GUIDE_FILENAME}`](../{SERVICE_GUIDES_DIRNAME}/{ASR_FALLBACK_GUIDE_FILENAME})")
 
-    lines.extend(["", "## 路由列表", ""])
+    lines.extend(["", "## Routes", ""])
 
     for method, path, op in operations:
         ability = " / ".join(infer_abilities(path))
@@ -1044,12 +1044,12 @@ def build_tag_markdown(
         lines.append(f"### `{method} {path}`")
         lines.append("")
         if summary:
-            lines.append(f"- 摘要：{summary}")
-        lines.append(f"- 能力：{ability}")
-        lines.append(f"- 认证：{security}")
+            lines.append(f"- Summary: {summary}")
+        lines.append(f"- Capabilities: {ability}")
+        lines.append(f"- Auth: {security}")
         if operation_id:
-            lines.append(f"- operationId：`{operation_id}`")
-        lines.append(f"- 完整契约：[`{contract_link}#{contract_anchor}`](../{contract_link}#{contract_anchor})")
+            lines.append(f"- operationId: `{operation_id}`")
+        lines.append(f"- Full contract: [`{contract_link}#{contract_anchor}`](../{contract_link}#{contract_anchor})")
         lines.append("")
         lines.extend(render_parameter_section(spec, op.get("parameters") or [], detailed=False))
         lines.extend(render_request_body_section(spec, op.get("requestBody") or {}, detailed=False))
@@ -1068,21 +1068,21 @@ def build_contract_markdown(
     desc = normalize_inline_text(tag_meta.get("description"))
     common_auth = collect_common_security(spec, operations)
     lines: List[str] = [
-        f"# {tag} 完整契约",
+        f"# {tag} Full Contract",
         "",
-        f"- 回到索引：[`{INDEX_FILENAME}`](../{INDEX_FILENAME})",
-        f"- 回到路由详情：[`{tag_file_relpath(tag)}`](../{tag_file_relpath(tag)})",
-        f"- 当前契约文件：`{contract_file_relpath(tag)}`",
-        f"- 数据源：`{source_meta['source']}`",
-        f"- 获取时间：`{source_meta['fetched_at']}`",
-        f"- 路由数：`{len(operations)}`",
-        f"- 默认认证：{common_auth}",
-        "- 使用方式：当需要精确的认证说明、参数描述、默认值、示例或成功响应字段时，再读本文件。",
+        f"- Back to index: [`{INDEX_FILENAME}`](../{INDEX_FILENAME})",
+        f"- Back to route summary: [`{tag_file_relpath(tag)}`](../{tag_file_relpath(tag)})",
+        f"- Current contract file: `{contract_file_relpath(tag)}`",
+        f"- Source: `{source_meta['source']}`",
+        f"- Fetched at: `{source_meta['fetched_at']}`",
+        f"- Route count: `{len(operations)}`",
+        f"- Default auth: {common_auth}",
+        "- Read this file only when you need precise auth notes, parameter descriptions, defaults, examples, or success-response fields.",
     ]
     if desc:
-        lines.append(f"- 标签说明：{desc}")
+        lines.append(f"- Tag description: {desc}")
 
-    lines.extend(["", "## 路由契约", ""])
+    lines.extend(["", "## Route Contracts", ""])
 
     for method, path, op in operations:
         summary = normalize_inline_text(op.get("summary"))
@@ -1095,15 +1095,15 @@ def build_contract_markdown(
         lines.append(f"### `{method} {path}`")
         lines.append("")
         if summary:
-            lines.append(f"- 摘要：{summary}")
-        lines.append(f"- 能力：{' / '.join(infer_abilities(path))}")
-        lines.append(f"- 认证：{security}")
+            lines.append(f"- Summary: {summary}")
+        lines.append(f"- Capabilities: {' / '.join(infer_abilities(path))}")
+        lines.append(f"- Auth: {security}")
         if operation_id:
-            lines.append(f"- operationId：`{operation_id}`")
+            lines.append(f"- operationId: `{operation_id}`")
         lines.append("")
 
         if description:
-            lines.append("#### 说明")
+            lines.append("#### Notes")
             lines.append("")
             lines.extend(quote_block(description))
             lines.append("")
@@ -1132,66 +1132,66 @@ def build_asr_u2_u3_fallback_markdown(
 ) -> str:
     operation_index = build_operation_index(grouped)
     lines: List[str] = [
-        "# U2 ASR 与 U3 公网 URL Fallback",
+        "# U2 ASR and U3 Public URL Fallback",
         "",
-        "## 用途",
+        "## Purpose",
         "",
-        "- 这个 guide 用于视频 ASR 主路径和超时 fallback，不用于文本作品。",
-        "- 默认必须先走 U2 ASR；U3 只能作为 fallback，不允许直接绕过 U2。",
-        "- 当 U1 详情接口返回的是无水印下载链接或下载链接，但该链接可能不是公网可读 URL 时，用本 guide 判断何时转入 U3。",
-        f"- 数据源：`{source_meta['source']}`",
-        f"- 获取时间：`{source_meta['fetched_at']}`",
+        "- This guide defines the primary ASR path and timeout fallback for video tasks. It does not apply to text-only works.",
+        "- Always try U2 ASR first. U3 is fallback-only and must not bypass U2 by default.",
+        "- If a U1 detail route returns a no-watermark download link or another download URL that may not be publicly readable, use this guide to decide when to switch to U3.",
+        f"- Source: `{source_meta['source']}`",
+        f"- Fetched at: `{source_meta['fetched_at']}`",
         "",
-        "## 固定策略",
+        "## Fixed Policy",
         "",
-        "1. 先调用 U1 详情接口，拿到 `video_download_url`、无水印下载链接或其他可直接下载媒体链接。",
-        "2. 直接用该链接提交 U2 ASR，不允许默认先走 U3。",
-        "3. 90 秒仍未返回完整结果，只进入软观察，不切换主路径。",
-        "4. 120 秒（2 分钟）仍未返回结果或未返回完整结果，判定源链接大概率不是公网可读 URL，才允许进入 U3 fallback。",
-        "5. U3 完成后必须拿公网可读 URL，再次提交 U2 ASR。",
-        "6. 如果 U3 或二次 U2 仍失败，保留事实卡并返回 `incomplete`；不要伪造主文本或分析结论。",
+        "1. Call a U1 detail route first and collect `video_download_url`, a no-watermark download URL, or another directly downloadable media URL.",
+        "2. Submit that URL to U2 ASR directly. Do not start with U3.",
+        "3. If there is still no complete result after 90 seconds, stay in soft observation and keep the primary path unchanged.",
+        "4. If there is still no result or still no complete result after 120 seconds, treat the source URL as likely not publicly readable and only then allow U3 fallback.",
+        "5. After U3 completes, obtain a public URL and submit it to U2 ASR again.",
+        "6. If U3 or the second U2 attempt still fails, keep the fact card and return `incomplete`. Do not fabricate the main text or any analysis conclusion.",
         "",
-        "## 场景补充",
+        "## Scenario Notes",
         "",
-        "- 单作品：对当前作品单独执行这条链路。",
-        "- Creator 批量：只对 120 秒后仍未成功的子集走 U3 fallback，不要把整批已成功项重新上传。",
+        "- Single content task: run this flow only for the current item.",
+        "- Creator batch task: apply U3 fallback only to the subset that still has no result after 120 seconds. Do not re-upload items that already succeeded.",
         "",
-        "## 路由事实",
+        "## Route Facts",
         "",
     ]
 
     for title, method, path, explanation in SERVICE_GUIDE_ROUTES:
         lines.append(f"### {title}")
         lines.append("")
-        lines.append(f"- 说明：{explanation}")
+        lines.append(f"- Purpose: {explanation}")
 
         entry = operation_index.get((method.upper(), path))
         if entry is None:
-            lines.append("- 当前 OpenAPI 未找到该 route。")
+            lines.append("- This route was not found in the current OpenAPI.")
             lines.append("")
             continue
 
         tag, op = entry
         tag_relpath = tag_file_relpath(tag)
         contract_relpath = contract_file_relpath(tag)
-        lines.append(f"- Tag：[`{tag}`](../{tag_relpath})")
-        lines.append(f"- Route：`{method.upper()} {path}`")
-        lines.append(f"- 认证：{summarize_security(spec, op)}")
-        lines.append(f"- 入参：{summarize_params(op.get('parameters') or [])}")
-        lines.append(f"- 请求体：{summarize_request_body(spec, op.get('requestBody') or {})}")
-        lines.append(f"- 成功响应：{summarize_success_response(spec, op.get('responses') or {})}")
+        lines.append(f"- Tag: [`{tag}`](../{tag_relpath})")
+        lines.append(f"- Route: `{method.upper()} {path}`")
+        lines.append(f"- Auth: {summarize_security(spec, op)}")
+        lines.append(f"- Parameters: {summarize_params(op.get('parameters') or [])}")
+        lines.append(f"- Request body: {summarize_request_body(spec, op.get('requestBody') or {})}")
+        lines.append(f"- Success response: {summarize_success_response(spec, op.get('responses') or {})}")
         lines.append(
-            f"- 完整契约：[`{contract_relpath}#{operation_anchor(method.upper(), path)}`](../{contract_relpath}#{operation_anchor(method.upper(), path)})"
+            f"- Full contract: [`{contract_relpath}#{operation_anchor(method.upper(), path)}`](../{contract_relpath}#{operation_anchor(method.upper(), path)})"
         )
         lines.append("")
 
     lines.extend(
         [
-            "## 执行备注",
+            "## Execution Notes",
             "",
-            "- 本 guide 只定义路由选择和 fallback 顺序，不替代各平台自己的 detail route 选择。",
-            "- U1 来源 route 由平台决定，例如抖音/小红书的 detail route；本 guide 只要求优先使用它们返回的下载链接。",
-            "- 如果平台已直接返回可用 `subtitle_raw`，优先直接映射为 `asr_raw`，不必再走 U2/U3。",
+            "- This guide only defines route order and fallback order. It does not replace platform-specific detail-route selection.",
+            "- The U1 source route depends on the platform, for example a Douyin or Xiaohongshu detail route. This guide only requires using the returned download URL first.",
+            "- If the platform already returns usable `subtitle_raw`, map it directly to `asr_raw` instead of calling U2 or U3.",
             "",
         ]
     )

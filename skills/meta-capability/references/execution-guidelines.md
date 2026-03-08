@@ -1,25 +1,25 @@
-# 通用执行规则
+# Execution Guidelines
 
-## 目标
+## Goal
 
-在统一的跨平台调用框架下，先完成 API 能力发现、路由选择、入参确认和字段可得性判断，再进入具体提取或分析。
+Within a shared cross-platform execution flow, finish capability discovery, route selection, input confirmation, and field-availability checks before moving into extraction or analysis.
 
-## 最小检查清单
+## Minimum Checklist
 
-- 平台与对象类型：作品、评论、主页或作品集合。
-- 已阅读 `api-capability-index.md` 并锁定对应平台 tag。
-- 已阅读相关 `api-tags/*.md` 中对应对象的 route、认证方式、关键入参与关键成功响应。
-- 若需要精确字段说明、默认值、示例或完整响应结构，已继续阅读对应 `api-contracts/*.md`。
-- 已确认当前优先走仓库已验证的路由链，还是需要从全量目录里临时选路由。
-- 视频 ASR 场景下，已确认是否需要按 `service-guides/asr-u2-u3-fallback.md` 处理 90 秒软观察和 120 秒（2 分钟）硬 fallback。
-- 可用入口：分享链接、落地页链接、平台 ID、主页链接、下载链接、正文文本。
-- 可获取资源：标题、文案、字幕、评论、媒体下载链接、作者资料、互动指标。
-- 输出要求：原始事实、结构化字段、分析结论，还是三者组合。
-- 缺失与降级：哪些字段可稳定获取，哪些字段需要 fallback，哪些字段当前不可得。
+- Confirm the platform and object type: single content item, comments, profile, or content collection.
+- Read `api-capability-index.md` and lock onto the relevant platform tag.
+- Read the relevant routes in `api-tags/*.md` for auth requirements, key inputs, and key success responses.
+- If exact field definitions, defaults, examples, or full success-response structures are needed, continue into the relevant `api-contracts/*.md`.
+- Decide whether the task can use a validated route chain from this repository or needs an ad hoc route choice from the broader catalog.
+- For video ASR, decide whether `service-guides/asr-u2-u3-fallback.md` is needed for the 90-second soft observation window and the 120-second hard fallback.
+- Identify the usable entry points: share URL, landing-page URL, platform ID, profile URL, download URL, or raw text.
+- Identify the retrievable resources: title, caption, subtitles, comments, media download URLs, author metadata, and engagement metrics.
+- Confirm the output expectation: raw facts, structured fields, analysis conclusions, or a combination.
+- Confirm missing-field and degradation behavior: which fields are stable, which need fallback, and which are currently unavailable.
 
-## 产出要求
+## Output Requirements
 
-- 给出明确 route、入参和结果，而不是泛泛建议。
-- 明确字段来源、稳定性和缺失原因。
-- 分析结论只能建立在已提取事实之上，不补造数据。
-- 输出优先保持平台无关的结构，便于后续复用。
+- Return concrete routes, inputs, and results rather than generic advice.
+- Make field origin, stability, and missing reasons explicit.
+- Ground every analysis conclusion in retrieved facts only.
+- Prefer platform-neutral output structures when possible so the results remain reusable.

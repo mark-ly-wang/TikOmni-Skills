@@ -1,44 +1,44 @@
-# iOS-Shortcut 完整契约
+# iOS-Shortcut Full Contract
 
-- 回到索引：[`api-capability-index.md`](../api-capability-index.md)
-- 回到路由详情：[`api-tags/ios-shortcut.md`](../api-tags/ios-shortcut.md)
-- 当前契约文件：`api-contracts/ios-shortcut.md`
-- 数据源：`https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
-- 获取时间：`2026-03-08T04:31:58+00:00`
-- 路由数：`1`
-- 默认认证：请求头 `Authorization` Bearer
-- 使用方式：当需要精确的认证说明、参数描述、默认值、示例或成功响应字段时，再读本文件。
-- 标签说明：**(iOS快捷方式接口/iOS-Shortcut endpoints)**
+- Back to index: [`api-capability-index.md`](../api-capability-index.md)
+- Back to route summary: [`api-tags/ios-shortcut.md`](../api-tags/ios-shortcut.md)
+- Current contract file: `api-contracts/ios-shortcut.md`
+- Source: `https://app.tikomni.com/openapi/tikomni-openapi.full.with-u2.public.latest.json`
+- Fetched at: `2026-03-08T06:54:04+00:00`
+- Route count: `1`
+- Default auth: Header `Authorization` Bearer
+- Read this file only when you need precise auth notes, parameter descriptions, defaults, examples, or success-response fields.
+- Tag description: **(iOS快捷方式接口/iOS-Shortcut endpoints)**
 
-## 路由契约
+## Route Contracts
 
 <a id="get-api-u1-v1-ios-shortcut-shortcut"></a>
 ### `GET /api/u1/v1/ios_shortcut/shortcut`
 
-- 摘要：用于iOS快捷指令的版本更新信息/Version update information for iOS shortcuts
-- 能力：通用能力
-- 认证：请求头 `Authorization: Bearer {token}`；文档说明还可用 Cookie `Authorization` 兜底（`HTTPBearer`）
-- operationId：`get_shortcut_api_v1_ios_shortcut_shortcut_get`
+- Summary: 用于iOS快捷指令的版本更新信息/Version update information for iOS shortcuts
+- Capabilities: general
+- Auth: Header `Authorization: Bearer {token}`; docs also allow Cookie `Authorization` as fallback (`HTTPBearer`)
+- operationId: `get_shortcut_api_v1_ios_shortcut_shortcut_get`
 
-#### 参数
+#### Parameters
 
-无
+None
 
-#### 请求体
+#### Request Body
 
-无
+None
 
-#### 成功响应
+#### Success Response
 
 ##### `200 application/json`
 
-- Schema 摘要：`version*`:string, `update*`:string, `link*`:string, `link_en*`:string, `note*`:string, `note_en*`:string
+- Schema summary: `version*`:string, `update*`:string, `link*`:string, `link_en*`:string, `note*`:string, `note_en*`:string
 
-| 字段 | 类型 | 必填 | 说明 | 默认值 | 示例 | 枚举 |
+| Field | Type | Required | Description | Default | Example | Enum |
 | --- | --- | --- | --- | --- | --- | --- |
-| version | string | 是 | 无 | 无 | 无 | 无 |
-| update | string | 是 | 无 | 无 | 无 | 无 |
-| link | string | 是 | 无 | 无 | 无 | 无 |
-| link_en | string | 是 | 无 | 无 | 无 | 无 |
-| note | string | 是 | 无 | 无 | 无 | 无 |
-| note_en | string | 是 | 无 | 无 | 无 | 无 |
+| version | string | Yes | None | None | None | None |
+| update | string | Yes | None | None | None | None |
+| link | string | Yes | None | None | None | None |
+| link_en | string | Yes | None | None | None | None |
+| note | string | Yes | None | None | None | None |
+| note_en | string | Yes | None | None | None | None |

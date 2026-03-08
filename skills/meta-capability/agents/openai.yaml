@@ -1,4 +1,4 @@
 interface:
   display_name: "元能力"
-  short_description: "TikOmni 全量 API 能力查询、路由选择、鉴权测试与手动调用入口"
-  default_prompt: "使用 -capability 先确认 TikOmni 支持哪些接口、该调哪个 route、要传哪些字段；需要时可直接测试鉴权并手动调用 route，再决定是否进入专用分析 skill。"
+  short_description: "跨平台内容抓取、提取、查询、整理、分析与执行任务入口"
+  default_prompt: "使用 $meta-capability 处理一个明确的平台对象，例如单条内容、账号主页、评论区、搜索结果、榜单、直播间或商品页，并直接完成抓取、整理或分析。"

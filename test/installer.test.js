@@ -48,6 +48,11 @@ test("installSkills copies a selected skill into the target directory", () => {
 
   assert.equal(result.installed.length, 1);
   assert.ok(fs.existsSync(path.join(destinationRoot, "meta-capability", "SKILL.md")));
+  assert.ok(fs.existsSync(path.join(destinationRoot, "env.example")));
+  assert.match(
+    fs.readFileSync(path.join(destinationRoot, "env.example"), "utf8"),
+    /TikOmni shared environment example/
+  );
 });
 
 test("installSkills rejects overwriting without force", () => {

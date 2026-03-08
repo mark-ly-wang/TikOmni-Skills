@@ -1,31 +1,35 @@
-# TikOmni Skills ✨
+# TikOmni Skills
 
-中文 | [English (README.md)](./README.md)
+中文 | [English](./README.md)
 
-这是一个给 AI Agent 使用的 TikOmni Skill 仓库，用于从主流自媒体平台获取结构化数据。
+让 AI Agent 直接使用 TikOmni 的跨平台内容获取与结构化分析能力。
 
-## 🚀 这是什么仓库
+适用于 `Codex`、`Claude Code`、`OpenClaw`。  
+面向内容抓取、单作品分析、创作者分析、搜索结果、评论线程、榜单、直播间和结构化结果产出。
 
-本仓库提供拆分后的 TikOmni Skill 模块：
-- `skills/meta-capability`
-- `skills/single-work-analysis`
-- `skills/creator-analysis`
+- Website: https://tikomni.com
+- Dashboard: https://app.tikomni.com
+- API Docs: https://docs.tikomni.com
+- Releases: https://github.com/mark-ly-wang/TikOmni-Skills/releases
 
-它可以让 Agent：
-- 跨平台抓取公开内容数据
-- 统一字段结构，输出标准化结果
-- 生成可用于后续流程的 Markdown 结构化产物
+## 为什么有这个仓库
 
-## 🌐 官方入口
+`TikOmni-Skills` 是 TikOmni 面向 AI Agent 的 Skill 交付层。
 
-- 官网：https://tikomni.com
-- 注册/控制台（获取 API Key）：https://app.tikomni.com
-- API 地址：https://api.tikomni.com
-- API 文档：https://docs.tikomni.com
+它的目标不是堆一批平台脚本，也不只是沉淀几个固定模板；它更重要的作用，是把 TikOmni 的原能力组织成 Agent 可安装、可调用、可组合的 Skills，让 Agent 能直接完成：
+
+- 获取单条内容、账号主页和内容集合
+- 获取评论线程、搜索结果、榜单、直播间和商品页等具体对象
+- 提取标题、文案、字幕、转写和结构化字段
+- 输出标准化 JSON 与 Markdown 卡片
+- 基于真实抓取结果继续做分析、总结和归档
+
+如果你把 TikOmni 看作跨平台能力底座，这个仓库就是把这些能力交付给 Agent 的使用层。
 
 ## 📦 支持平台
 
 当前目录覆盖主流平台（示例）：
+
 - 抖音、小红书、快手、B站、微博
 - TikTok、YouTube、Instagram、Threads、Twitter/X、Reddit、LinkedIn
 - 视频号、公众号、头条、西瓜、知乎、Lemon8、皮皮虾
@@ -35,45 +39,56 @@
 ## 🧩 可获取哪些结构化数据
 
 按不同平台/接口可返回：
+
 - 作者/账号信息
 - 作品/视频基础信息
+- 评论与回复数据
+- 搜索结果、榜单结果、直播间信息、商品相关数据
 - 互动指标（点赞、评论、分享等，视接口可用性）
 - 字幕/转写/文案文本（接口支持时）
+- 媒体地址等可提取资源（接口支持时）
 - 路由与请求追踪信息（方便复现）
 
-## ✅ 当前已可用能力（面向用户）
+## Skill 模块
 
-> 以下是当前可直接使用的功能范围（持续更新）：
+| Skill | 作用 | 典型任务 |
+| --- | --- | --- |
+| `meta-capability` | 通用能力层 | 跨平台获取、路由探索、结构化抓取，以及评论线程、搜索、榜单、直播间、商品页等对象的通用执行与兜底 |
+| `single-work-analysis` | 单作品专项 Skill | 单个视频、单篇笔记、单条帖子、单篇文章的提取与分析 |
+| `creator-analysis` | 创作者专项 Skill | 账号主页、作者页、频道页、内容集合的抓取与聚合分析 |
 
-### 0) 当前仓库内的 Skill 模块
-- `skills/meta-capability`：给 Agent 的 TikOmni 通用探索与执行指引
-- `skills/single-work-analysis`：当前已覆盖抖音 / 小红书的单作品分析模块
-- `skills/creator-analysis`：当前已覆盖抖音 / 小红书的创作者分析模块
+选择建议：
 
-### 1) 抖音 / 小红书单作品分析
-- 单视频（或单笔记）提取：标题、作者、发布时间、互动数据等基础信息
-- 文本能力：字幕/文案提取（接口支持时）
-- 产出：标准化结构结果 + 作品卡（便于复盘、对标、沉淀）
+- 想分析单个内容对象：安装 `single-work-analysis`
+- 想分析账号主页或内容集合：安装 `creator-analysis`
+- 想保留通用 TikOmni 能力入口：安装 `meta-capability`
+- 不确定会用到哪些场景：直接安装 `all`
 
-### 2) 抖音 / 小红书作者主页分析
-- 支持作者维度抓取与分析（按最新内容进行分页拉取）
-- 默认全量抓取，上限 200 条（未特别指定时）
-- 产出：
-  - 单作品卡合集（逐条作品）
-  - 作者画像信息（昵称、平台ID、IP属地、粉丝/获赞/收藏、签名、头像、作品数等）
-  - 作者商业分析 + 对标分析
+## 当前更成熟的高频链路
 
-### 3) 通用能力
-- 跨平台统一字段与结构化输出
-- 结果可用于后续工作流（策略分析、内容复盘、知识沉淀）
-- 输出包含可追踪元信息，便于排查与复现
+在通用能力层之上，本仓库已经沉淀出一批更适合直接复用的高频方案。
 
-## 🔧 如何安装本 Skill
+当前重点验证和持续打磨的方向包括：
 
-按你的 Agent 运行环境安装即可。
+- Douyin 单作品分析
+- Xiaohongshu 单作品分析
+- Douyin 创作者主页分析
+- Xiaohongshu 创作者主页分析
 
-### 命令安装（`npx`）
-把这个包发布到 npm 后，可以直接用命令安装：
+这些链路代表当前最成熟、最适合直接上手的实践路径。  
+它们很重要，但不等于本仓库能力边界的全部定义。
+
+## 30 秒快速开始
+
+### 1. 注册并获取 API Key
+
+- 官网：https://tikomni.com
+- 控制台：https://app.tikomni.com
+- API 文档：https://docs.tikomni.com
+
+### 2. 安装 Skills
+
+如果 npm 包已发布，可以直接使用：
 
 ```bash
 npx @tikomni/skills list
@@ -83,112 +98,70 @@ npx @tikomni/skills install openclaw meta-capability --dir "/custom/skills"
 ```
 
 默认安装目录：
+
 - `codex` -> `$CODEX_HOME/skills`，默认 `~/.codex/skills`
 - `claude-code` -> `~/.claude/skills`
 - `openclaw` -> 优先 `~/.openclaw/workspace/skills`，否则 `~/.openclaw/skills`
 
-可选参数：
-- `--dir <path>`：显式指定 skills 目录
-- `--force`：覆盖已存在的同名 skill 目录
+如果你暂时不走 npm 分发，也可以手动把目标 Skill 目录复制到对应运行时的 `skills` 目录。
 
-分发说明：
-- `npx` 安装时连接的是 npm registry，不是在安装时去 clone GitHub 仓库。
-- GitHub 是源码仓库，npm 才是给最终用户分发安装包的渠道。
-
-### OpenClaw
-把本仓库（或 `skills/` 下的某个 skill 目录）放到 OpenClaw 的 skills 目录，让系统加载。
-
-### Codex
-把目标 skill 目录复制到 Codex 的 skills 目录。
-
-### Claude Code
-把目标 skill 目录复制到 Claude Code 的 skills 目录。
-
-### 本地开发调试
-在 npm 包还没发布之前，也可以直接本地运行安装器：
-
-```bash
-node bin/tikomni-skills.js list
-node bin/tikomni-skills.js install codex meta-capability --dir "/tmp/tikomni-skills"
-```
-
-### 发布说明
-正式发布依赖仓库内的 npm workflow 和 `package.json` 发布元数据。
-
-## ⚙️ 安装后怎么配置（仅 env）
-
-TikOmni 用户配置统一走 **环境变量**，不需要编辑 YAML。
+### 3. 配置环境变量
 
 推荐做法：
-- 先复制仓库根目录的 [`env.example`](./env.example) 到 `skills/.env`
-- 再按需要在某个 skill 目录下增加 `.env.local` 做局部覆盖
 
-必填：
+- CLI 安装后，目标 `skills` 根目录会自带一份共享 [`env.example`](./env.example)
+- 把这份 `skills/env.example` 复制为 `skills/.env`
+- 如有局部覆盖需求，再在对应 Skill 目录下增加 `.env.local`
+
+最少需要配置：
+
 ```bash
-TIKOMNI_API_KEY="你的真实 key"
-# 必填绝对路径
+TIKOMNI_API_KEY="your_real_key"
 TIKOMNI_OUTPUT_ROOT="/absolute/path/to/tikomni-output"
-# 必填绝对路径
 TIKOMNI_CARD_ROOT="/absolute/path/to/tikomni-cards"
 ```
 
-高级可选：
-```bash
-# 运行时
-TIKOMNI_TIMEOUT_MS="60000"
+更多高级变量见 [`env.example`](./env.example)。
 
-# 输出根目录下的子目录
-# 默认值：_runs / results / _errors
-TIKOMNI_OUTPUT_RUNS_DIR="_runs"
-TIKOMNI_OUTPUT_RESULTS_DIR="results"
-TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
+## 也可以直接让 Agent 帮你安装
 
-# 命名规则
-TIKOMNI_FILENAME_PATTERN_CARD="{prefix}-{author_slug}-{title_slug}{ext}"
-TIKOMNI_FILENAME_PATTERN_JSON="{timestamp}-{platform}-{identifier}{ext}"
+除了手动执行命令，你也可以直接对 Agent 说：
 
-# 卡片目录语言预设（默认 zh）
-TIKOMNI_PATH_LOCALE="zh"   # zh | en
+- “帮我把 TikOmni skills 全部安装到 Codex。”
+- “把 `creator-analysis` 安装到 Claude Code 的 skills 目录。”
+- “把 `meta-capability` 安装到 OpenClaw，目标目录是 `/custom/skills`。”
 
-# 卡片前缀
-TIKOMNI_CARD_PREFIX_WORK="CBV"
-TIKOMNI_CARD_PREFIX_AUTHOR="CBA"
-TIKOMNI_CARD_PREFIX_AUTHOR_SAMPLE_WORK="CBV"
+## 安装完成后怎么用
 
-# 显式路由（最高优先级，分隔符：|）
-TIKOMNI_CARD_ROUTE_WORK="content-system|benchmark|work-cards"
-TIKOMNI_CARD_ROUTE_AUTHOR="content-system|benchmark|author-cards"
-TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="content-system|benchmark|author-sample-cards|{platform}-{author_slug}"
-```
+配置完成后，可以直接通过自然语言发起任务，例如：
 
-路由优先级：
-1) 显式 `TIKOMNI_CARD_ROUTE_*`
-2) `TIKOMNI_PATH_LOCALE` 预设（`zh`/`en`，默认 `zh`）
-3) 内置/默认配置
+- “提取这个抖音视频的结构化信息和字幕。”
+- “分析这个小红书笔记，输出作品卡和内容拆解。”
+- “抓取这个抖音主页近 20 条内容，并总结选题方向。”
+- “分析这个小红书账号，输出作者画像和代表性内容特征。”
+- “搜索这个关键词下的抖音结果，并整理前 20 条内容特征。”
+- “获取这个直播间的信息并输出结构化摘要。”
 
-推荐配置位置：
-- `<skills_root>/.env`（共享配置）
-- `<skill_root>/.env.local`（本地覆盖）
+## 版本与发布
 
-对于拆分后的模块，也沿用同样规则：
-- 共享配置放在 skills 根层
-- 某个 skill 需要特殊覆盖时，再在该 skill 目录下增加 `.env.local`
+当前包版本见 [`package.json`](./package.json)。
 
-## ▶️ 怎么使用
+更多版本与发布信息见：
 
-在你的 AI Agent 里直接用自然语言下指令，例如：
-- “提取这个抖音主页数据”
-- “抓取这个小红书账号近 20 条并总结选题方向”
-- “提取视频字幕/文案并输出结构化 markdown”
+- [Releases](https://github.com/mark-ly-wang/TikOmni-Skills/releases)
+- [`RELEASING.md`](./RELEASING.md)
+- [`RELEASING.zh-CN.md`](./RELEASING.zh-CN.md)
 
-## 🔐 安全说明
+## 安全说明
 
-- 不要把真实密钥提交到 Git（`.env`、`.env.local`、CI secrets）
-- 不要在日志或输出中泄露 API Key
+- 不要把真实 API Key 提交到 Git
+- 不要在日志、截图或产物中泄露敏感配置
+- 建议使用 `.env` / `.env.local` 管理本地密钥
 
-## 📚 核心参考
+## 相关链接
 
-- 元能力：[`skills/meta-capability/SKILL.md`](./skills/meta-capability/SKILL.md)
-- 单作品分析：[`skills/single-work-analysis/SKILL.md`](./skills/single-work-analysis/SKILL.md)
-- 创作者分析：[`skills/creator-analysis/SKILL.md`](./skills/creator-analysis/SKILL.md)
-- API 文档：https://docs.tikomni.com
+- Website: https://tikomni.com
+- Dashboard: https://app.tikomni.com
+- API: https://api.tikomni.com
+- Docs: https://docs.tikomni.com
+- Issues: https://github.com/mark-ly-wang/TikOmni-Skills/issues

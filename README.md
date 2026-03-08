@@ -1,79 +1,94 @@
-# TikOmni Skills ✨
+# TikOmni Skills
 
-English | [中文说明 (README.zh-CN.md)](./README.zh-CN.md)
+English | [中文](./README.zh-CN.md)
 
-A production-ready skill package for AI agents to fetch structured data from major social platforms through TikOmni APIs.
+Give AI agents direct access to TikOmni's cross-platform content retrieval and structured analysis capabilities.
 
-## 🚀 What this repository is
-
-This repository provides the split TikOmni skill modules used by AI agents:
-- `skills/meta-capability`
-- `skills/single-work-analysis`
-- `skills/creator-analysis`
-
-With this skill, agents can:
-- collect cross-platform public content data
-- normalize fields into consistent structured output
-- generate markdown-ready extraction artifacts (for workflows and downstream analysis)
-
-## 🌐 Official links
+Works with `Codex`, `Claude Code`, and `OpenClaw`.  
+Built for content extraction, single-work analysis, creator analysis, search results, comment threads, rankings, livestreams, and structured outputs.
 
 - Website: https://tikomni.com
-- Sign up / Dashboard (get API key): https://app.tikomni.com
-- API endpoint: https://api.tikomni.com
-- API docs: https://docs.tikomni.com
+- Dashboard: https://app.tikomni.com
+- API Docs: https://docs.tikomni.com
+- Releases: https://github.com/mark-ly-wang/TikOmni-Skills/releases
 
-## 📦 Supported platforms
+## Why This Repo Exists
 
-Current catalog includes mainstream platforms such as:
+`TikOmni-Skills` is the agent-facing delivery layer for TikOmni skills.
+
+Its purpose is not to be a pile of platform scripts or a few fixed templates. More importantly, it packages TikOmni's core capabilities into installable, composable skills so agents can directly:
+
+- retrieve single content items, creator pages, and content collections
+- retrieve comment threads, search results, rankings, livestreams, and product pages as concrete platform objects
+- extract titles, captions, subtitles, transcripts, and structured fields
+- generate normalized JSON outputs and Markdown cards
+- continue with analysis, summaries, and downstream knowledge workflows
+
+If TikOmni is the cross-platform capability layer, this repository is the layer that makes those capabilities usable by agents.
+
+## Supported Platforms
+
+Current coverage includes mainstream platforms such as:
+
 - Douyin, Xiaohongshu, Kuaishou, Bilibili, Weibo
 - TikTok, YouTube, Instagram, Threads, Twitter/X, Reddit, LinkedIn
 - WeChat Channels, WeChat Official Accounts, Toutiao, Xigua, Zhihu, Lemon8, Pipixia
 
-(See the official docs catalog at https://docs.tikomni.com.)
+For the full catalog, see https://docs.tikomni.com
 
-## 🧩 What structured data you can get
+## What Structured Data You Can Get
 
-Depending on platform and endpoint, the skill can return:
-- author/account metadata
-- post/video basic info
-- engagement metrics (likes/comments/shares, etc. when available)
-- subtitles/transcripts/copy text (when supported)
-- routing and request trace metadata for reproducibility
+Depending on the platform and endpoint, the skills can return:
 
-## ✅ Currently available capabilities (human-facing)
+- author or account metadata
+- post or video basic information
+- comments and replies
+- search results, ranking results, livestream information, and commerce-related data
+- engagement metrics such as likes, comments, and shares when available
+- subtitles, transcripts, or caption text when supported
+- extractable media URLs and related assets when supported
+- route and request trace metadata for reproducibility
 
-> Practical feature scope you can use right now:
+## Skill Modules
 
-### 0) Skill modules currently in this repo
-- `skills/meta-capability`: generic TikOmni exploration and execution guidance for agents
-- `skills/single-work-analysis`: single-work analysis module for current Douyin / Xiaohongshu implementations
-- `skills/creator-analysis`: creator-analysis module for current Douyin / Xiaohongshu implementations
+| Skill | Role | Typical tasks |
+| --- | --- | --- |
+| `meta-capability` | General capability layer | Cross-platform retrieval, route discovery, structured extraction, plus generic execution and fallback for comment threads, search, rankings, livestreams, product pages, and other supported objects |
+| `single-work-analysis` | Single-work specialist skill | Extracting and analyzing one video, note, post, or article |
+| `creator-analysis` | Creator specialist skill | Collecting and analyzing creator pages, channels, and content collections |
 
-### 1) Douyin / Xiaohongshu single-content analysis
-- Single video/note extraction: title, author, publish time, engagement basics, etc.
-- Text layer: subtitle/copy extraction when supported by upstream endpoints
-- Output: normalized structured result + reusable work card
+Suggested choices:
 
-### 2) Douyin / Xiaohongshu author-home analysis
-- Author-level collection and analysis from homepage content (latest-first pagination)
-- Default behavior: full fetch with a cap of 200 items unless explicitly specified otherwise
-- Output:
-  - per-work card collection
-  - author profile (nickname, platform id, IP location, fans/likes/collections, bio, avatar, work count, etc.)
-  - business analysis + benchmark analysis
+- Want to analyze one content item: install `single-work-analysis`
+- Want to analyze a creator page or content collection: install `creator-analysis`
+- Want to keep a general TikOmni entry point available: install `meta-capability`
+- Not sure which one you need yet: install `all`
 
-### 3) General capabilities
-- Cross-platform normalization into a consistent schema
-- Workflow-friendly outputs for strategy review, benchmarking, and knowledge capture
-- Traceable metadata for troubleshooting and reproducibility
+## More Mature High-Frequency Flows
 
-## 🔧 Install this skill
+On top of the general capability layer, this repository already includes a set of more reusable high-frequency flows.
 
-Use the integration method matching your agent runtime.
+Current areas with the most validation and ongoing iteration include:
 
-### CLI installer (`npx`)
-After publishing this package to npm, you can install skills directly with:
+- Douyin single-work analysis
+- Xiaohongshu single-work analysis
+- Douyin creator-page analysis
+- Xiaohongshu creator-page analysis
+
+These flows represent the most mature and easiest-to-adopt paths today.  
+They matter, but they do not define the full capability boundary of this repository.
+
+## 30-Second Quick Start
+
+### 1. Sign up and get an API key
+
+- Website: https://tikomni.com
+- Dashboard: https://app.tikomni.com
+- API Docs: https://docs.tikomni.com
+
+### 2. Install skills
+
+If the npm package has been published, you can install directly with:
 
 ```bash
 npx @tikomni/skills list
@@ -83,112 +98,70 @@ npx @tikomni/skills install openclaw meta-capability --dir "/custom/skills"
 ```
 
 Default install targets:
-- `codex` -> `$CODEX_HOME/skills` or `~/.codex/skills`
+
+- `codex` -> `$CODEX_HOME/skills`, default `~/.codex/skills`
 - `claude-code` -> `~/.claude/skills`
 - `openclaw` -> prefers `~/.openclaw/workspace/skills`, otherwise `~/.openclaw/skills`
 
-Optional flags:
-- `--dir <path>`: override the target skills directory
-- `--force`: overwrite an existing installed skill directory
+If you are not distributing through npm yet, you can also copy the target skill folder into the runtime's `skills` directory manually.
 
-Distribution note:
-- `npx` installs from the npm registry package, not by cloning this GitHub repository at install time.
-- GitHub is the source repo; npm is the distribution channel for end-user installation.
-
-### OpenClaw
-Place this repo (or one of the skill folders under `skills/`) in your OpenClaw workspace skills path, then let OpenClaw load the skill.
-
-### Codex
-Install/copy the target skill folder into your Codex skills directory.
-
-### Claude Code
-Install/copy the target skill folder into your Claude skills directory.
-
-### Local development
-Before the npm package is published, you can run the installer locally:
-
-```bash
-node bin/tikomni-skills.js list
-node bin/tikomni-skills.js install codex meta-capability --dir "/tmp/tikomni-skills"
-```
-
-### Publishing
-Publishing is handled by the npm workflow plus the package metadata in this repository.
-
-## ⚙️ Configure after installation (env-only)
-
-TikOmni user configuration is **env-only**. You do not need to edit YAML.
+### 3. Configure environment variables
 
 Recommended workflow:
-- copy the repo-root [`env.example`](./env.example) to `skills/.env`
+
+- after CLI installation, the target `skills` root includes a shared [`env.example`](./env.example)
+- copy `skills/env.example` to `skills/.env`
 - add `.env.local` inside a specific skill only when that skill needs a local override
 
-Required:
+Minimum required config:
+
 ```bash
 TIKOMNI_API_KEY="your_real_key"
-# required absolute path
 TIKOMNI_OUTPUT_ROOT="/absolute/path/to/tikomni-output"
-# required absolute path
 TIKOMNI_CARD_ROOT="/absolute/path/to/tikomni-cards"
 ```
 
-Optional advanced env vars:
-```bash
-# Runtime
-TIKOMNI_TIMEOUT_MS="60000"
+For advanced variables, see [`env.example`](./env.example).
 
-# Output subdirectories under TIKOMNI_OUTPUT_ROOT
-# defaults: _runs / results / _errors
-TIKOMNI_OUTPUT_RUNS_DIR="_runs"
-TIKOMNI_OUTPUT_RESULTS_DIR="results"
-TIKOMNI_OUTPUT_ERRORS_DIR="_errors"
+## You Can Also Ask Your Agent to Install It
 
-# Naming
-TIKOMNI_FILENAME_PATTERN_CARD="{prefix}-{author_slug}-{title_slug}{ext}"
-TIKOMNI_FILENAME_PATTERN_JSON="{timestamp}-{platform}-{identifier}{ext}"
+Instead of running commands manually, you can ask your agent directly:
 
-# Card route locale preset (default zh)
-TIKOMNI_PATH_LOCALE="zh"   # zh | en
+- "Install all TikOmni skills into Codex."
+- "Install `creator-analysis` into the Claude Code skills directory."
+- "Install `meta-capability` into OpenClaw and use `/custom/skills` as the target directory."
 
-# Card prefixes
-TIKOMNI_CARD_PREFIX_WORK="CBV"
-TIKOMNI_CARD_PREFIX_AUTHOR="CBA"
-TIKOMNI_CARD_PREFIX_AUTHOR_SAMPLE_WORK="CBV"
+## How to Use It After Installation
 
-# Explicit routes (highest priority, separator: |)
-TIKOMNI_CARD_ROUTE_WORK="content-system|benchmark|work-cards"
-TIKOMNI_CARD_ROUTE_AUTHOR="content-system|benchmark|author-cards"
-TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK="content-system|benchmark|author-sample-cards|{platform}-{author_slug}"
-```
+Once configured, you can trigger tasks in natural language, for example:
 
-Route precedence:
-1) `TIKOMNI_CARD_ROUTE_*` explicit env
-2) `TIKOMNI_PATH_LOCALE` preset (`zh`/`en`, default `zh`)
-3) built-in/default config
+- "Extract the structured fields and subtitles from this Douyin video."
+- "Analyze this Xiaohongshu note and output a work card plus a content breakdown."
+- "Fetch the latest 20 posts from this Douyin creator page and summarize topic patterns."
+- "Analyze this Xiaohongshu account and output a creator profile with representative content traits."
+- "Search this keyword on Douyin and summarize the top 20 result patterns."
+- "Fetch this livestream's information and return a structured summary."
 
-Recommended placement:
-- `<skills_root>/.env` (shared config)
-- `<skill_root>/.env.local` (local override)
+## Versioning and Releases
 
-For split modules, the same pattern applies:
-- shared env at the skills root
-- optional per-skill override in each skill folder's `.env.local`
+The current package version is declared in [`package.json`](./package.json).
 
-## ▶️ How to use
+For release and version details, see:
 
-Use the skill through natural-language requests in your AI agent, for example:
-- “Extract Douyin homepage data for this URL.”
-- “Get Xiaohongshu author posts and summarize key topics.”
-- “Fetch video copy/subtitles and output structured markdown.”
+- [Releases](https://github.com/mark-ly-wang/TikOmni-Skills/releases)
+- [`RELEASING.md`](./RELEASING.md)
+- [`RELEASING.zh-CN.md`](./RELEASING.zh-CN.md)
 
-## 🔐 Security
+## Security
 
-- Never commit real secrets (`.env`, `.env.local`, CI secrets)
-- Never expose API keys in logs or output
+- Never commit real API keys to Git
+- Never expose sensitive config in logs, screenshots, or outputs
+- Prefer `.env` and `.env.local` for local secret management
 
-## 📚 Core references
+## Links
 
-- Meta capability: [`skills/meta-capability/SKILL.md`](./skills/meta-capability/SKILL.md)
-- Single work analysis: [`skills/single-work-analysis/SKILL.md`](./skills/single-work-analysis/SKILL.md)
-- Creator analysis: [`skills/creator-analysis/SKILL.md`](./skills/creator-analysis/SKILL.md)
-- API docs: https://docs.tikomni.com
+- Website: https://tikomni.com
+- Dashboard: https://app.tikomni.com
+- API: https://api.tikomni.com
+- Docs: https://docs.tikomni.com
+- Issues: https://github.com/mark-ly-wang/TikOmni-Skills/issues

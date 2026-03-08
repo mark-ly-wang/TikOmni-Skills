@@ -2,10 +2,10 @@
   "name": "@tikomni/skills",
   "version": "0.1.0",
   "description": "TikOmni skill installer CLI for Codex, Claude Code, and OpenClaw",
-  "license": "UNLICENSED",
-  "homepage": "https://github.com/Tikomni/TikOmni-Skills#readme",
+  "license": "MIT",
+  "homepage": "https://github.com/mark-ly-wang/TikOmni-Skills#readme",
   "bugs": {
-    "url": "https://github.com/Tikomni/TikOmni-Skills/issues"
+    "url": "https://github.com/mark-ly-wang/TikOmni-Skills/issues"
   },
   "bin": {
     "tikomni-skills": "./bin/tikomni-skills.js"
@@ -39,6 +39,6 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/Tikomni/TikOmni-Skills.git"
+    "url": "git+https://github.com/mark-ly-wang/TikOmni-Skills.git"
   }
 }

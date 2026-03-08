@@ -2,7 +2,7 @@
 
 ## 先读什么
 
-- 先读 `references/api-capability-catalog.md` 中 `Xiaohongshu-App-V2-API`、`Xiaohongshu-App-API`、`Xiaohongshu-Web-V2-API`。
+- 先读 `references/api-capability-index.md`，再读 `references/api-tags/xiaohongshu-app-v2-api.md`、`references/api-tags/xiaohongshu-app-api.md`、`references/api-tags/xiaohongshu-web-v2-api.md`。
 - 当前仓库已验证的是“主页输入 -> user_id/xsec_token 解析 -> profile 多路由级联 -> posts 多路由级联”。
 
 ## 作者侧优先资源
@@ -45,7 +45,8 @@
 
 - 已有 `user_id` 时，直接跳过 resolve route；`xsec_token` 作为补充，不是所有路由都必需。
 - profile 和 posts 都必须按级联顺序尝试，并基于字段完整度判断是否切 fallback。
-- 主页作品页拿不到稳定字段时，再回全量目录找补充 route，不要直接把半残字段送进作者分析。
+- 如果批量 U2 ASR 超过 120 秒（2 分钟）仍未完全返回，只对未成功子集按 `references/service-guides/asr-u2-u3-fallback.md` 走 U3 fallback。
+- 主页作品页拿不到稳定字段时，再回 `references/api-capability-index.md` 锁定 tag，并读对应 `references/api-tags/*.md` 找补充 route，不要直接把半残字段送进作者分析。
 
 ## 当前可运行实现
 

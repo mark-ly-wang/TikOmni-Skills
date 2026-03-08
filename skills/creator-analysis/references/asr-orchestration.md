@@ -2,6 +2,7 @@
 
 ## 主路径
 
+- 先读 `references/service-guides/asr-u2-u3-fallback.md`，统一执行“U2 主路径 -> 90 秒软观察 -> 120 秒（2 分钟）硬 fallback -> U3 -> 再回 U2”。
 - creator / 主页场景的视频作品必须优先走批量 ASR。
 - 单次批量请求上限为 100 条 `video_download_url`。
 - 不建议逐条串行或逐条并行调用 ASR 作为主页主路径。
@@ -16,7 +17,7 @@
 ## 超时与 fallback
 
 - 90 秒：软观察阈值
-- 120 秒：硬 fallback 阈值
+- 120 秒（2 分钟）：硬 fallback 阈值
 - 120 秒时若仍未完全返回，只对未成功子集走上传媒体 fallback
 
 ## 上传媒体 fallback

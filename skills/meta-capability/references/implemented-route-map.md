@@ -10,8 +10,8 @@
 ## 用途
 
 - 本文档只记录当前仓库已经有脚本实现并验证过的优先路由链。
-- 它不替代 `api-capability-catalog.md`；后者是全量目录，这里是“优先怎么调”。
-- 当用户目标已经很明确时，优先走这里列出的路由链；只有链路不满足时再回全量目录找补充 route。
+- 它不替代 `api-capability-index.md` + `api-tags/*.md`；后者负责完整目录和 route 细节，这里是“优先怎么调”。
+- 当用户目标已经很明确时，优先走这里列出的路由链；只有链路不满足时再回索引和对应 tag 文件找补充 route。
 
 ## 单作品
 
@@ -25,6 +25,11 @@
    - 请求体关键字段：`input.file_urls[]`
 4. `POST /api/u2/v1/tasks/{task_id}`
    - 路径参数：`task_id`
+
+ASR 超时 fallback：
+
+- 90 秒仍未完成时只做软观察。
+- 120 秒（2 分钟）仍无结果时，不直接判失败；按 `service-guides/asr-u2-u3-fallback.md` 走 U3 fallback，再回调 U2。
 
 必保输出目标：
 
@@ -60,6 +65,11 @@
 7. `GET /api/u1/v1/xiaohongshu/web/get_note_info_v7`
 8. `POST /api/u2/v1/services/audio/asr/transcription`
 9. `POST /api/u2/v1/tasks/{task_id}`
+
+ASR 超时 fallback：
+
+- 90 秒仍未完成时只做软观察。
+- 120 秒（2 分钟）仍无结果时，不直接判失败；按 `service-guides/asr-u2-u3-fallback.md` 走 U3 fallback，再回调 U2。
 
 必保输出目标：
 
@@ -161,7 +171,7 @@
 
 ## 其他平台
 
-- 先在 `api-capability-catalog.md` 里找对应平台 tag。
+- 先在 `api-capability-index.md` 里找对应平台 tag，再读对应 `api-tags/*.md`。
 - 单作品优先找 detail route，再补 media/subtitle/comment route。
 - 创作者主页优先找 profile route + posts route 的组合，不要只拿单段数据。
 - 只有当全量目录里找不到可满足必保字段的 route 时，才宣告当前平台或当前对象不可行。

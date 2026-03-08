@@ -6,7 +6,8 @@
 
 ## 先读什么
 
-- 先读 `references/api-capability-catalog.md`，锁定对应平台 tag。
+- 先读 `references/api-capability-index.md`，锁定对应平台 tag。
+- 再读对应的 `references/api-tags/<tag>.md`，确认 route、入参、请求体和成功响应摘要。
 - 优先筛 `user / author / creator / profile / home / channel / posts / notes / videos` 相关 route。
 - 再补评论、媒体下载、字幕和额外指标 route。
 
@@ -37,6 +38,7 @@
 - 如果平台存在 profile route 和 posts route 多版本并存，优先选择字段更完整、分页能力更稳定的版本。
 - 作品列表 route 必须能稳定给出 `platform_work_id` 和发布时间/互动指标的主体字段，否则不能直接进入抽样和聚合分析。
 - 视频作品如果缺字幕且又没有下载链路，要在 route 选择阶段就标记后续 ASR 不可行。
+- 如果批量 U2 ASR 超过 120 秒（2 分钟）仍未完全返回，只对未成功子集按 `references/service-guides/asr-u2-u3-fallback.md` 走 U3 fallback。
 
 ## 当前可运行实现
 

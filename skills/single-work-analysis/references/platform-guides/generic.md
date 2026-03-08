@@ -6,7 +6,8 @@
 
 ## 先读什么
 
-- 先读 `references/api-capability-catalog.md`，找到对应平台 tag。
+- 先读 `references/api-capability-index.md`，找到对应平台 tag。
+- 再读对应的 `references/api-tags/<tag>.md`，确认 route、入参、请求体和成功响应摘要。
 - 优先筛 `detail / post / note / video / article / comment / download / subtitle` 相关 route。
 - 再决定是否需要额外找评论、字幕、媒体下载或作者补充接口。
 
@@ -29,6 +30,7 @@
 - 视频作品如果 detail route 不返回字幕，必须继续找字幕 route 或可用下载链接，再进入 ASR。
 - 同一个平台若同时有 App / Web / V2 / V3 路由，优先选择字段更全、稳定性更高的版本，并记录 fallback。
 - 不要因为某条 route 能返回一点信息，就跳过对必保字段的核验。
+- 如果 U2 超过 120 秒（2 分钟）仍无结果，按 `references/service-guides/asr-u2-u3-fallback.md` 走 U3 fallback。
 
 ## 视频作品额外要求
 

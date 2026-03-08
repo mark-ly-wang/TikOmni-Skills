@@ -2,7 +2,7 @@
 
 ## 先读什么
 
-- 先读 `references/api-capability-catalog.md` 中 `Xiaohongshu-App-V2-API`、`Xiaohongshu-App-API`、`Xiaohongshu-Web-V2-API`、`Xiaohongshu-Web-API`。
+- 先读 `references/api-capability-index.md`，再读 `references/api-tags/xiaohongshu-app-v2-api.md`、`references/api-tags/xiaohongshu-app-api.md`、`references/api-tags/xiaohongshu-web-v2-api.md`、`references/api-tags/xiaohongshu-web-api.md`。
 - 当前仓库的已验证路由链是 `APP_V2 -> APP_V1 -> WEB_V2 -> WEB_V7`，并根据笔记类型选 detail route。
 
 ## 优先资源
@@ -47,6 +47,7 @@
 - 用户只给短链时，优先尝试从 `share_text` 解析 `note_id`；解析失败再走 `short_url` 专用 WEB_V2 route。
 - 已经知道 `note_id` 时，优先走 `note_id` 直查，不要先绕分享链。
 - 视频笔记优先使用平台原生字幕；只有字幕缺失且存在 `video_download_url` 时才触发 U2 ASR。
+- 如果 U2 超过 120 秒（2 分钟）仍无结果，按 `references/service-guides/asr-u2-u3-fallback.md` 走 U3 fallback。
 
 ## 当前可运行实现
 

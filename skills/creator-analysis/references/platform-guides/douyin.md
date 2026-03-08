@@ -2,7 +2,7 @@
 
 ## 先读什么
 
-- 先读 `references/api-capability-catalog.md` 中 `Douyin-App-V3-API` 和 `Douyin-Web-API`。
+- 先读 `references/api-capability-index.md`，再读 `references/api-tags/douyin-app-v3-api.md` 和 `references/api-tags/douyin-web-api.md`。
 - 当前仓库已验证的是“主页输入 -> sec_user_id 解析 -> 作者 profile -> 作品分页列表”的主页链路。
 
 ## 作者侧优先资源
@@ -40,7 +40,8 @@
 
 - 已经有 `sec_user_id` 时，直接跳过解析 route。
 - 作者页抓取默认走最新作品分页，不要先随机搜索其他 feed route。
-- 如果主页链路拿不到作者关键字段，再回全量能力目录挑补充 route；不要直接放弃作者卡。
+- 如果批量 U2 ASR 超过 120 秒（2 分钟）仍未完全返回，只对未成功子集按 `references/service-guides/asr-u2-u3-fallback.md` 走 U3 fallback。
+- 如果主页链路拿不到作者关键字段，再回 `references/api-capability-index.md` 锁定 tag，并读对应 `references/api-tags/*.md` 挑补充 route；不要直接放弃作者卡。
 
 ## 当前可运行实现
 

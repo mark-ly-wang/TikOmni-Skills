@@ -2,6 +2,7 @@
 
 ## 视频作品 ASR
 
+0. 先读 `references/service-guides/asr-u2-u3-fallback.md`，统一执行“U2 主路径 -> 90 秒软观察 -> 120 秒（2 分钟）硬 fallback -> U3 -> 再回 U2”。
 1. 如果接口直接返回 `subtitle_raw`，优先映射到 `asr_raw`。
 2. 如果没有 `subtitle_raw`，使用 `video_download_url` 调用 ASR。
 3. `asr_clean` 只能由 `asr_raw` 规则清洗得到。
@@ -9,7 +10,7 @@
 ## 超时与 fallback
 
 - 90 秒：软观察阈值。
-- 120 秒：硬 fallback 阈值。
+- 120 秒（2 分钟）：硬 fallback 阈值。
 - 120 秒时若仍无完整 `asr_raw`，走“上传媒体 -> 公网 URL -> 再调 ASR”fallback。
 
 ## 失败终态

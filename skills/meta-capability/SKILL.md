@@ -18,6 +18,7 @@ description: Use this skill for TikOmni platform capability discovery, full API 
 - 告诉 agent 每条 route 的典型能力类型、入参位置和请求体字段。
 - 给出当前仓库已验证的优先路由链，避免 agent 在全量目录里盲选。
 - 在进入专用 skill 之前，先完成能力发现、接口选择、字段盘点和可行性判断。
+- 在需要时，直接测试鉴权是否可用，并手动调用选中的 route。
 
 ## 不要做
 
@@ -32,9 +33,11 @@ description: Use this skill for TikOmni platform capability discovery, full API 
 2. 再按需读 `references/api-tags/*.md`，确认 route 摘要、认证方式、关键入参和关键成功响应。
 3. 如果需要精确字段说明、默认值、示例或完整响应结构，再读 `references/api-contracts/*.md`。
 4. 再读 `references/implemented-route-map.md`，优先走当前仓库已经验证过的路由链。
-5. 读取 `references/execution-guidelines.md`，确认对象类型、目标字段、输出形式和降级策略。
-6. 如果任务涉及 ASR 超时、公网 URL 不可读或 U3 媒体中转，读取 `references/service-guides/asr-u2-u3-fallback.md`。
-7. 如果任务是单作品深度分析或创作者聚合分析，再转交给专用 skill，但保留已经确认的 route 和字段事实。
+5. 如需先验证鉴权，运行 `python3 "skills/meta-capability/scripts/test_auth.py"`；它会自动读取 `skills/.env` 或当前 skill 下的 `.env.local`，并组装 `Authorization: Bearer {token}`。
+6. 如需手动调用某条 route，运行 `python3 "skills/meta-capability/scripts/call_route.py" METHOD PATH --params-json '...' --body-json '...'`。
+7. 读取 `references/execution-guidelines.md`，确认对象类型、目标字段、输出形式和降级策略。
+8. 如果任务涉及 ASR 超时、公网 URL 不可读或 U3 媒体中转，读取 `references/service-guides/asr-u2-u3-fallback.md`。
+9. 如果任务是单作品深度分析或创作者聚合分析，再转交给专用 skill，但保留已经确认的 route 和字段事实。
 
 ## References
 
@@ -44,3 +47,9 @@ description: Use this skill for TikOmni platform capability discovery, full API 
 - 当前已验证路由链：`references/implemented-route-map.md`
 - 通用执行规则：`references/execution-guidelines.md`
 - U2/U3 ASR fallback：`references/service-guides/asr-u2-u3-fallback.md`
+
+## Scripts
+
+- 鉴权测试：`scripts/test_auth.py`
+- 手动调用 route：`scripts/call_route.py`
+- 运行时配置：`references/config-templates/defaults.yaml`

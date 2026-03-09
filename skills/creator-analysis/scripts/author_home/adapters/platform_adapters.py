@@ -58,6 +58,46 @@ def _pick_http_urls(payload: Any, keys: List[str]) -> List[str]:
     return deduped
 
 
+def _extract_first_url(value: Any) -> str:
+    if isinstance(value, str):
+        text = value.strip()
+        return text if text.startswith("http://") or text.startswith("https://") else ""
+    if isinstance(value, list):
+        for item in value:
+            url = _extract_first_url(item)
+            if url:
+                return url
+        return ""
+    if isinstance(value, dict):
+        for key in ("url_list", "url", "uri", "avatar_url", "cover_url", "src"):
+            if key in value:
+                url = _extract_first_url(value.get(key))
+                if url:
+                    return url
+        return ""
+    return ""
+
+
+def _normalize_douyin_tags(value: Any) -> List[str]:
+    if not isinstance(value, list):
+        return []
+    tags: List[str] = []
+    for item in value:
+        if isinstance(item, str):
+            text = item.strip().lstrip("#")
+            if text:
+                tags.append(text)
+            continue
+        if not isinstance(item, dict):
+            continue
+        for key in ("hashtag_name", "search_text", "tag_name", "name", "text"):
+            text = _t(item.get(key)).lstrip("#")
+            if text:
+                tags.append(text)
+                break
+    return list(dict.fromkeys(tags))
+
+
 def _is_probable_video_url(url: str) -> bool:
     lower = (url or "").lower()
     if not (lower.startswith("http://") or lower.startswith("https://")):
@@ -93,13 +133,54 @@ def _extract_xhs_video_down_url(item: Dict[str, Any]) -> str:
     return ""
 
 
+def _normalize_text_list(value: Any) -> List[str]:
+    values: List[str] = []
+    if isinstance(value, list):
+        items = value
+    else:
+        items = [value]
+    for item in items:
+        if isinstance(item, str):
+            text = item.strip().lstrip("#")
+            if text:
+                values.append(text)
+            continue
+        if not isinstance(item, dict):
+            continue
+        for key in ("name", "tag_name", "tag", "text", "display_text", "title"):
+            text = _t(item.get(key)).lstrip("#")
+            if text:
+                values.append(text)
+                break
+    return list(dict.fromkeys(values))
+
+
 def _extract_xhs_subtitle_inline(item: Dict[str, Any]) -> str:
     lines: List[str] = []
-    for container in deep_find_all(item, ["subtitles", "subtitle_list", "subtitleList"]):
+    for container in deep_find_all(
+        item,
+        [
+            "subtitles",
+            "subtitle_list",
+            "subtitleList",
+            "subtitle",
+            "subtitle_text",
+            "caption_text",
+            "transcript",
+            "transcript_text",
+            "subtitle_content",
+            "subtitle_inline",
+        ],
+    ):
+        if isinstance(container, str):
+            value = _t(container)
+            if value:
+                lines.append(value)
+            continue
         if isinstance(container, list):
             for entry in container:
                 if isinstance(entry, dict):
-                    for key in ["text", "content", "sentence", "line"]:
+                    for key in ["text", "content", "sentence", "line", "subtitle_text", "caption_text"]:
                         value = _t(entry.get(key))
                         if value:
                             lines.append(value)
@@ -118,7 +199,21 @@ def _extract_xhs_subtitle_inline(item: Dict[str, Any]) -> str:
 
 
 def _extract_xhs_subtitle_urls(item: Dict[str, Any]) -> List[str]:
-    return _pick_http_urls(item, ["subtitle_url", "subtitleUrl", "srt_url", "srtUrl", "vtt_url", "vttUrl"])
+    return _pick_http_urls(
+        item,
+        [
+            "subtitle_url",
+            "subtitleUrl",
+            "srt_url",
+            "srtUrl",
+            "vtt_url",
+            "vttUrl",
+            "caption_url",
+            "captionUrl",
+            "subtitle_urls",
+            "subtitleUrls",
+        ],
+    )
 
 
 def _extract_xhs_work_modality(item: Dict[str, Any], *, video_download_url: str, subtitle_inline: str) -> str:
@@ -130,6 +225,66 @@ def _extract_xhs_work_modality(item: Dict[str, Any], *, video_download_url: str,
     if video_download_url or subtitle_inline:
         return "video"
     return "text"
+
+
+def _extract_xhs_avatar_url(payload: Any) -> str:
+    return (
+        _extract_first_url(_first(payload, ["image"], ""))
+        or _extract_first_url(_first(payload, ["avatar"], ""))
+        or _extract_first_url(_first(payload, ["avatar_url"], ""))
+        or _extract_first_url(_first(payload, ["images"], ""))
+        or _extract_first_url(_first(payload, ["avatar_info"], ""))
+    )
+
+
+def _extract_xhs_cover_image(item: Dict[str, Any]) -> str:
+    return (
+        _extract_first_url(_first(item, ["cover"], ""))
+        or _extract_first_url(_first(item, ["cover_url"], ""))
+        or _extract_first_url(_first(item, ["cover_image"], ""))
+        or _extract_first_url(_first(item, ["image"], ""))
+        or _extract_first_url(_first(item, ["image_url"], ""))
+        or _extract_first_url(_first(item, ["images"], ""))
+    )
+
+
+def _extract_xhs_share_url(item: Dict[str, Any], note_id: str) -> str:
+    return (
+        _t(_first(item, ["share_url", "share_link", "url", "note_url", "short_url"]))
+        or (f"https://www.xiaohongshu.com/explore/{note_id}" if note_id else "")
+    )
+
+
+def _extract_xhs_source_url(item: Dict[str, Any], note_id: str) -> str:
+    return (
+        _t(_first(item, ["source_url", "note_url", "url", "share_url", "share_link"]))
+        or (f"https://www.xiaohongshu.com/explore/{note_id}" if note_id else "")
+    )
+
+
+def _extract_xhs_title(item: Dict[str, Any]) -> str:
+    return _t(_first(item, ["title", "display_title", "note_title", "name"]))
+
+
+def _extract_xhs_caption(item: Dict[str, Any]) -> str:
+    return _t(_first(item, ["desc", "content", "note_desc", "description", "text"]))
+
+
+def _extract_xhs_tags(item: Dict[str, Any]) -> List[str]:
+    for key in ("tag_list", "tags", "hashtags", "topics"):
+        value = _first(item, [key], [])
+        tags = _normalize_text_list(value)
+        if tags:
+            return tags
+    return []
+
+
+def _extract_xhs_profile_payload(raw: Dict[str, Any]) -> Any:
+    profile_response = raw.get("profile_response") if isinstance(raw.get("profile_response"), dict) else {}
+    profile_data = profile_response.get("data")
+    if isinstance(profile_data, dict):
+        return profile_data
+    return profile_response
 
 
 def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dict[str, Any]], List[Dict[str, str]]]:
@@ -151,7 +306,11 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
         liked_count=_i(_first(profile_data, ["total_favorited", "liked_count", "favoriting_count"])),
         collected_count=_i(_first(profile_data, ["collect_count", "collected_count", "total_collected_count"])),
         signature=_t(_first(profile_data, ["signature", "desc"])),
-        avatar_url=_t(_first(profile_data, ["avatar_larger", "avatar_thumb", "avatar_url", "avatar"])),
+        avatar_url=(
+            _extract_first_url(_first(profile_data, ["avatar_larger"], ""))
+            or _extract_first_url(_first(profile_data, ["avatar_thumb"], ""))
+            or _extract_first_url(_first(profile_data, ["avatar_url", "avatar"], ""))
+        ),
         works_count=_i(_first(profile_data, ["aweme_count", "works_count", "video_count"])),
         verified=bool(_first(profile_data, ["verification_type", "verified"], 0) not in (0, None, "", "false", False)),
         snapshot_at=datetime.now().isoformat(timespec="seconds"),
@@ -177,6 +336,7 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
             "play": _i(_first(item, ["play_count", "view_count"], 0)),
         }
         video_down_url = _extract_douyin_video_down_url(item)
+        tags = _normalize_douyin_tags(_first(item, ["hashtags", "tags", "text_extra"], []))
         work = build_work_item(
             platform="douyin",
             platform_work_id=aweme_id,
@@ -191,9 +351,13 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
             work_modality="video",
             content_type="video",
             duration_ms=_i(_first(item, ["duration_ms", "duration"], 0)),
-            tags=list(_first(item, ["hashtags", "tags", "text_extra"], [])) if isinstance(_first(item, ["hashtags", "tags", "text_extra"], []), list) else [],
+            tags=tags,
             metrics=metrics,
-            cover_image=_t(_first(item, ["cover_url", "cover", "origin_cover"], "")),
+            cover_image=(
+                _extract_first_url(_first(item, ["cover_url"], ""))
+                or _extract_first_url(_first(item, ["cover"], ""))
+                or _extract_first_url(_first(item, ["origin_cover"], ""))
+            ),
             source_url=f"https://www.douyin.com/video/{aweme_id}" if aweme_id else "",
             share_url=_t(_first(item, ["share_url", "share_link"])),
             video_download_url=video_down_url,
@@ -206,6 +370,15 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
             },
             raw_ref={"aweme_id": aweme_id, "raw_item": item},
         )
+        work.update(
+            {
+                "digg_count": metrics["like"],
+                "comment_count": metrics["comment"],
+                "collect_count": metrics["collect"],
+                "share_count": metrics["share"],
+                "play_count": metrics["play"],
+            }
+        )
 
         missing.extend(validate_work_item(work))
         works.append(work)
@@ -216,7 +389,7 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
 
 def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dict[str, Any]], List[Dict[str, str]]]:
     missing: List[Dict[str, str]] = []
-    profile_data = raw.get("profile_response", {}).get("data")
+    profile_data = _extract_xhs_profile_payload(raw)
 
     author_id = _t(_first(profile_data, ["user_id", "userid", "id"], raw.get("resolved_author_id")))
     author_handle = _t(_first(profile_data, ["red_id", "redid", "display_id", "username"]))
@@ -230,7 +403,7 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
         liked_count=_i(_first(profile_data, ["liked_count", "likes", "total_liked", "like_count"])),
         collected_count=_i(_first(profile_data, ["collected_count", "collect_count", "total_collected", "favorite_count"])),
         signature=_t(_first(profile_data, ["desc", "signature", "bio", "introduction"])),
-        avatar_url=_t(_first(profile_data, ["image", "avatar", "avatar_url", "images"])),
+        avatar_url=_extract_xhs_avatar_url(profile_data),
         works_count=_i(_first(profile_data, ["notes", "note_count", "works_count", "post_count"])),
         verified=bool(_first(profile_data, ["official_verified", "verified"], False)),
         snapshot_at=datetime.now().isoformat(timespec="seconds"),
@@ -245,13 +418,12 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
         if not isinstance(item, dict):
             continue
         note_id = _t(_first(item, ["note_id", "id", "item_id"]))
-        interact = _first(item, ["interact_info", "interaction_info", "statistics"], {})
         metrics = {
-            "like": _i(_first(interact, ["liked_count", "like_count", "digg_count"], 0)),
-            "comment": _i(_first(interact, ["comment_count"], 0)),
-            "collect": _i(_first(interact, ["collected_count", "collect_count"], 0)),
-            "share": _i(_first(interact, ["share_count"], 0)),
-            "play": _i(_first(interact, ["view_count", "play_count"], 0)),
+            "like": _i(_first(item, ["liked_count", "like_count", "digg_count"], 0)),
+            "comment": _i(_first(item, ["comment_count"], 0)),
+            "collect": _i(_first(item, ["collected_count", "collect_count"], 0)),
+            "share": _i(_first(item, ["share_count"], 0)),
+            "play": _i(_first(item, ["view_count", "play_count"], 0)),
         }
         subtitle_inline = _extract_xhs_subtitle_inline(item)
         subtitle_urls = _extract_xhs_subtitle_urls(item)
@@ -259,6 +431,9 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
         content_type_raw = _t(_first(item, ["type", "note_type", "model_type"]))
         work_modality = _extract_xhs_work_modality(item, video_download_url=video_down_url, subtitle_inline=subtitle_inline)
         content_type = "video" if work_modality == "video" else (content_type_raw or "text")
+        cover_image = _extract_xhs_cover_image(item)
+        source_url = _extract_xhs_source_url(item, note_id)
+        share_url = _extract_xhs_share_url(item, note_id)
 
         work = build_work_item(
             platform="xiaohongshu",
@@ -266,19 +441,19 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
             platform_author_id=author_id,
             author_handle=author_handle,
             author_platform_id=author_id,
-            title=_t(_first(item, ["title", "display_title"])),
-            caption_raw=_t(_first(item, ["desc", "content"])),
+            title=_extract_xhs_title(item),
+            caption_raw=_extract_xhs_caption(item),
             subtitle_raw=subtitle_inline,
             subtitle_source="native_subtitle" if subtitle_inline else "missing",
-            publish_time=_t(_first(item, ["publish_time", "time", "create_time"])),
+            publish_time=_t(_first(item, ["publish_time", "time", "create_time", "publishTime", "created_at"])),
             work_modality=work_modality,
             content_type=content_type,
             duration_ms=_i(_first(item, ["duration_ms", "duration", "video_duration"], 0)),
-            tags=list(_first(item, ["tag_list", "tags", "hashtags"], [])) if isinstance(_first(item, ["tag_list", "tags", "hashtags"], []), list) else [],
+            tags=_extract_xhs_tags(item),
             metrics=metrics,
-            cover_image=_t(_first(item, ["cover", "cover_url", "cover_image", "image", "image_url"], "")),
-            source_url=f"https://www.xiaohongshu.com/explore/{note_id}" if note_id else "",
-            share_url=_t(_first(item, ["share_url", "share_link", "url", "note_url"])),
+            cover_image=cover_image,
+            source_url=source_url,
+            share_url=share_url,
             video_download_url=video_down_url,
             asr_status="subtitle_ready" if subtitle_inline else "pending",
             asr_error_reason="",
@@ -290,6 +465,15 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
                 "subtitle_inline": subtitle_inline,
                 "subtitle_urls": subtitle_urls,
             },
+        )
+        work.update(
+            {
+                "digg_count": metrics["like"],
+                "comment_count": metrics["comment"],
+                "collect_count": metrics["collect"],
+                "share_count": metrics["share"],
+                "play_count": metrics["play"],
+            }
         )
 
         missing.extend(validate_work_item(work))

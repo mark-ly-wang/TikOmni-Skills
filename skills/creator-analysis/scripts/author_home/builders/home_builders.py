@@ -11,51 +11,111 @@ from typing import Any, Dict, List, Optional
 from scripts.writers.write_benchmark_card import write_benchmark_card
 
 
+AUTHOR_SAMPLE_CARD_ROLE = "author_sample_card"
+SAMPLE_WORK_CARD_ROLE = "sample_work_card"
+AUTHOR_CARD_ROLE = "author_card"
+
+
 def build_work_cards(
     *,
     platform: str,
     profile: Dict[str, Any],
     works: List[Dict[str, Any]],
     render_payloads: Dict[str, Dict[str, Any]],
+    sampled_work_ids: Optional[List[str]],
+    sampled_work_explanations: Optional[Dict[str, Any]],
     card_root: Optional[str],
     storage_config: Optional[Dict[str, Any]],
     write_card: bool,
     failed_items: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     if not write_card:
-        return {"enabled": False, "count": 0, "results": []}
+        return {
+            "author_sample_cards": {"enabled": False, "count": 0, "results": []},
+            "sample_work_cards": {"enabled": False, "count": 0, "results": []},
+        }
 
     sample_author = str(profile.get("nickname") or profile.get("platform_author_id") or "作者")
-    results: List[Dict[str, Any]] = []
-    unresolved: List[Dict[str, Any]] = list(failed_items or [])
+    author_sample_results: List[Dict[str, Any]] = []
+    sample_work_results: List[Dict[str, Any]] = []
+    author_sample_failed: List[Dict[str, Any]] = list(failed_items or [])
+    sample_work_failed: List[Dict[str, Any]] = []
+    sampled_id_set = {str(item).strip() for item in (sampled_work_ids or []) if str(item).strip()}
+    explanation_map = sampled_work_explanations if isinstance(sampled_work_explanations, dict) else {}
 
     for work in works:
         platform_work_id = str(work.get("platform_work_id") or "").strip()
         payload = render_payloads.get(platform_work_id)
         if not isinstance(payload, dict):
-            unresolved.append(
+            author_sample_failed.append(
                 {
                     "platform_work_id": platform_work_id,
                     "error_reason": "missing_work_analysis_artifact",
                 }
             )
             continue
-        result = write_benchmark_card(
-            payload=payload,
-            platform=platform,
-            card_type="author_sample_work",
-            card_root=card_root,
-            sample_author=sample_author,
-            content_kind="author_home",
-            storage_config=storage_config,
-        )
-        results.append(result)
+
+        base_payload = dict(payload)
+        try:
+            full_result = write_benchmark_card(
+                payload=base_payload,
+                platform=platform,
+                card_type="author_sample_work",
+                card_root=card_root,
+                sample_author=sample_author,
+                content_kind="author_home",
+                storage_config=storage_config,
+                card_role=AUTHOR_SAMPLE_CARD_ROLE,
+            )
+            author_sample_results.append(full_result)
+        except Exception as error:
+            author_sample_failed.append(
+                {
+                    "platform_work_id": platform_work_id,
+                    "error_reason": f"author_sample_card_write_failed:{type(error).__name__}:{error}",
+                }
+            )
+            continue
+
+        if platform_work_id in sampled_id_set:
+            sample_payload = dict(base_payload)
+            explanation = explanation_map.get(platform_work_id)
+            sample_payload["sampled_explanation"] = explanation if isinstance(explanation, dict) else {}
+            try:
+                sample_result = write_benchmark_card(
+                    payload=sample_payload,
+                    platform=platform,
+                    card_type="author_sample_work",
+                    card_root=card_root,
+                    sample_author=sample_author,
+                    content_kind="author_home",
+                    storage_config=storage_config,
+                    route_card_type="author",
+                    route_extra_parts=["sample_work"],
+                    card_role=SAMPLE_WORK_CARD_ROLE,
+                )
+                sample_work_results.append(sample_result)
+            except Exception as error:
+                sample_work_failed.append(
+                    {
+                        "platform_work_id": platform_work_id,
+                        "error_reason": f"sample_work_card_write_failed:{type(error).__name__}:{error}",
+                    }
+                )
 
     return {
-        "enabled": True,
-        "count": len(results),
-        "results": results,
-        "failed_items": unresolved,
+        "author_sample_cards": {
+            "enabled": True,
+            "count": len(author_sample_results),
+            "results": author_sample_results,
+            "failed_items": author_sample_failed,
+        },
+        "sample_work_cards": {
+            "enabled": True,
+            "count": len(sample_work_results),
+            "results": sample_work_results,
+            "failed_items": sample_work_failed,
+        },
     }
 
 
@@ -127,6 +187,9 @@ def build_author_card(
         "author_analysis_v2": author_analysis_v2,
         "author_analysis_input_v1": analysis_payload.get("author_analysis_input_v1") if isinstance(analysis_payload.get("author_analysis_input_v1"), dict) else {},
         "sampled_work_explanations": analysis_payload.get("sampled_work_explanations") if isinstance(analysis_payload.get("sampled_work_explanations"), dict) else {},
+        "stage_status": analysis_payload.get("stage_status") if isinstance(analysis_payload.get("stage_status"), dict) else {},
+        "quality_tier": analysis_payload.get("quality_tier") or "",
+        "sampled_work_ids": list(analysis_payload.get("sampled_work_ids") or []) if isinstance(analysis_payload.get("sampled_work_ids"), list) else [],
         "author_card_highlights": author_card_highlights,
         "business_score": int(analysis_payload.get("business_score", 0) or 0),
         "benchmark_gap_score": int(analysis_payload.get("benchmark_gap_score", 0) or 0),
@@ -146,4 +209,5 @@ def build_author_card(
         sample_author=None,
         content_kind="author_analysis",
         storage_config=storage_config,
+        card_role=AUTHOR_CARD_ROLE,
     )

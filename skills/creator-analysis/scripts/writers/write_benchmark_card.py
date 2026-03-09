@@ -47,6 +47,9 @@ def resolve_default_card_root() -> str:
 # Keep import-time compatibility for other scripts without crashing when env is absent.
 DEFAULT_CARD_ROOT = ""
 CARD_TYPES = ["work", "author", "author_sample_work"]
+AUTHOR_SAMPLE_CARD_ROLE = "author_sample_card"
+SAMPLE_WORK_CARD_ROLE = "sample_work_card"
+AUTHOR_CARD_ROLE = "author_card"
 
 
 def _normalize_lines(value: Any) -> List[str]:
@@ -90,6 +93,39 @@ def _safe_optional_int(value: Any) -> Optional[int]:
         if text.isdigit() or (text.startswith("-") and text[1:].isdigit()):
             return int(text)
     return None
+
+
+def _safe_text(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, (int, float, bool)):
+        return str(value).strip()
+    return ""
+
+
+def _safe_text_list(value: Any) -> List[str]:
+    if isinstance(value, list):
+        result: List[str] = []
+        for item in value:
+            if isinstance(item, dict):
+                for key in ("name", "value", "label", "hashtag_name", "search_text", "tag_name", "text"):
+                    text = _safe_text(item.get(key))
+                    if text:
+                        result.append(text)
+                        break
+                continue
+            text = _safe_text(item)
+            if text:
+                result.append(text)
+        return list(dict.fromkeys(result))
+    if isinstance(value, str):
+        text = _safe_text(value)
+        if not text:
+            return []
+        return [item for item in re.split(r"[,，\s]+", text) if item]
+    return []
 
 
 def _to_unix_sec(value: Any) -> int:
@@ -417,7 +453,7 @@ def _extract_tags(payload: Dict[str, Any]) -> List[str]:
     for key in ("tags", "tag_list", "hashtags"):
         value = payload.get(key)
         if isinstance(value, list):
-            tags = [normalize_text(item).lstrip("#") for item in value if normalize_text(item)]
+            tags = [item.lstrip("#") for item in _safe_text_list(value)]
             if tags:
                 return list(dict.fromkeys(tags))
         if isinstance(value, str) and normalize_text(value):
@@ -430,7 +466,7 @@ def _extract_tags(payload: Dict[str, Any]) -> List[str]:
     for key in ("tags", "tag_list", "hashtags"):
         value = source.get(key)
         if isinstance(value, list):
-            tags = [normalize_text(item).lstrip("#") for item in value if normalize_text(item)]
+            tags = [item.lstrip("#") for item in _safe_text_list(value)]
             if tags:
                 return list(dict.fromkeys(tags))
 
@@ -476,11 +512,14 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
     if create_time_sec <= 0:
         create_time_sec = _to_unix_sec(_source_dict(payload).get("create_time"))
 
-    digg_count = _safe_int(payload.get("digg_count"), default=0)
-    comment_count = _safe_int(payload.get("comment_count"), default=0)
-    collect_count = _safe_int(payload.get("collect_count"), default=0)
-    share_count = _safe_int(payload.get("share_count"), default=0)
+    metrics = payload.get("metrics") if isinstance(payload.get("metrics"), dict) else {}
+    digg_count = _safe_int(payload.get("digg_count"), default=_safe_int(metrics.get("like"), default=0))
+    comment_count = _safe_int(payload.get("comment_count"), default=_safe_int(metrics.get("comment"), default=0))
+    collect_count = _safe_int(payload.get("collect_count"), default=_safe_int(metrics.get("collect"), default=0))
+    share_count = _safe_int(payload.get("share_count"), default=_safe_int(metrics.get("share"), default=0))
     play_count = _safe_optional_int(payload.get("play_count"))
+    if play_count is None:
+        play_count = _safe_optional_int(metrics.get("play"))
 
     summary = normalize_text(payload.get("summary"))
     raw_content = normalize_text(payload.get("raw_content"))
@@ -512,6 +551,8 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
     if not primary_text:
         primary_text = asr_clean if primary_text_source == "asr_clean" else normalize_text(payload.get("desc"))
 
+    sampled_explanation = payload.get("sampled_explanation") if isinstance(payload.get("sampled_explanation"), dict) else {}
+
     return {
         "title": title,
         "platform": platform,
@@ -540,6 +581,18 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
         "raw_content": raw_content,
         "primary_text": primary_text,
         "asr_clean": asr_clean,
+        "performance_score": payload.get("performance_score"),
+        "performance_score_norm": payload.get("performance_score_norm"),
+        "bucket": normalize_text(payload.get("bucket")),
+        "hook_type": normalize_text(payload.get("hook_type")),
+        "structure_type": normalize_text(payload.get("structure_type")),
+        "cta_type": normalize_text(payload.get("cta_type")),
+        "content_form": normalize_text(payload.get("content_form")),
+        "style_markers": _safe_text_list(payload.get("style_markers")),
+        "analysis_eligibility": normalize_text(payload.get("analysis_eligibility")) or "eligible",
+        "analysis_exclusion_reason": normalize_text(payload.get("analysis_exclusion_reason")),
+        "card_role": normalize_text(payload.get("card_role")),
+        "sampled_explanation": sampled_explanation,
         "platform_native_refs": payload.get("platform_native_refs") if isinstance(payload.get("platform_native_refs"), dict) else {},
         "request_id": payload.get("request_id"),
         "confidence": normalize_text(payload.get("confidence")) or "low",
@@ -552,6 +605,9 @@ def _extract_required_fields(payload: Dict[str, Any], platform: str) -> Dict[str
         "sampled_work_explanations": payload.get("sampled_work_explanations") if isinstance(payload.get("sampled_work_explanations"), dict) else {},
         "author_card_highlights": payload.get("author_card_highlights") if isinstance(payload.get("author_card_highlights"), dict) else {},
         "validation": payload.get("validation") if isinstance(payload.get("validation"), dict) else {},
+        "quality_tier": normalize_text(payload.get("quality_tier")),
+        "stage_status": payload.get("stage_status") if isinstance(payload.get("stage_status"), dict) else {},
+        "sampled_work_ids": _safe_text_list(payload.get("sampled_work_ids")),
         "business_score": _safe_int(payload.get("business_score"), default=0),
         "benchmark_gap_score": _safe_int(payload.get("benchmark_gap_score"), default=0),
         "style_radar": payload.get("style_radar") if isinstance(payload.get("style_radar"), dict) else {},
@@ -965,6 +1021,7 @@ def _build_output_path(
     now: dt.datetime,
     sample_author: Optional[str],
     storage_config: Optional[Dict[str, Any]],
+    extra_route_parts: Optional[List[str]] = None,
 ) -> Dict[str, str]:
     author_slug = _pick_author_slug(payload, author_hint=sample_author)
     title_slug = _pick_title_slug(payload)
@@ -979,6 +1036,7 @@ def _build_output_path(
         year_month=now.strftime("%Y-%m"),
         timestamp=now.strftime("%Y%m%d-%H%M%S"),
         storage_config=storage_config,
+        extra_route_parts=extra_route_parts,
     )
     return {
         "path": path,
@@ -989,7 +1047,30 @@ def _build_output_path(
     }
 
 
-def _render_author_markdown(
+def _json_details_block(title: str, payload: Any) -> List[str]:
+    return [
+        "<details>",
+        f"<summary>{title}</summary>",
+        "",
+        "```json",
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        "```",
+        "",
+        "</details>",
+    ]
+
+
+def _display_list(values: Any, *, fallback: str = "数据不足") -> str:
+    items = _safe_text_list(values)
+    return "、".join(items) if items else fallback
+
+
+def _display_scalar(value: Any, *, fallback: str = "数据不足") -> str:
+    text = normalize_text(value)
+    return text or fallback
+
+
+def _render_author_card_markdown(
     *,
     card_id: str,
     card_type: str,
@@ -998,59 +1079,38 @@ def _render_author_markdown(
 ) -> str:
     analysis_output = fields.get("analysis_output") if isinstance(fields.get("analysis_output"), dict) else {}
     author_analysis_v2 = fields.get("author_analysis_v2") if isinstance(fields.get("author_analysis_v2"), dict) else analysis_output.get("author_analysis_v2", {})
-    if not isinstance(author_analysis_v2, dict):
-        author_analysis_v2 = {}
-    sampled_work_explanations = fields.get("sampled_work_explanations") if isinstance(fields.get("sampled_work_explanations"), dict) else analysis_output.get("sampled_work_explanations", {})
-    if not isinstance(sampled_work_explanations, dict):
-        sampled_work_explanations = {}
-    author_card_highlights = fields.get("author_card_highlights") if isinstance(fields.get("author_card_highlights"), dict) else {}
-    if not isinstance(author_card_highlights, dict):
-        author_card_highlights = {}
+    author_analysis_v2 = author_analysis_v2 if isinstance(author_analysis_v2, dict) else {}
     validation = fields.get("validation") if isinstance(fields.get("validation"), dict) else analysis_output.get("validation", {})
-    if not isinstance(validation, dict):
-        validation = {}
+    validation = validation if isinstance(validation, dict) else {}
+    stage_status = fields.get("stage_status") if isinstance(fields.get("stage_status"), dict) else {}
+    stage_status = stage_status if isinstance(stage_status, dict) else {}
+    sampled_work_explanations = fields.get("sampled_work_explanations") if isinstance(fields.get("sampled_work_explanations"), dict) else analysis_output.get("sampled_work_explanations", {})
+    sampled_work_explanations = sampled_work_explanations if isinstance(sampled_work_explanations, dict) else {}
+    quality_tier = _display_scalar(fields.get("quality_tier"), fallback="unknown")
 
-    business_score = _safe_int(fields.get("business_score"), default=_safe_int(analysis_output.get("business_score"), default=0))
-    benchmark_gap_score = _safe_int(fields.get("benchmark_gap_score"), default=_safe_int(analysis_output.get("benchmark_gap_score"), default=0))
-    style_radar = fields.get("style_radar") if isinstance(fields.get("style_radar"), dict) else analysis_output.get("style_radar", {})
-    if not isinstance(style_radar, dict):
-        style_radar = {}
+    positioning = author_analysis_v2.get("author_positioning") if isinstance(author_analysis_v2.get("author_positioning"), dict) else {}
+    trust_model = author_analysis_v2.get("trust_model") if isinstance(author_analysis_v2.get("trust_model"), dict) else {}
+    content_mechanism = author_analysis_v2.get("content_mechanism") if isinstance(author_analysis_v2.get("content_mechanism"), dict) else {}
+    commercial_bridge = author_analysis_v2.get("commercial_bridge") if isinstance(author_analysis_v2.get("commercial_bridge"), dict) else {}
+    core_tensions = author_analysis_v2.get("core_tensions") if isinstance(author_analysis_v2.get("core_tensions"), dict) else {}
+    clone_guidance = author_analysis_v2.get("clone_guidance") if isinstance(author_analysis_v2.get("clone_guidance"), dict) else {}
+    evidence_pack = author_analysis_v2.get("evidence_pack") if isinstance(author_analysis_v2.get("evidence_pack"), dict) else {}
 
-    core_contradictions = fields.get("core_contradictions") if isinstance(fields.get("core_contradictions"), list) else analysis_output.get("core_contradictions", [])
-    if not isinstance(core_contradictions, list):
-        core_contradictions = []
-
-    recommendations = fields.get("recommendations") if isinstance(fields.get("recommendations"), list) else analysis_output.get("recommendations", [])
-    if not isinstance(recommendations, list):
-        recommendations = []
-
-    business_analysis = normalize_text(fields.get("business_analysis")) or normalize_text(analysis_output.get("business_analysis"))
-    benchmark_analysis = normalize_text(fields.get("benchmark_analysis")) or normalize_text(analysis_output.get("benchmark_analysis"))
-    author_portrait = normalize_text(author_card_highlights.get("one_liner")) or normalize_text(fields.get("summary")) or normalize_text(analysis_output.get("author_portrait"))
+    sampled_work_ids = _safe_text_list(fields.get("sampled_work_ids"))
+    representative_works = _safe_text_list(evidence_pack.get("representative_works")) or sampled_work_ids[:8]
 
     fm = {
         "card_id": card_id,
         "card_type": card_type,
+        "card_role": fields.get("card_role") or AUTHOR_CARD_ROLE,
         "platform": fields.get("platform"),
         "generated_at": generated_at,
         "updated_at": generated_at,
         "title": fields.get("title"),
-        "platform_work_id": fields.get("platform_work_id"),
-        "author": fields.get("author"),
-        "author_handle": fields.get("author_handle"),
         "platform_author_id": fields.get("platform_author_id"),
+        "author_handle": fields.get("author_handle"),
         "nickname": fields.get("nickname"),
-        "ip_location": fields.get("ip_location"),
-        "avatar_url": fields.get("avatar_url"),
-        "signature": fields.get("signature"),
-        "fans_count": fields.get("fans_count"),
-        "liked_count": fields.get("liked_count"),
-        "collected_count": fields.get("collected_count"),
-        "works_count": fields.get("works_count"),
-        "verified": fields.get("verified"),
-        "snapshot_at": fields.get("snapshot_at"),
-        "business_score": business_score,
-        "benchmark_gap_score": benchmark_gap_score,
+        "quality_tier": quality_tier,
         "request_id": fields.get("request_id"),
     }
 
@@ -1062,89 +1122,207 @@ def _render_author_markdown(
     lines = [
         *frontmatter,
         "",
-        "## 基础事实",
-        f"- 平台：{fields.get('platform') or '未知'}",
-        f"- 作者ID：{fields.get('platform_author_id') or '未知'}",
-        f"- 账号标识：{fields.get('author_handle') or 'N/A'}",
-        f"- 昵称：{fields.get('nickname') or fields.get('author') or '未知'}",
-        f"- IP属地：{fields.get('ip_location') or 'N/A'}",
-        f"- 签名：{fields.get('signature') or 'N/A'}",
-        f"- 头像：{fields.get('avatar_url') or 'N/A'}",
+        "## 基础主页事实",
+        f"- 平台：{_display_scalar(fields.get('platform'), fallback='未知')}",
+        f"- 作者ID：{_display_scalar(fields.get('platform_author_id'), fallback='未知')}",
+        f"- 账号标识：{_display_scalar(fields.get('author_handle'), fallback='N/A')}",
+        f"- 昵称：{_display_scalar(fields.get('nickname') or fields.get('author'), fallback='未知')}",
+        f"- IP属地：{_display_scalar(fields.get('ip_location'), fallback='N/A')}",
+        f"- 签名：{_display_scalar(fields.get('signature'), fallback='N/A')}",
         f"- 粉丝数：{_display_metric(fields.get('fans_count'))}",
         f"- 累计获赞：{_display_metric(fields.get('liked_count'))}",
         f"- 累计收藏：{_display_metric(fields.get('collected_count'))}",
         f"- 作品数：{_display_metric(fields.get('works_count'))}",
-        f"- 认证状态：{'是' if fields.get('verified') else '否'}" if fields.get('verified') is not None else "- 认证状态：N/A",
-        f"- 抓取时间：{fields.get('snapshot_at') or 'N/A'}",
+        f"- 质量档：{quality_tier}",
         "",
-        "## 作者画像",
-        author_portrait or "数据不足",
+        "## 作者定位",
+        _display_scalar(positioning.get("one_liner") or fields.get("summary")),
+        f"- 作者类型：{_display_scalar(positioning.get('author_type'))}",
+        f"- 主要角色：{_display_scalar(positioning.get('primary_role'))}",
+        f"- 目标受众：{_display_scalar(positioning.get('target_audience'))}",
+        f"- 核心问题：{_display_scalar(positioning.get('core_problem_solved'))}",
+        f"- 核心价值：{_display_scalar(positioning.get('core_value_proposition'))}",
         "",
-        "## 主页摘要卡",
-        f"- 核心价值：{normalize_text(author_card_highlights.get('core_value_proposition')) or '数据不足'}",
-        f"- 主要信任源：{normalize_text(author_card_highlights.get('primary_trust_source')) or '数据不足'}",
-        f"- 胜率结构：{('、'.join([normalize_text(x) for x in author_card_highlights.get('winning_content_structures', []) if normalize_text(x)])) or '数据不足'}",
-        f"- 可能产品：{('、'.join([normalize_text(x) for x in author_card_highlights.get('likely_products', []) if normalize_text(x)])) or '证据不足'}",
-        f"- 最大张力：{normalize_text(author_card_highlights.get('most_important_tension')) or '数据不足'}",
-        f"- 只学一件事：{normalize_text(author_card_highlights.get('if_only_learn_one_thing')) or '数据不足'}",
+        "## 信任模型",
+        f"- 主要信任源：{_display_scalar(trust_model.get('primary_trust_source'))}",
+        f"- 次级信任源：{_display_list(trust_model.get('secondary_trust_sources'))}",
+        f"- 建立机制：{_display_list(trust_model.get('trust_building_mechanisms'))}",
+        f"- 风险：{_display_list(trust_model.get('trust_risks'))}",
         "",
-        "## 商业分析",
-        business_analysis or "数据不足",
+        "## 内容机制",
+        f"- 世界观：{_display_scalar((author_analysis_v2.get('cognitive_engine') or {}).get('worldview'))}",
+        f"- 推理模式：{_display_list((author_analysis_v2.get('cognitive_engine') or {}).get('reasoning_modes'))}",
+        f"- 内容来源：{_display_list(content_mechanism.get('topic_sources'))}",
+        f"- 内容目标：{_display_list(content_mechanism.get('topic_goals'))}",
+        f"- 优势结构：{_display_list(content_mechanism.get('winning_content_structures'))}",
+        f"- 流量驱动：{_display_list(content_mechanism.get('traffic_drivers'))}",
+        f"- 主导主题：{_display_list(content_mechanism.get('dominant_themes'))}",
         "",
-        "## 对标分析",
-        benchmark_analysis or "数据不足",
+        "## 商业桥",
+        f"- 漏斗角色：{_display_list(commercial_bridge.get('content_role_in_funnel'))}",
+        f"- 可能产品：{_display_list(commercial_bridge.get('likely_products'), fallback='证据不足')}",
+        f"- 转化路径：{_display_scalar(commercial_bridge.get('conversion_path'), fallback='证据不足')}",
+        f"- 商业信号：{_display_list(commercial_bridge.get('business_model_signals'), fallback='证据不足')}",
         "",
-        "## 评分",
-        f"- business_score: {business_score}",
-        f"- benchmark_gap_score: {benchmark_gap_score}",
+        "## 核心张力",
+        f"- 最重要张力：{_display_scalar(core_tensions.get('most_important_tension'))}",
+        f"- 张力列表：{_display_list(core_tensions.get('tensions'))}",
         "",
-        "## 风格雷达",
-        "```json",
-        json.dumps(style_radar, ensure_ascii=False, indent=2),
-        "```",
+        "## 建议动作",
+        f"- 可复制要素：{_display_list(clone_guidance.get('copyable_elements'))}",
+        f"- 不可复制要素：{_display_list(clone_guidance.get('non_copyable_elements'))}",
+        f"- 风险区：{_display_list(clone_guidance.get('danger_zones'))}",
+        f"- 只学一件事：{_display_scalar(clone_guidance.get('if_only_learn_one_thing'))}",
         "",
-        "## 核心矛盾",
+        "## 代表样本",
     ]
 
-    if core_contradictions:
-        lines.extend([f"- {normalize_text(item)}" for item in core_contradictions if normalize_text(item)])
-    else:
-        lines.append("- 数据不足")
-
-    lines.extend(["", "## 建议动作"])
-    if recommendations:
-        lines.extend([f"- {normalize_text(item)}" for item in recommendations if normalize_text(item)])
+    if representative_works:
+        lines.extend([f"- {item}" for item in representative_works[:8]])
     else:
         lines.append("- 数据不足")
 
     lines.extend(
         [
             "",
-            "## author_analysis_v2",
-            "```json",
-            json.dumps(author_analysis_v2, ensure_ascii=False, indent=2),
-            "```",
-            "",
-            "## sampled_work_explanations",
-            "```json",
-            json.dumps(sampled_work_explanations, ensure_ascii=False, indent=2),
-            "```",
-            "",
-            "## 校验",
-            f"- validation_ok: {bool(validation.get('ok'))}",
-            f"- validation_error_count: {len(validation.get('errors') or [])}",
-            "",
             "## 附录",
             f"- confidence: {fields.get('confidence')}",
-            f"- error_reason: {fields.get('error_reason')}",
+            f"- error_reason: {fields.get('error_reason') or 'N/A'}",
+        ]
+    )
+
+    if quality_tier == "fallback":
+        lines.append("- note: 当前作者分析使用 fallback 结果，请优先复核正文结论。")
+    elif quality_tier == "degraded_author_only":
+        lines.append("- note: 批量解释缺失，作者分析基于聚合统计与样本事实完成。")
+
+    lines.extend([""] + _json_details_block("author_analysis_v2", author_analysis_v2))
+    lines.extend([""] + _json_details_block("sampled_work_explanations", sampled_work_explanations))
+    lines.extend([""] + _json_details_block("validation", validation))
+    lines.extend([""] + _json_details_block("stage_status", stage_status))
+    lines.extend([""] + _json_details_block("extract_trace", fields.get("extract_trace", [])))
+    return "\n".join(lines)
+
+
+def _render_author_sample_markdown(
+    *,
+    card_id: str,
+    card_type: str,
+    fields: Dict[str, Any],
+    generated_at: str,
+) -> str:
+    card_role = normalize_text(fields.get("card_role")) or AUTHOR_SAMPLE_CARD_ROLE
+    sampled_explanation = fields.get("sampled_explanation") if isinstance(fields.get("sampled_explanation"), dict) else {}
+    sampled_explanation = sampled_explanation if isinstance(sampled_explanation, dict) else {}
+
+    fm = {
+        "card_id": card_id,
+        "card_type": card_type,
+        "card_role": card_role,
+        "platform": fields.get("platform"),
+        "generated_at": generated_at,
+        "updated_at": generated_at,
+        "title": fields.get("title"),
+        "platform_work_id": fields.get("platform_work_id"),
+        "author": fields.get("author"),
+        "author_handle": fields.get("author_handle"),
+        "platform_author_id": fields.get("platform_author_id"),
+        "share_url": fields.get("share_url"),
+        "source_url": fields.get("source_url"),
+    }
+
+    frontmatter = ["---"]
+    for key, value in fm.items():
+        frontmatter.append(f"{key}: {json.dumps(value, ensure_ascii=False)}")
+    frontmatter.append("---")
+
+    metrics_line = (
+        f"赞 {_display_metric(fields.get('digg_count'))} / 评 {_display_metric(fields.get('comment_count'))} / "
+        f"藏 {_display_metric(fields.get('collect_count'))} / 转 {_display_metric(fields.get('share_count'))} / 播 {_display_metric(fields.get('play_count'))}"
+    )
+
+    lines = [
+        *frontmatter,
+        "",
+        "## 基础信息",
+        f"- 作者：{_display_scalar(fields.get('author') or fields.get('author_handle') or fields.get('platform_author_id'), fallback='未知作者')}",
+        f"- 标题：{_display_scalar(fields.get('title'), fallback='（标题缺失）')}",
+        f"- 原始文案：{_display_scalar(fields.get('caption_raw'), fallback='N/A')}",
+        f"- 作品模态：{_display_scalar(fields.get('work_modality'), fallback='未知')}",
+        f"- 发布时间：{_display_scalar(fields.get('published_date'), fallback='N/A')}",
+        f"- 时长：{_format_duration(_safe_int(fields.get('duration_ms'), default=0)) if _safe_int(fields.get('duration_ms'), default=0) > 0 else 'N/A'}",
+        f"- 互动：{metrics_line}",
+        f"- 标签：{_display_list(fields.get('tags'), fallback='无')}",
+        f"- 链接：{_display_scalar(fields.get('share_url'), fallback='（未提供）')}",
+        "",
+        "## 表现与结构",
+        f"- performance_score：{fields.get('performance_score') if fields.get('performance_score') is not None else 'N/A'}",
+        f"- performance_score_norm：{fields.get('performance_score_norm') if fields.get('performance_score_norm') is not None else 'N/A'}",
+        f"- bucket：{_display_scalar(fields.get('bucket'), fallback='unknown')}",
+        f"- hook_type：{_display_scalar(fields.get('hook_type'), fallback='unknown')}",
+        f"- structure_type：{_display_scalar(fields.get('structure_type'), fallback='unknown')}",
+        f"- cta_type：{_display_scalar(fields.get('cta_type'), fallback='unknown')}",
+        f"- content_form：{_display_scalar(fields.get('content_form'), fallback='unknown')}",
+        f"- style_markers：{_display_list(fields.get('style_markers'), fallback='未命中显著标记')}",
+    ]
+
+    precomputed_sections = fields.get("analysis_sections") if isinstance(fields.get("analysis_sections"), dict) else {}
+    modules = precomputed_sections.get("modules") if isinstance(precomputed_sections.get("modules"), dict) else {}
+    for heading in DEFAULT_MODULE_SECTIONS:
+        lines.append("")
+        lines.append(f"## {heading}")
+        for item in modules.get(heading, ["数据不足"]):
+            lines.append(_display_scalar(item))
+
+    if card_role == SAMPLE_WORK_CARD_ROLE:
+        lines.extend(
+            [
+                "",
+                "## 批量解释",
+                f"- why_it_worked_or_failed：{_display_scalar(sampled_explanation.get('why_it_worked_or_failed'), fallback='批量解释未生成')}",
+                f"- copyable_elements：{_display_list(sampled_explanation.get('copyable_elements'), fallback='批量解释未生成')}",
+                f"- non_copyable_elements：{_display_list(sampled_explanation.get('non_copyable_elements'), fallback='批量解释未生成')}",
+                f"- emotional_triggers：{_display_list(sampled_explanation.get('emotional_triggers'), fallback='批量解释未生成')}",
+                f"- cognitive_gap：{_display_scalar(sampled_explanation.get('cognitive_gap'), fallback='批量解释未生成')}",
+                f"- commercial_signal：{_display_scalar(sampled_explanation.get('commercial_signal'), fallback='批量解释未生成')}",
+            ]
+        )
+
+    lines.extend(
+        [
             "",
-            "```json",
-            json.dumps(fields.get("extract_trace", []), ensure_ascii=False, indent=2),
-            "```",
+            "## 主文本",
+            _display_scalar(fields.get("primary_text"), fallback="（无可用主文本）"),
+            "",
+            "## 附录",
+            f"- analysis_eligibility: {_display_scalar(fields.get('analysis_eligibility'), fallback='unknown')}",
+            f"- analysis_exclusion_reason: {_display_scalar(fields.get('analysis_exclusion_reason'), fallback='N/A')}",
+            f"- request_id: {_display_scalar(fields.get('request_id'), fallback='N/A')}",
+            f"- confidence: {_display_scalar(fields.get('confidence'), fallback='low')}",
+            f"- error_reason: {_display_scalar(fields.get('error_reason'), fallback='N/A')}",
+            "",
+            "### ASR_RAW",
+            _display_scalar(fields.get("raw_content"), fallback="（无可用 ASR 原文）"),
             "",
         ]
     )
+    lines.extend(_json_details_block("extract_trace", fields.get("extract_trace", [])))
     return "\n".join(lines)
+
+
+def _render_author_markdown(
+    *,
+    card_id: str,
+    card_type: str,
+    fields: Dict[str, Any],
+    generated_at: str,
+) -> str:
+    return _render_author_card_markdown(
+        card_id=card_id,
+        card_type=card_type,
+        fields=fields,
+        generated_at=generated_at,
+    )
 
 
 def _render_markdown(
@@ -1161,6 +1339,14 @@ def _render_markdown(
             fields=fields,
             generated_at=generated_at,
         )
+    if card_type == "author_sample_work":
+        return _render_author_sample_markdown(
+            card_id=card_id,
+            card_type=card_type,
+            fields=fields,
+            generated_at=generated_at,
+        )
+
     author_name = fields.get("author") or fields.get("author_handle") or fields.get("platform_author_id") or "未知作者"
     title = fields.get("title") or "（标题缺失）"
     metrics_line = (
@@ -1168,10 +1354,7 @@ def _render_markdown(
         f"藏 {_display_metric(fields.get('collect_count'))} / 转 {_display_metric(fields.get('share_count'))} / 播 {_display_metric(fields.get('play_count'))}"
     )
     precomputed_sections = fields.get("analysis_sections") if isinstance(fields.get("analysis_sections"), dict) else {}
-    if precomputed_sections:
-        analysis_sections = precomputed_sections
-    else:
-        analysis_sections = {} if card_type == "author_sample_work" else build_analysis_sections(fields)
+    analysis_sections = precomputed_sections or build_analysis_sections(fields)
     creative_modules = analysis_sections.get("modules", {})
     insight_lines = analysis_sections.get("insight", ["数据不足"])
     extract_trace_json = json.dumps(fields.get("extract_trace", []), ensure_ascii=False, indent=2)
@@ -1187,21 +1370,6 @@ def _render_markdown(
         "author": fields.get("author"),
         "author_handle": fields.get("author_handle"),
         "platform_author_id": fields.get("platform_author_id"),
-        "caption_raw": fields.get("caption_raw"),
-        "primary_text": fields.get("primary_text"),
-        "share_url": fields.get("share_url"),
-        "source_url": fields.get("source_url"),
-        "cover_image": fields.get("cover_image"),
-        "video_download_url": fields.get("video_download_url"),
-        "published_date": fields.get("published_date"),
-        "duration_ms": fields.get("duration_ms"),
-        "digg_count": fields.get("digg_count"),
-        "comment_count": fields.get("comment_count"),
-        "collect_count": fields.get("collect_count"),
-        "share_count": fields.get("share_count"),
-        "play_count": fields.get("play_count"),
-        "tags": fields.get("tags", []),
-        "work_modality": fields.get("work_modality"),
     }
 
     frontmatter = ["---"]
@@ -1218,10 +1386,8 @@ def _render_markdown(
         f"- 原始文案：{fields.get('caption_raw') or 'N/A'}",
         f"- 作品模态：{fields.get('work_modality') or '未知'}",
         f"- 发布时间：{fields.get('published_date') or 'N/A'}",
-        f"- {'视频时长' if fields.get('work_modality') == 'video' else '阅读载体'}：{_format_duration(fields.get('duration_ms', 0)) if fields.get('work_modality') == 'video' else '文本'}",
         f"- 互动：{metrics_line}",
         f"- 链接：{fields.get('share_url') or '（未提供）'}",
-        f"- 下载链接：{fields.get('video_download_url') or 'N/A'}" if fields.get("work_modality") == "video" else "- 下载链接：N/A",
     ]
 
     for heading in DEFAULT_MODULE_SECTIONS:
@@ -1235,20 +1401,11 @@ def _render_markdown(
     for item in insight_lines:
         lines.append(item)
 
-    transcript_heading = "## 主文本"
-    transcript_body = fields.get("primary_text")
-    transcript_fallback = "（无可用主文本）"
-
     lines.extend(
         [
             "",
-            transcript_heading,
-            transcript_body or transcript_fallback,
-        ]
-    )
-
-    lines.extend(
-        [
+            "## 主文本",
+            fields.get("primary_text") or "（无可用主文本）",
             "",
             "## 附录",
             "### ASR_RAW",
@@ -1299,6 +1456,9 @@ def write_benchmark_card(
     content_kind: Optional[str] = None,
     storage_config: Optional[Dict[str, Any]] = None,
     force_card_type: bool = False,
+    route_card_type: Optional[str] = None,
+    route_extra_parts: Optional[List[str]] = None,
+    card_role: Optional[str] = None,
 ) -> Dict[str, Any]:
     now = dt.datetime.now()
     generated_at = now.isoformat(timespec="seconds")
@@ -1313,17 +1473,30 @@ def write_benchmark_card(
         storage_config=storage_config,
         force_card_type=force_card_type,
     )
-    fields = _extract_required_fields(payload, platform=platform)
+    effective_route_card_type = normalize_card_type(route_card_type) if route_card_type else effective_card_type
+    effective_card_role = normalize_text(card_role) or normalize_text(payload.get("card_role"))
+    explicit_route_override = bool(route_card_type or route_extra_parts)
+
+    payload_for_fields = dict(payload)
+    if effective_card_role:
+        payload_for_fields["card_role"] = effective_card_role
+    fields = _extract_required_fields(payload_for_fields, platform=platform)
+    if not fields.get("card_role"):
+        if effective_card_type == "author":
+            fields["card_role"] = AUTHOR_CARD_ROLE
+        elif effective_card_type == "author_sample_work":
+            fields["card_role"] = AUTHOR_SAMPLE_CARD_ROLE
     resolved_card_root = _resolve_card_root(card_root)
 
     primary_target = _build_output_path(
         card_root=resolved_card_root,
         platform=platform,
-        card_type=effective_card_type,
+        card_type=effective_route_card_type,
         payload=payload,
         now=now,
         sample_author=sample_author,
         storage_config=storage_config,
+        extra_route_parts=route_extra_parts,
     )
     primary_path = primary_target["path"]
 
@@ -1340,12 +1513,16 @@ def write_benchmark_card(
         "ok": True,
         "platform": platform,
         "card_type": effective_card_type,
+        "card_role": fields.get("card_role"),
         "requested_card_type": normalized_card_type,
         "force_card_type": bool(force_card_type),
         "content_kind": resolved_content_kind or None,
         "primary_card_path": primary_path,
         "routing": {
+            "card_role": fields.get("card_role"),
+            "route_key": effective_route_card_type,
             "primary_route_parts": primary_target["route_parts"],
+            "explicit_override": explicit_route_override,
             "storage_routes_configured": bool(isinstance(storage_config, dict) and isinstance(storage_config.get("storage_routes"), dict)),
         },
         "required_fields": fields,

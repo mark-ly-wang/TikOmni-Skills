@@ -214,6 +214,7 @@ def build_card_output_path(
     year_month: str,
     timestamp: str,
     storage_config: Optional[Dict[str, Any]],
+    extra_route_parts: Optional[List[str]] = None,
 ) -> Tuple[str, str]:
     card_routes = _configured_card_routes(storage_config)
     route = card_routes.get(card_type) or DEFAULT_CARD_TYPE_ROUTES["work"]
@@ -229,6 +230,8 @@ def build_card_output_path(
         "timestamp": timestamp,
     }
     rendered_parts = render_route_parts(parts, context=route_context)
+    if isinstance(extra_route_parts, list) and extra_route_parts:
+        rendered_parts.extend(render_route_parts(extra_route_parts, context=route_context))
     directory = os.path.join(card_root, *rendered_parts)
     os.makedirs(directory, exist_ok=True)
 

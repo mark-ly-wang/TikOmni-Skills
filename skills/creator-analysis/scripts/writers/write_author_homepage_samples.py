@@ -10,7 +10,7 @@ if __package__ in {None, ""}:
             sys.path.insert(0, str(_parent))
             break
 
-"""Batch writer for author-homepage sampled work cards."""
+"""Creator-analysis batch writer for author sample cards."""
 
 import argparse
 import json
@@ -60,7 +60,7 @@ def _items(data: Any) -> List[Dict[str, Any]]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Write homepage sampled works to author sample directory")
+    parser = argparse.ArgumentParser(description="Write creator-analysis author sample cards")
     parser.add_argument("--platform", required=True, help="Platform name, e.g. douyin/xiaohongshu")
     parser.add_argument("--config", default=None, help="Runtime config YAML path")
     parser.add_argument("--input-json", default="-", help="JSON list/dict path or '-' for stdin")
@@ -89,6 +89,7 @@ def main() -> None:
             sample_author=_author_hint(payload, args.sample_author),
             content_kind="author_home",
             storage_config=config,
+            card_role="author_sample_card",
         )
         results.append(result)
 

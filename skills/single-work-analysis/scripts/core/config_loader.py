@@ -35,43 +35,34 @@ BUILTIN_DEFAULT_CONFIG: Dict[str, Any] = {
         },
         "content_kind_card_type": {
             "single_video": "work",
+            "note": "work",
             "work": "work",
-            "author_home": "author_sample_work",
-            "author_sample_work": "author_sample_work",
-            "author_analysis": "author",
         },
         "card_type_routes": {
             "work": {
                 "prefix": "CBV",
                 "parts": ["内容系统", "对标研究", "作品卡"],
             },
-            "author": {
-                "prefix": "CBA",
-                "parts": ["内容系统", "对标研究", "作者卡"],
-            },
-            "author_sample_work": {
-                "prefix": "CBV",
-                "parts": ["内容系统", "对标研究", "作者样本卡", "{platform}-{author_slug}"],
-            },
         },
     },
     "naming_rules": {
-        "card_filename_pattern": "{prefix}-{author_slug}-{title_slug}{ext}",
+        "card_filename_pattern": "{prefix}-{platform}-{author_slug}-{title_slug}{ext}",
         "json_filename_pattern": "{timestamp}-{platform}-{identifier}{ext}",
+    },
+    "analysis": {
+        "provider": "auto",
+        "timeout_sec": 90,
     },
     "asr_strategy": {
         "poll_interval_sec": 3.0,
-        "max_polls": 30,
+        "max_polls": 10,
         "submit_retry": {
             "douyin_video": {"max_retries": 2, "backoff_ms": 1500},
             "xiaohongshu_note": {"max_retries": 0, "backoff_ms": 0},
         },
         "u2_timeout_retry": {
             "enabled": True,
-            "max_retries": 3,
-        },
-        "author_home": {
-            "batch_submit_size": 50,
+            "max_retries": 0,
         },
     },
 }
@@ -82,46 +73,21 @@ LOCALE_ROUTE_PRESETS: Dict[str, Dict[str, Dict[str, Any]]] = {
             "prefix": "CBV",
             "parts": ["内容系统", "对标研究", "作品卡"],
         },
-        "author": {
-            "prefix": "CBA",
-            "parts": ["内容系统", "对标研究", "作者卡"],
-        },
-        "author_sample_work": {
-            "prefix": "CBV",
-            "parts": ["内容系统", "对标研究", "作者样本卡", "{platform}-{author_slug}"],
-        },
     },
     "en": {
         "work": {
             "prefix": "CBV",
             "parts": ["content-system", "benchmark-research", "work-cards"],
         },
-        "author": {
-            "prefix": "CBA",
-            "parts": ["content-system", "benchmark-research", "author-cards"],
-        },
-        "author_sample_work": {
-            "prefix": "CBV",
-            "parts": [
-                "content-system",
-                "benchmark-research",
-                "author-sample-cards",
-                "{platform}-{author_slug}",
-            ],
-        },
     },
 }
 
 CARD_ROUTE_ENV_KEYS: Dict[str, str] = {
     "work": "TIKOMNI_CARD_ROUTE_WORK",
-    "author": "TIKOMNI_CARD_ROUTE_AUTHOR",
-    "author_sample_work": "TIKOMNI_CARD_ROUTE_AUTHOR_SAMPLE_WORK",
 }
 
 CARD_PREFIX_ENV_KEYS: Dict[str, str] = {
     "work": "TIKOMNI_CARD_PREFIX_WORK",
-    "author": "TIKOMNI_CARD_PREFIX_AUTHOR",
-    "author_sample_work": "TIKOMNI_CARD_PREFIX_AUTHOR_SAMPLE_WORK",
 }
 
 
@@ -289,6 +255,8 @@ def apply_env_overrides(config: Dict[str, Any], env_values: Optional[Dict[str, s
 
     naming_rules = config.setdefault("naming_rules", {}) if isinstance(config.get("naming_rules"), dict) else {}
     config["naming_rules"] = naming_rules
+    analysis = config.setdefault("analysis", {}) if isinstance(config.get("analysis"), dict) else {}
+    config["analysis"] = analysis
 
     timeout_ms = _env_int("TIKOMNI_TIMEOUT_MS", env_values=env_values)
     if timeout_ms is not None:
@@ -314,6 +282,14 @@ def apply_env_overrides(config: Dict[str, Any], env_values: Optional[Dict[str, s
         naming_rules["card_filename_pattern"] = legacy_filename_pattern
     if json_filename_pattern is not None:
         naming_rules["json_filename_pattern"] = json_filename_pattern
+
+    analysis_provider = _env_text("TIKOMNI_ANALYSIS_PROVIDER", env_values=env_values)
+    if analysis_provider is not None:
+        analysis["provider"] = analysis_provider
+
+    analysis_timeout_sec = _env_int("TIKOMNI_ANALYSIS_TIMEOUT_SEC", env_values=env_values)
+    if analysis_timeout_sec is not None:
+        analysis["timeout_sec"] = analysis_timeout_sec
 
     path_locale = _normalize_path_locale(_read_env("TIKOMNI_PATH_LOCALE", env_values=env_values) or "zh")
     locale_routes = LOCALE_ROUTE_PRESETS.get(path_locale, LOCALE_ROUTE_PRESETS["zh"])

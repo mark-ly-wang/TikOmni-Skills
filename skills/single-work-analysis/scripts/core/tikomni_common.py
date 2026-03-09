@@ -69,9 +69,19 @@ def _resolve_env_file_path(env_file: Optional[str]) -> Path:
         return (skills_root / ".env").resolve()
 
     candidate = Path(env_file).expanduser()
-    if not candidate.is_absolute():
-        candidate = skills_root / candidate
-    return candidate.resolve()
+    if candidate.is_absolute():
+        return candidate.resolve()
+
+    search_roots = [
+        Path.cwd(),
+        get_repo_root(),
+        skills_root,
+    ]
+    for root in search_roots:
+        resolved = (root / candidate).resolve()
+        if resolved.exists():
+            return resolved
+    return (Path.cwd() / candidate).resolve()
 
 
 def _infer_default_env_paths(primary_env_file: Optional[str]) -> Tuple[Path, Path]:

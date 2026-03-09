@@ -58,6 +58,46 @@ def _pick_http_urls(payload: Any, keys: List[str]) -> List[str]:
     return deduped
 
 
+def _extract_first_url(value: Any) -> str:
+    if isinstance(value, str):
+        text = value.strip()
+        return text if text.startswith("http://") or text.startswith("https://") else ""
+    if isinstance(value, list):
+        for item in value:
+            url = _extract_first_url(item)
+            if url:
+                return url
+        return ""
+    if isinstance(value, dict):
+        for key in ("url_list", "url", "uri", "avatar_url", "cover_url", "src"):
+            if key in value:
+                url = _extract_first_url(value.get(key))
+                if url:
+                    return url
+        return ""
+    return ""
+
+
+def _normalize_douyin_tags(value: Any) -> List[str]:
+    if not isinstance(value, list):
+        return []
+    tags: List[str] = []
+    for item in value:
+        if isinstance(item, str):
+            text = item.strip().lstrip("#")
+            if text:
+                tags.append(text)
+            continue
+        if not isinstance(item, dict):
+            continue
+        for key in ("hashtag_name", "search_text", "tag_name", "name", "text"):
+            text = _t(item.get(key)).lstrip("#")
+            if text:
+                tags.append(text)
+                break
+    return list(dict.fromkeys(tags))
+
+
 def _is_probable_video_url(url: str) -> bool:
     lower = (url or "").lower()
     if not (lower.startswith("http://") or lower.startswith("https://")):
@@ -151,7 +191,11 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
         liked_count=_i(_first(profile_data, ["total_favorited", "liked_count", "favoriting_count"])),
         collected_count=_i(_first(profile_data, ["collect_count", "collected_count", "total_collected_count"])),
         signature=_t(_first(profile_data, ["signature", "desc"])),
-        avatar_url=_t(_first(profile_data, ["avatar_larger", "avatar_thumb", "avatar_url", "avatar"])),
+        avatar_url=(
+            _extract_first_url(_first(profile_data, ["avatar_larger"], ""))
+            or _extract_first_url(_first(profile_data, ["avatar_thumb"], ""))
+            or _extract_first_url(_first(profile_data, ["avatar_url", "avatar"], ""))
+        ),
         works_count=_i(_first(profile_data, ["aweme_count", "works_count", "video_count"])),
         verified=bool(_first(profile_data, ["verification_type", "verified"], 0) not in (0, None, "", "false", False)),
         snapshot_at=datetime.now().isoformat(timespec="seconds"),
@@ -177,6 +221,7 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
             "play": _i(_first(item, ["play_count", "view_count"], 0)),
         }
         video_down_url = _extract_douyin_video_down_url(item)
+        tags = _normalize_douyin_tags(_first(item, ["hashtags", "tags", "text_extra"], []))
         work = build_work_item(
             platform="douyin",
             platform_work_id=aweme_id,
@@ -191,9 +236,13 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
             work_modality="video",
             content_type="video",
             duration_ms=_i(_first(item, ["duration_ms", "duration"], 0)),
-            tags=list(_first(item, ["hashtags", "tags", "text_extra"], [])) if isinstance(_first(item, ["hashtags", "tags", "text_extra"], []), list) else [],
+            tags=tags,
             metrics=metrics,
-            cover_image=_t(_first(item, ["cover_url", "cover", "origin_cover"], "")),
+            cover_image=(
+                _extract_first_url(_first(item, ["cover_url"], ""))
+                or _extract_first_url(_first(item, ["cover"], ""))
+                or _extract_first_url(_first(item, ["origin_cover"], ""))
+            ),
             source_url=f"https://www.douyin.com/video/{aweme_id}" if aweme_id else "",
             share_url=_t(_first(item, ["share_url", "share_link"])),
             video_download_url=video_down_url,
@@ -205,6 +254,15 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
                 "douyin_aweme_author_id": stable_author_id or author_id,
             },
             raw_ref={"aweme_id": aweme_id, "raw_item": item},
+        )
+        work.update(
+            {
+                "digg_count": metrics["like"],
+                "comment_count": metrics["comment"],
+                "collect_count": metrics["collect"],
+                "share_count": metrics["share"],
+                "play_count": metrics["play"],
+            }
         )
 
         missing.extend(validate_work_item(work))

@@ -13,9 +13,10 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import jsonschema
 
-INPUT_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "references" / "schemas" / "author-analysis-input-v1.schema.json"
-OUTPUT_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "references" / "schemas" / "author-analysis-v2.schema.json"
-PROMPT_CONTRACT_PATH = Path(__file__).resolve().parents[2] / "references" / "prompt-contracts" / "author-analysis-v2.md"
+SKILL_ROOT = Path(__file__).resolve().parents[3]
+INPUT_SCHEMA_PATH = SKILL_ROOT / "references" / "schemas" / "author-analysis-input-v1.schema.json"
+OUTPUT_SCHEMA_PATH = SKILL_ROOT / "references" / "schemas" / "author-analysis-v2.schema.json"
+PROMPT_CONTRACT_PATH = SKILL_ROOT / "references" / "prompt-contracts" / "author-analysis-v2.md"
 
 LOW_HIGH_MID = {"low", "mid", "high"}
 RELATIONSHIP_DISTANCE = {"near", "mid", "far"}
@@ -48,6 +49,17 @@ STOPWORDS = {
     "the", "and", "for", "that", "with", "from", "this", "you", "your", "are", "was", "were", "have", "has", "had", "into",
 }
 SCHEMA_CACHE: Dict[Path, Dict[str, Any]] = {}
+
+
+class AnalysisResourceError(RuntimeError):
+    def __init__(self, *, code: str, path: Path, detail: str = "") -> None:
+        self.code = code
+        self.path = path
+        self.detail = detail
+        message = f"{code}:{path}"
+        if detail:
+            message = f"{message}:{detail}"
+        super().__init__(message)
 
 REQUIRED_V2_FIELDS = {
     "author_positioning": ["one_liner", "author_type", "primary_role", "target_audience", "core_problem_solved", "core_value_proposition", "evidence"],
@@ -105,15 +117,15 @@ def _clamp(value: float, low: float, high: float) -> float:
 def load_json_schema(path: Path) -> Dict[str, Any]:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return {}
+    except Exception as error:
+        raise AnalysisResourceError(code="schema_load_failed", path=path, detail=f"{type(error).__name__}:{error}") from error
 
 
 def prompt_contract_text() -> str:
     try:
         return PROMPT_CONTRACT_PATH.read_text(encoding="utf-8").strip()
-    except Exception:
-        return ""
+    except Exception as error:
+        raise AnalysisResourceError(code="contract_load_failed", path=PROMPT_CONTRACT_PATH, detail=f"{type(error).__name__}:{error}") from error
 
 
 def _load_schema(path: Path) -> Dict[str, Any]:
@@ -128,7 +140,7 @@ def _load_schema(path: Path) -> Dict[str, Any]:
 def _schema_errors(payload: Any, path: Path) -> List[Dict[str, str]]:
     schema = _load_schema(path)
     if not schema:
-        return []
+        raise AnalysisResourceError(code="schema_empty", path=path)
     try:
         validator = jsonschema.Draft202012Validator(schema)
         rows: List[Dict[str, str]] = []
@@ -150,6 +162,24 @@ def _dedupe_keep_order(values: Sequence[str]) -> List[str]:
         seen.add(clean)
         result.append(clean)
     return result
+
+
+def _safe_text_list(value: Any) -> List[str]:
+    if not isinstance(value, list):
+        return []
+    result: List[str] = []
+    for item in value:
+        if isinstance(item, dict):
+            for key in ("name", "value", "label", "hashtag_name", "search_text", "tag_name", "text"):
+                text = _safe_text(item.get(key))
+                if text:
+                    result.append(text)
+                    break
+            continue
+        text = _safe_text(item)
+        if text:
+            result.append(text)
+    return _dedupe_keep_order(result)
 
 
 def _dedupe_error_list(errors: Sequence[Dict[str, str]]) -> List[Dict[str, str]]:
@@ -396,7 +426,7 @@ def _normalize_work(profile: Dict[str, Any], work: Dict[str, Any]) -> Dict[str, 
         "share_count": share,
         "play_count": play,
         "content_form": _pick_content_form(work),
-        "tags": list(work.get("tags") or []) if isinstance(work.get("tags"), list) else [],
+        "tags": _safe_text_list(work.get("tags")),
         "author_id": _safe_text(profile.get("author_platform_id") or profile.get("platform_author_id")),
         "author_name": _safe_text(profile.get("nickname")) or "作者",
         "performance_score": performance_score,
@@ -636,12 +666,13 @@ def _compare_bucket_groups(items: List[Dict[str, Any]]) -> Dict[str, Any]:
     return result
 
 
-def build_author_analysis_input_v1(*, profile: Dict[str, Any], works: List[Dict[str, Any]], platform: str) -> Tuple[Dict[str, Any], List[Dict[str, str]]]:
+def prepare_author_analysis_bundle(*, profile: Dict[str, Any], works: List[Dict[str, Any]], platform: str) -> Dict[str, Any]:
     normalized = [_normalize_work(profile, work) for work in works if isinstance(work, dict)]
     eligible = [item for item in normalized if _safe_text(item.get("analysis_eligibility")) == "eligible"]
     excluded_count = len(normalized) - len(eligible)
     ranked = _assign_buckets(eligible)
     sampled = _sample_standard_works(ranked)
+    sampled_work_ids = [_safe_text(item.get("platform_work_id")) for item in sampled if _safe_text(item.get("platform_work_id"))]
     aggregate_stats = {
         "total_works": len(ranked),
         "excluded_works_count": excluded_count,
@@ -663,7 +694,7 @@ def build_author_analysis_input_v1(*, profile: Dict[str, Any], works: List[Dict[
         "global_bucket_distribution": _distribution_from_values([_safe_text(item.get("bucket")) for item in ranked], limit=4),
         "global_top_vs_mid_vs_bottom_deltas": _compare_bucket_groups(ranked),
     }
-    payload = {
+    analysis_input = {
         "author_profile": {
             "platform": _safe_text(profile.get("platform")) or platform,
             "platform_author_id": _safe_text(profile.get("author_platform_id") or profile.get("platform_author_id")),
@@ -696,6 +727,18 @@ def build_author_analysis_input_v1(*, profile: Dict[str, Any], works: List[Dict[
             "sampled_works_count": len(sampled),
         },
     }
+    return {
+        "analysis_input": analysis_input,
+        "normalized_works": normalized,
+        "ranked_works": ranked,
+        "sampled_works": sampled,
+        "sampled_work_ids": sampled_work_ids,
+        "excluded_works_count": excluded_count,
+    }
+
+
+def build_author_analysis_input_v1(*, profile: Dict[str, Any], works: List[Dict[str, Any]], platform: str) -> Tuple[Dict[str, Any], List[Dict[str, str]]]:
+    payload = prepare_author_analysis_bundle(profile=profile, works=works, platform=platform).get("analysis_input") or {}
     return payload, validate_author_analysis_input_v1(payload)
 
 

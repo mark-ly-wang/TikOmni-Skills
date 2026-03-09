@@ -17,7 +17,11 @@ from scripts.core.config_loader import config_get, resolve_storage_paths
 from scripts.core.progress_report import ProgressReporter
 from scripts.writers.write_benchmark_card import build_card_analysis_artifact
 
-WORK_ANALYSIS_ARTIFACT_VERSION = "creator_analysis.work_analysis_artifact@v3"
+WORK_ANALYSIS_ARTIFACT_VERSION = "creator_analysis.work_analysis_artifact@v4"
+AUTHOR_HOME_TIMING_VERSION = "creator_analysis.author_home_timing@v2"
+AUTHOR_HOME_CARD_CONTRACT_VERSION = "creator_analysis.author_sample_card@v2"
+DOUYIN_NORMALIZATION_VERSION = "douyin_author_home_normalization@v2"
+XHS_NORMALIZATION_VERSION = "xiaohongshu_author_home_normalization@v1"
 DEFAULT_MAX_WORKERS = 3
 MAX_MAX_WORKERS = 5
 PERF_FIELDS = ("digg_count", "comment_count", "collect_count", "share_count", "play_count")
@@ -43,6 +47,28 @@ def _safe_int(value: Any, default: int = 0) -> int:
         return int(float(text)) if text else default
     except Exception:
         return default
+
+
+def _safe_text_list(value: Any) -> List[str]:
+    if not isinstance(value, list):
+        return []
+    result: List[str] = []
+    for item in value:
+        if isinstance(item, dict):
+            for key in ("name", "value", "label", "hashtag_name", "search_text", "tag_name", "text"):
+                text = _safe_text(item.get(key))
+                if text:
+                    result.append(text)
+                    break
+            continue
+        text = _safe_text(item)
+        if text:
+            result.append(text)
+    return list(dict.fromkeys(result))
+
+
+def _normalization_version(platform: str) -> str:
+    return DOUYIN_NORMALIZATION_VERSION if platform == "douyin" else XHS_NORMALIZATION_VERSION
 
 
 def _coerce_unix_sec(value: Any) -> int:
@@ -91,8 +117,8 @@ def _format_metric_summary(work: Dict[str, Any]) -> str:
 
 
 def _author_home_structural_sections(work: Dict[str, Any]) -> Dict[str, Any]:
-    tags = [item for item in (work.get("tags") or []) if _safe_text(item)] if isinstance(work.get("tags"), list) else []
-    style_markers = [item for item in (work.get("style_markers") or []) if _safe_text(item)] if isinstance(work.get("style_markers"), list) else []
+    tags = _safe_text_list(work.get("tags"))
+    style_markers = _safe_text_list(work.get("style_markers"))
     first_sentence = _first_sentence(work.get("primary_text") or work.get("asr_raw") or work.get("caption_raw") or work.get("title"))
     bucket = _safe_text(work.get("bucket")) or "unknown"
     all_time_rank = work.get("all_time_score_rank")
@@ -136,11 +162,11 @@ def _author_home_structural_sections(work: Dict[str, Any]) -> Dict[str, Any]:
 def _metrics_from_work(work: Dict[str, Any]) -> Dict[str, int]:
     metrics = work.get("metrics") if isinstance(work.get("metrics"), dict) else {}
     return {
-        "digg_count": _safe_int(metrics.get("like"), default=0),
-        "comment_count": _safe_int(metrics.get("comment"), default=0),
-        "collect_count": _safe_int(metrics.get("collect"), default=0),
-        "share_count": _safe_int(metrics.get("share"), default=0),
-        "play_count": _safe_int(metrics.get("play"), default=0),
+        "digg_count": _safe_int(work.get("digg_count"), default=_safe_int(metrics.get("like"), default=0)),
+        "comment_count": _safe_int(work.get("comment_count"), default=_safe_int(metrics.get("comment"), default=0)),
+        "collect_count": _safe_int(work.get("collect_count"), default=_safe_int(metrics.get("collect"), default=0)),
+        "share_count": _safe_int(work.get("share_count"), default=_safe_int(metrics.get("share"), default=0)),
+        "play_count": _safe_int(work.get("play_count"), default=_safe_int(metrics.get("play"), default=0)),
     }
 
 
@@ -158,7 +184,7 @@ def build_single_work_payload(
         "author_handle": author_handle,
     }
     payload: Dict[str, Any] = {
-        "content_kind": "single_video" if platform == "douyin" else "note",
+        "content_kind": "author_home",
         "platform_work_id": work.get("platform_work_id"),
         "title": work.get("title") or work.get("desc"),
         "caption_raw": work.get("caption_raw") or work.get("desc") or "",
@@ -183,6 +209,14 @@ def build_single_work_payload(
         "work_modality": _safe_text(work.get("work_modality")) or ("video" if platform == "douyin" else "text"),
         "analysis_eligibility": _safe_text(work.get("analysis_eligibility")) or "eligible",
         "analysis_exclusion_reason": _safe_text(work.get("analysis_exclusion_reason")),
+        "performance_score": work.get("performance_score"),
+        "performance_score_norm": work.get("performance_score_norm"),
+        "bucket": _safe_text(work.get("bucket")),
+        "hook_type": _safe_text(work.get("hook_type")),
+        "structure_type": _safe_text(work.get("structure_type")),
+        "cta_type": _safe_text(work.get("cta_type")),
+        "content_form": _safe_text(work.get("content_form")),
+        "style_markers": _safe_text_list(work.get("style_markers")),
         "platform_native_refs": dict(work.get("platform_native_refs") or {}),
         "request_id": work.get("request_id"),
         "confidence": "medium" if _safe_text(work.get("primary_text") or work.get("title") or work.get("caption_raw")) else "low",
@@ -202,6 +236,8 @@ def _artifact_cache_key(*, platform: str, content_kind: str, platform_work_id: s
             platform_work_id,
             WORK_ANALYSIS_ARTIFACT_VERSION,
             PROMPT_CONTRACT_HASH,
+            AUTHOR_HOME_TIMING_VERSION,
+            AUTHOR_HOME_CARD_CONTRACT_VERSION,
         ]
     )
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:20]
@@ -252,6 +288,12 @@ def _load_cached_artifact(
         return None
     if meta.get("prompt_contract_hash") != PROMPT_CONTRACT_HASH:
         return None
+    if meta.get("author_home_timing_version") != AUTHOR_HOME_TIMING_VERSION:
+        return None
+    if meta.get("author_sample_card_contract_version") != AUTHOR_HOME_CARD_CONTRACT_VERSION:
+        return None
+    if meta.get("normalization_version") != _normalization_version(platform):
+        return None
     return payload if isinstance(payload, dict) else None
 
 
@@ -295,6 +337,8 @@ def _refresh_cached_payload(
             "artifact_cache_key": ((artifact.get("meta") or {}).get("cache_key") if isinstance(artifact.get("meta"), dict) else None),
             "artifact_path": artifact_path,
             "from_cache": from_cache,
+            "artifact_version": ((artifact.get("meta") or {}).get("analysis_logic_version") if isinstance(artifact.get("meta"), dict) else None),
+            "normalization_version": ((artifact.get("meta") or {}).get("normalization_version") if isinstance(artifact.get("meta"), dict) else None),
         }
     )
     payload["request_id"] = work.get("request_id") or payload.get("request_id")
@@ -326,6 +370,8 @@ def _build_artifact(
             "platform_work_id": work.get("platform_work_id"),
             "ok": True,
             "prompt_contract_hash": PROMPT_CONTRACT_HASH,
+            "artifact_version": WORK_ANALYSIS_ARTIFACT_VERSION,
+            "normalization_version": _normalization_version(platform),
         }
     )
     platform_work_id = _safe_text(work.get("platform_work_id"))
@@ -333,12 +379,15 @@ def _build_artifact(
         "meta": {
             "platform": platform,
             "platform_work_id": platform_work_id,
-            "content_kind": _safe_text(payload.get("content_kind")) or "single_video",
+            "content_kind": _safe_text(payload.get("content_kind")) or "author_home",
             "analysis_logic_version": WORK_ANALYSIS_ARTIFACT_VERSION,
             "prompt_contract_hash": PROMPT_CONTRACT_HASH,
+            "author_home_timing_version": AUTHOR_HOME_TIMING_VERSION,
+            "author_sample_card_contract_version": AUTHOR_HOME_CARD_CONTRACT_VERSION,
+            "normalization_version": _normalization_version(platform),
             "cache_key": _artifact_cache_key(
                 platform=platform,
-                content_kind=_safe_text(payload.get("content_kind")) or "single_video",
+                content_kind=_safe_text(payload.get("content_kind")) or "author_home",
                 platform_work_id=platform_work_id,
             ) if platform_work_id else None,
             "written_at": datetime.now().isoformat(timespec="seconds"),
@@ -393,7 +442,7 @@ def orchestrate_work_analysis_artifacts(
 
     for work in works:
         platform_work_id = _safe_text(work.get("platform_work_id"))
-        content_kind = "single_video" if platform == "douyin" else "note"
+        content_kind = "author_home"
         if not platform_work_id:
             stats["failed_count"] += 1
             failed_items.append({"platform_work_id": "", "error_reason": "missing_platform_work_id"})
@@ -430,6 +479,9 @@ def orchestrate_work_analysis_artifacts(
             artifact_manifest[platform_work_id] = {
                 "from_cache": True,
                 "artifact_path": str(artifact_path) if artifact_path is not None else None,
+                "artifact_version": WORK_ANALYSIS_ARTIFACT_VERSION,
+                "prompt_contract_hash": PROMPT_CONTRACT_HASH,
+                "normalization_version": _normalization_version(platform),
             }
             stats["cache_hit_count"] += 1
             trace.append(
@@ -484,6 +536,9 @@ def orchestrate_work_analysis_artifacts(
                         artifact_manifest[platform_work_id] = {
                             "from_cache": False,
                             "artifact_path": artifact_path,
+                            "artifact_version": WORK_ANALYSIS_ARTIFACT_VERSION,
+                            "prompt_contract_hash": PROMPT_CONTRACT_HASH,
+                            "normalization_version": _normalization_version(platform),
                         }
                     stats["finished_count"] += 1
                     trace.append(
@@ -550,4 +605,5 @@ def orchestrate_work_analysis_artifacts(
         "artifact_root": str(artifact_root) if artifact_root is not None else None,
         "analysis_logic_version": WORK_ANALYSIS_ARTIFACT_VERSION,
         "prompt_contract_hash": PROMPT_CONTRACT_HASH,
+        "normalization_version": _normalization_version(platform),
     }

@@ -1,4 +1,11 @@
-# Creator Work Card Fields
+# Creator Analysis Work Card Fields
+
+## Card Roles
+
+- `author_sample_card`
+  - Fact-and-structure card for every retrieved work in creator analysis.
+- `sample_work_card`
+  - Sampled-only enhanced card that reuses the same fact-and-structure fields and adds the explanation block.
 
 ## Fixed Display Fields
 
@@ -20,13 +27,42 @@
 - `share_url`
 - `primary_text`
 
-## Video-Only Additional Fields
+## Structural Display Fields
+
+- `performance_score`
+- `performance_score_norm`
+- `bucket`
+- `hook_type`
+- `structure_type`
+- `cta_type`
+- `content_form`
+- `style_markers`
+- `tags`
+
+## Shared Appendix Fields
+
+- `analysis_eligibility`
+- `analysis_exclusion_reason`
+
+## Video-Only Appendix Fields
 
 - `asr_raw`
 - `video_download_url`
 
+## Sampled-Only Explanation Block
+
+- `sampled_explanation.why_it_worked_or_failed`
+- `sampled_explanation.copyable_elements`
+- `sampled_explanation.non_copyable_elements`
+- `sampled_explanation.emotional_triggers`
+- `sampled_explanation.cognitive_gap`
+- `sampled_explanation.commercial_signal`
+
 ## Key Rules
 
-- Keep fact cards for all retrieved works.
-- The final work card should not expose `content_type`, `publish_time`, `create_time_sec`, `subtitle_raw`, `asr_source`, `asr_status`, or `asr_error_reason`.
+- Keep author sample cards for all retrieved works.
+- Only sampled works receive the sampled explanation block.
+- The final card should not expose `content_type`, `publish_time`, `create_time_sec`, `subtitle_raw`, `asr_source`, `asr_status`, or `asr_error_reason`.
+- Use `primary_text` as the main reading body and keep `asr_raw` in appendix/details only.
 - If a video item cannot obtain `asr_raw`, keep the fact card but mark `analysis_eligibility=incomplete` and exclude that item from creator analysis.
+- Do not introduce per-work standalone LLM analysis in creator analysis.

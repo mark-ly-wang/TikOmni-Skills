@@ -10,9 +10,13 @@ import subprocess
 from typing import Any, Dict, List, Tuple
 
 from scripts.author_home.analyzers.author_analysis_v2_support import (
+    AnalysisResourceError,
+    OUTPUT_SCHEMA_PATH,
+    PROMPT_CONTRACT_PATH,
     build_author_analysis_input_v1,
     build_fallback_author_analysis_v2,
     derive_legacy_summary,
+    prepare_author_analysis_bundle,
     prompt_contract_text,
     validate_author_analysis_v2,
 )
@@ -106,8 +110,7 @@ def _compact_analysis_input_for_prompt(analysis_input: Dict[str, Any]) -> Dict[s
 
 
 
-def _build_prompt(analysis_input: Dict[str, Any], sampled_work_explanations: Dict[str, Any]) -> str:
-    contract_prompt = prompt_contract_text()
+def _build_prompt(analysis_input: Dict[str, Any], sampled_work_explanations: Dict[str, Any], *, contract_prompt: str) -> str:
     prompt_input = _compact_analysis_input_for_prompt(analysis_input)
     prompt_payload = {"author_analysis_input_v1": prompt_input}
     if isinstance(sampled_work_explanations, dict) and sampled_work_explanations.get("sampled_work_explanations"):
@@ -124,6 +127,17 @@ def _build_prompt(analysis_input: Dict[str, Any], sampled_work_explanations: Dic
         "=== 输入数据(JSON) ===\n"
         f"{json.dumps(prompt_payload, ensure_ascii=False)}"
     )
+
+
+def _stage_status(*, status: str, ok_count: int, failed_count: int, degraded_count: int, reason_codes: List[str], failure_kind: str = "") -> Dict[str, Any]:
+    return {
+        "status": status,
+        "ok_count": ok_count,
+        "failed_count": failed_count,
+        "degraded_count": degraded_count,
+        "reason_codes": list(dict.fromkeys([code for code in reason_codes if code])),
+        "failure_kind": failure_kind or None,
+    }
 
 
 def _extract_json_block(text: str) -> Dict[str, Any]:
@@ -159,9 +173,29 @@ def _unwrap_author_analysis(payload: Dict[str, Any]) -> Dict[str, Any]:
     return payload
 
 
-def run_prompt_first_author_analysis(profile: Dict[str, Any], works: List[Dict[str, Any]]) -> Tuple[Dict[str, Any], List[Dict[str, str]], List[Dict[str, Any]]]:
-    analysis_input, input_errors = build_author_analysis_input_v1(profile=profile, works=works, platform=str(profile.get("platform") or "unknown"))
-    sampled_work_explanations, sampled_explanation_errors, sampled_explanation_trace = run_sampled_work_batch_explanations(analysis_input)
+def run_prompt_first_author_analysis(
+    profile: Dict[str, Any],
+    works: List[Dict[str, Any]],
+    *,
+    analysis_bundle: Dict[str, Any] | None = None,
+) -> Tuple[Dict[str, Any], List[Dict[str, str]], List[Dict[str, Any]]]:
+    prepared = analysis_bundle if isinstance(analysis_bundle, dict) else prepare_author_analysis_bundle(
+        profile=profile,
+        works=works,
+        platform=str(profile.get("platform") or "unknown"),
+    )
+    analysis_input = prepared.get("analysis_input") if isinstance(prepared.get("analysis_input"), dict) else {}
+    input_errors: List[Dict[str, str]] = []
+    input_resource_error: AnalysisResourceError | None = None
+    try:
+        input_errors = build_author_analysis_input_v1(
+            profile=profile,
+            works=works,
+            platform=str(profile.get("platform") or "unknown"),
+        )[1]
+    except AnalysisResourceError as error:
+        input_resource_error = error
+    sampled_work_explanations, sampled_explanation_errors, sampled_explanation_trace, sampled_explanations_status = run_sampled_work_batch_explanations(analysis_input)
     sampled_works_count = len(analysis_input.get("sampled_works") or [])
     total_works = ((analysis_input.get("aggregate_stats") or {}).get("total_works") if isinstance(analysis_input.get("aggregate_stats"), dict) else 0)
     llm_timeout_sec = max(int(os.getenv("TIKOMNI_AUTHOR_ANALYSIS_TIMEOUT_SEC", str(DEFAULT_ANALYSIS_TIMEOUT_SEC))), 5)
@@ -173,20 +207,46 @@ def run_prompt_first_author_analysis(profile: Dict[str, Any], works: List[Dict[s
             "total_works": total_works,
             "sampled_works_count": sampled_works_count,
             "prompt_contract": f"prompt-contracts/{AUTHOR_ANALYSIS_PROMPT_FILE}@v1",
+            "contract_path": str(PROMPT_CONTRACT_PATH),
+            "schema_path": str(OUTPUT_SCHEMA_PATH),
             "llm_timeout_sec": llm_timeout_sec,
             "small_sample_skip_threshold": small_sample_skip_threshold,
         }
     ] + sampled_explanation_trace
     if input_errors:
         trace.append({"step": "analysis.input_validation_failed", "error_count": len(input_errors)})
+    if input_resource_error is not None:
+        trace.append({"step": "analysis.input_resource_error", "error": str(input_resource_error)})
+        result = {
+            **derive_legacy_summary({}, analysis_input=analysis_input, validation_errors=[]),
+            "author_analysis_v2": {},
+            "author_analysis_input_v1": analysis_input,
+            "sampled_work_explanations": sampled_work_explanations,
+            "sampled_explanations_status": sampled_explanations_status,
+            "author_analysis_status": _stage_status(
+                status="failed",
+                ok_count=0,
+                failed_count=1,
+                degraded_count=0,
+                reason_codes=[input_resource_error.code],
+                failure_kind="configuration",
+            ),
+            "quality_tier": "failed",
+            "validation": {
+                "ok": False,
+                "errors": [],
+            },
+        }
+        return result, [], trace
     if sampled_explanation_errors:
         trace.append({"step": "analysis.sampled_work_explanations_validation_failed", "error_count": len(sampled_explanation_errors)})
 
-    prompt = _build_prompt(analysis_input, sampled_work_explanations)
     response_text = ""
     analysis_v2: Dict[str, Any] = {}
     llm_ok = False
     skip_llm = sampled_works_count < small_sample_skip_threshold
+    author_reason_codes: List[str] = []
+    author_status = _stage_status(status="failed", ok_count=0, failed_count=1, degraded_count=0, reason_codes=["analysis_not_started"])
     if skip_llm:
         trace.append(
             {
@@ -196,7 +256,42 @@ def run_prompt_first_author_analysis(profile: Dict[str, Any], works: List[Dict[s
                 "threshold": small_sample_skip_threshold,
             }
         )
+        author_reason_codes.append("small_sample_below_threshold")
     else:
+        try:
+            contract_prompt = prompt_contract_text()
+            trace.append(
+                {
+                    "step": "analysis.resources_loaded",
+                    "contract_loaded": True,
+                    "contract_chars": len(contract_prompt),
+                }
+            )
+            prompt = _build_prompt(analysis_input, sampled_work_explanations, contract_prompt=contract_prompt)
+        except AnalysisResourceError as error:
+            trace.append({"step": "analysis.resource_error", "error": str(error)})
+            author_status = _stage_status(
+                status="failed",
+                ok_count=0,
+                failed_count=1,
+                degraded_count=0,
+                reason_codes=[error.code],
+                failure_kind="configuration",
+            )
+            result = {
+                **derive_legacy_summary({}, analysis_input=analysis_input, validation_errors=input_errors),
+                "author_analysis_v2": {},
+                "author_analysis_input_v1": analysis_input,
+                "sampled_work_explanations": sampled_work_explanations,
+                "sampled_explanations_status": sampled_explanations_status,
+                "author_analysis_status": author_status,
+                "quality_tier": "failed",
+                "validation": {
+                    "ok": False,
+                    "errors": input_errors,
+                },
+            }
+            return result, input_errors, trace
         try:
             run = subprocess.run(
                 ["openclaw", "agent", "--agent", "main", "--message", prompt, "--json"],
@@ -226,32 +321,124 @@ def run_prompt_first_author_analysis(profile: Dict[str, Any], works: List[Dict[s
             )
         except Exception as error:
             trace.append({"step": "analysis.llm_error", "error": f"{type(error).__name__}:{error}"})
+            author_reason_codes.append("author_llm_runtime_error")
 
-    validation_errors = validate_author_analysis_v2(analysis_v2, analysis_input=analysis_input) if analysis_v2 else []
-    if not analysis_v2 or validation_errors:
-        fallback = build_fallback_author_analysis_v2(analysis_input)
-        fallback_errors = validate_author_analysis_v2(fallback, analysis_input=analysis_input)
+    validation_errors: List[Dict[str, str]] = []
+    resource_error: AnalysisResourceError | None = None
+    if analysis_v2:
+        try:
+            validation_errors = validate_author_analysis_v2(analysis_v2, analysis_input=analysis_input)
+            trace.append({"step": "analysis.output_schema_loaded", "schema_loaded": True})
+        except AnalysisResourceError as error:
+            resource_error = error
+
+    if resource_error is not None:
+        trace.append(
+            {
+                "step": "analysis.resource_error",
+                "error": str(resource_error),
+                "contract_path": str(resource_error.path) if resource_error.code == "contract_load_failed" else str(resource_error.path),
+            }
+        )
+        author_status = _stage_status(
+            status="failed",
+            ok_count=0,
+            failed_count=1,
+            degraded_count=0,
+            reason_codes=[resource_error.code],
+            failure_kind="configuration",
+        )
+        result = {
+            **derive_legacy_summary({}, analysis_input=analysis_input, validation_errors=input_errors),
+            "author_analysis_v2": {},
+            "author_analysis_input_v1": analysis_input,
+            "sampled_work_explanations": sampled_work_explanations,
+            "sampled_explanations_status": sampled_explanations_status,
+            "author_analysis_status": author_status,
+            "quality_tier": "failed",
+            "validation": {
+                "ok": False,
+                "errors": input_errors,
+            },
+        }
+        return result, input_errors, trace
+
+    if not analysis_v2 or validation_errors or skip_llm:
+        try:
+            fallback = build_fallback_author_analysis_v2(analysis_input)
+            fallback_errors = validate_author_analysis_v2(fallback, analysis_input=analysis_input)
+        except AnalysisResourceError as error:
+            trace.append({"step": "analysis.fallback_resource_error", "error": str(error)})
+            author_status = _stage_status(
+                status="failed",
+                ok_count=0,
+                failed_count=1,
+                degraded_count=0,
+                reason_codes=[error.code],
+                failure_kind="configuration",
+            )
+            result = {
+                **derive_legacy_summary({}, analysis_input=analysis_input, validation_errors=input_errors),
+                "author_analysis_v2": {},
+                "author_analysis_input_v1": analysis_input,
+                "sampled_work_explanations": sampled_work_explanations,
+                "sampled_explanations_status": sampled_explanations_status,
+                "author_analysis_status": author_status,
+                "quality_tier": "failed",
+                "validation": {
+                    "ok": False,
+                    "errors": input_errors,
+                },
+            }
+            return result, input_errors, trace
+
         trace.append(
             {
                 "step": "analysis.fallback_used",
-                "reason": "llm_empty_or_validation_failed",
+                "reason": "small_sample_below_threshold" if skip_llm else "llm_empty_or_validation_failed",
                 "llm_ok": llm_ok,
                 "validation_error_count": len(validation_errors),
                 "fallback_error_count": len(fallback_errors),
             }
         )
         analysis_v2 = fallback
-        validation_errors = input_errors + sampled_explanation_errors + validation_errors + fallback_errors
+        validation_errors = input_errors + validation_errors + fallback_errors
+        author_status = _stage_status(
+            status="fallback",
+            ok_count=1 if analysis_v2 else 0,
+            failed_count=0 if analysis_v2 else 1,
+            degraded_count=0,
+            reason_codes=author_reason_codes or ["fallback_used"],
+            failure_kind="runtime",
+        )
     else:
-        validation_errors = input_errors + sampled_explanation_errors + validation_errors
+        validation_errors = input_errors + validation_errors
         trace.append({"step": "analysis.schema_validation_passed"})
+        author_status = _stage_status(
+            status="full",
+            ok_count=1,
+            failed_count=0,
+            degraded_count=0,
+            reason_codes=[],
+        )
 
     legacy = derive_legacy_summary(analysis_v2, analysis_input=analysis_input, validation_errors=validation_errors)
+    if author_status.get("status") == "failed":
+        quality_tier = "failed"
+    elif author_status.get("status") == "fallback":
+        quality_tier = "fallback"
+    elif sampled_explanations_status.get("status") != "full":
+        quality_tier = "degraded_author_only"
+    else:
+        quality_tier = "full"
     result = {
         **legacy,
         "author_analysis_v2": analysis_v2,
         "author_analysis_input_v1": analysis_input,
         "sampled_work_explanations": sampled_work_explanations,
+        "sampled_explanations_status": sampled_explanations_status,
+        "author_analysis_status": author_status,
+        "quality_tier": quality_tier,
         "validation": {
             "ok": not bool(validation_errors),
             "errors": validation_errors,

@@ -22,6 +22,7 @@ from scripts.core.config_loader import resolve_storage_paths
 from scripts.core.storage_router import render_output_filename, resolve_json_filename_pattern
 
 from scripts.author_home.adapters.platform_adapters import adapt_douyin_author_home, adapt_xhs_author_home
+from scripts.author_home.analyzers.author_analysis_v2_support import prepare_author_analysis_bundle
 from scripts.author_home.orchestrator.work_analysis_artifacts import orchestrate_work_analysis_artifacts
 from scripts.core.progress_report import ProgressReporter
 from scripts.author_home.analyzers.prompt_first_analyzers import run_prompt_first_author_analysis
@@ -30,6 +31,129 @@ from scripts.author_home.builders.home_builders import build_author_card, build_
 from scripts.author_home.collectors.homepage_collectors import collect_douyin_author_home_raw, collect_xhs_author_home_raw
 
 CollectorFn = Callable[..., Dict[str, Any]]
+
+
+def _stage_status(*, status: str, ok_count: int, failed_count: int, degraded_count: int, reason_codes: List[str], failure_kind: str = "") -> Dict[str, Any]:
+    return {
+        "status": status,
+        "ok_count": ok_count,
+        "failed_count": failed_count,
+        "degraded_count": degraded_count,
+        "reason_codes": list(dict.fromkeys([code for code in reason_codes if code])),
+        "failure_kind": failure_kind or None,
+    }
+
+
+def _reason_codes_from_failed_items(items: List[Dict[str, Any]]) -> List[str]:
+    reason_codes: List[str] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        reason = str(item.get("error_reason") or "").strip()
+        if not reason:
+            continue
+        reason_codes.append(reason.split(":", 1)[0])
+    return list(dict.fromkeys(reason_codes))
+
+
+def _merge_normalized_works(*, works: List[Dict[str, Any]], normalized_works: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    normalized_map = {
+        str(item.get("platform_work_id") or "").strip(): item
+        for item in normalized_works
+        if isinstance(item, dict) and str(item.get("platform_work_id") or "").strip()
+    }
+    merged: List[Dict[str, Any]] = []
+    for work in works:
+        if not isinstance(work, dict):
+            continue
+        platform_work_id = str(work.get("platform_work_id") or "").strip()
+        normalized = normalized_map.get(platform_work_id)
+        if not isinstance(normalized, dict):
+            merged.append(work)
+            continue
+        merged_work = dict(work)
+        for field in (
+            "primary_text",
+            "primary_text_source",
+            "digg_count",
+            "comment_count",
+            "collect_count",
+            "share_count",
+            "play_count",
+            "performance_score",
+            "performance_score_norm",
+            "bucket",
+            "hook_type",
+            "structure_type",
+            "cta_type",
+            "content_form",
+            "style_markers",
+            "analysis_eligibility",
+            "analysis_exclusion_reason",
+            "published_date",
+            "publish_time",
+        ):
+            if field in normalized:
+                merged_work[field] = normalized.get(field)
+        merged.append(merged_work)
+    return merged
+
+
+def _build_card_stage_status(*, expected_count: int, results: Dict[str, Any], failure_kind: str = "runtime") -> Dict[str, Any]:
+    if not isinstance(results, dict) or not results.get("enabled", True):
+        return _stage_status(status="skipped", ok_count=0, failed_count=0, degraded_count=0, reason_codes=["write_card_disabled"])
+    ok_count = int(results.get("count") or len(results.get("results") or []))
+    failed_items = results.get("failed_items") if isinstance(results.get("failed_items"), list) else []
+    degraded_count = len(failed_items) if ok_count > 0 else 0
+    failed_count = len(failed_items) if ok_count == 0 and expected_count > 0 else 0
+    if failed_count > 0:
+        return _stage_status(
+            status="failed",
+            ok_count=ok_count,
+            failed_count=failed_count,
+            degraded_count=0,
+            reason_codes=_reason_codes_from_failed_items(failed_items) or ["card_write_failed"],
+            failure_kind=failure_kind,
+        )
+    if degraded_count > 0:
+        return _stage_status(
+            status="degraded",
+            ok_count=ok_count,
+            failed_count=0,
+            degraded_count=degraded_count,
+            reason_codes=_reason_codes_from_failed_items(failed_items) or ["card_write_degraded"],
+            failure_kind=failure_kind,
+        )
+    return _stage_status(status="full", ok_count=ok_count, failed_count=0, degraded_count=0, reason_codes=[])
+
+
+def _build_overall_status(stage_status: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    ordered = [
+        "fetch",
+        "asr",
+        "sampled_explanations",
+        "author_analysis",
+        "author_sample_card",
+        "sample_work_card",
+        "author_card",
+    ]
+    stages = [stage_status.get(key) if isinstance(stage_status.get(key), dict) else {} for key in ordered]
+    if any(stage.get("failure_kind") == "configuration" or stage.get("status") == "failed" and stage.get("failure_kind") == "configuration" for stage in stages):
+        reason_codes: List[str] = []
+        for stage in stages:
+            if stage.get("failure_kind") == "configuration":
+                reason_codes.extend(stage.get("reason_codes") or [])
+        return _stage_status(status="failed", ok_count=0, failed_count=1, degraded_count=0, reason_codes=reason_codes or ["configuration_failed"], failure_kind="configuration")
+    author_analysis = stage_status.get("author_analysis") if isinstance(stage_status.get("author_analysis"), dict) else {}
+    author_card = stage_status.get("author_card") if isinstance(stage_status.get("author_card"), dict) else {}
+    if author_analysis.get("status") == "fallback" and author_card.get("status") in {"full", "degraded", "fallback"}:
+        return _stage_status(status="fallback", ok_count=0, failed_count=0, degraded_count=0, reason_codes=author_analysis.get("reason_codes") or ["author_analysis_fallback"], failure_kind=author_analysis.get("failure_kind") or "runtime")
+    if any((stage.get("failed_count") or 0) > 0 or (stage.get("degraded_count") or 0) > 0 or stage.get("status") in {"degraded", "failed"} for stage in stages):
+        reason_codes = []
+        for stage in stages:
+            reason_codes.extend(stage.get("reason_codes") or [])
+        return _stage_status(status="degraded", ok_count=0, failed_count=0, degraded_count=1, reason_codes=reason_codes or ["stage_degraded"])
+    return _stage_status(status="full", ok_count=1, failed_count=0, degraded_count=0, reason_codes=[])
 
 
 def _unsupported(platform: str) -> Dict[str, Any]:
@@ -44,6 +168,17 @@ def _unsupported(platform: str) -> Dict[str, Any]:
         "missing_fields": [],
         "extract_trace": [],
         "fallback_trace": [],
+        "stage_status": {
+            "fetch": _stage_status(status="failed", ok_count=0, failed_count=1, degraded_count=0, reason_codes=["unsupported_platform"]),
+            "asr": _stage_status(status="skipped", ok_count=0, failed_count=0, degraded_count=0, reason_codes=["unsupported_platform"]),
+            "author_sample_card": _stage_status(status="skipped", ok_count=0, failed_count=0, degraded_count=0, reason_codes=["unsupported_platform"]),
+            "sample_work_card": _stage_status(status="skipped", ok_count=0, failed_count=0, degraded_count=0, reason_codes=["unsupported_platform"]),
+            "sampled_explanations": _stage_status(status="skipped", ok_count=0, failed_count=0, degraded_count=0, reason_codes=["unsupported_platform"]),
+            "author_analysis": _stage_status(status="skipped", ok_count=0, failed_count=0, degraded_count=0, reason_codes=["unsupported_platform"]),
+            "author_card": _stage_status(status="skipped", ok_count=0, failed_count=0, degraded_count=0, reason_codes=["unsupported_platform"]),
+            "overall": _stage_status(status="failed", ok_count=0, failed_count=1, degraded_count=0, reason_codes=["unsupported_platform"]),
+        },
+        "quality_tier": "failed",
         "request_id": None,
     }
 
@@ -268,6 +403,21 @@ def run_author_home_analysis(
         progress=progress.child(scope="author_home.asr") if progress is not None else None,
     )
     works = list(asr_bundle.get("works") or [])[:capped_max_items]
+    prepared_analysis_bundle = prepare_author_analysis_bundle(
+        profile=profile,
+        works=works,
+        platform=platform,
+    )
+    works = _merge_normalized_works(
+        works=works,
+        normalized_works=prepared_analysis_bundle.get("normalized_works") if isinstance(prepared_analysis_bundle.get("normalized_works"), list) else [],
+    )
+    prepared_analysis_bundle = prepare_author_analysis_bundle(
+        profile=profile,
+        works=works,
+        platform=platform,
+    )
+    sampled_work_ids = prepared_analysis_bundle.get("sampled_work_ids") if isinstance(prepared_analysis_bundle.get("sampled_work_ids"), list) else []
 
     if write_card:
         work_analysis_bundle = orchestrate_work_analysis_artifacts(
@@ -296,6 +446,7 @@ def run_author_home_analysis(
             "artifact_root": None,
             "analysis_logic_version": None,
             "prompt_contract_hash": None,
+            "normalization_version": None,
         }
     work_analysis_stats = work_analysis_bundle.get("stats") if isinstance(work_analysis_bundle.get("stats"), dict) else {}
     work_analysis_failed = work_analysis_bundle.get("failed_items") if isinstance(work_analysis_bundle.get("failed_items"), list) else []
@@ -317,7 +468,11 @@ def run_author_home_analysis(
 
     if progress is not None:
         progress.progress(stage="author_home.analysis", message="running author analysis")
-    analysis, analysis_missing, analysis_trace = run_prompt_first_author_analysis(profile, works)
+    analysis, analysis_missing, analysis_trace = run_prompt_first_author_analysis(
+        profile,
+        works,
+        analysis_bundle=prepared_analysis_bundle,
+    )
     if progress is not None:
         progress.done(
             stage="author_home.analysis",
@@ -336,18 +491,16 @@ def run_author_home_analysis(
         profile=profile,
         works=works,
         render_payloads=render_payloads,
+        sampled_work_ids=sampled_work_ids,
+        sampled_work_explanations=(
+            analysis.get("sampled_work_explanations", {}).get("sampled_work_explanations")
+            if isinstance(analysis.get("sampled_work_explanations"), dict)
+            else {}
+        ),
         card_root=card_root,
         storage_config=storage_config,
         write_card=write_card,
         failed_items=work_analysis_failed,
-    )
-    author_card_write = build_author_card(
-        platform=platform,
-        profile=profile,
-        analysis_payload=analysis,
-        card_root=card_root,
-        storage_config=storage_config,
-        write_card=write_card,
     )
 
     asr_trace = list(asr_bundle.get("trace") or [])
@@ -378,19 +531,135 @@ def run_author_home_analysis(
             }
         )
 
-    work_analysis_missing: List[Dict[str, str]] = []
-    for item in work_analysis_failed:
-        if not isinstance(item, dict):
-            continue
-        work_analysis_missing.append(
-            {
-                "field": f"works[{item.get('platform_work_id') or 'unknown'}].analysis_artifact",
-                "reason": str(item.get("error_reason") or "work_analysis_artifact_failed"),
-            }
-        )
-
     asr_stats = asr_bundle.get("stats") if isinstance(asr_bundle.get("stats"), dict) else {}
     asr_checkpoint = asr_bundle.get("checkpoint") if isinstance(asr_bundle.get("checkpoint"), dict) else {}
+    author_sample_cards = work_card_write.get("author_sample_cards") if isinstance(work_card_write.get("author_sample_cards"), dict) else {}
+    sample_work_cards = work_card_write.get("sample_work_cards") if isinstance(work_card_write.get("sample_work_cards"), dict) else {}
+
+    eligible_count = len([item for item in works if isinstance(item, dict) and str(item.get("analysis_eligibility") or "") == "eligible"])
+    incomplete_count = len([item for item in works if isinstance(item, dict) and str(item.get("analysis_eligibility") or "") != "eligible"])
+    if works and eligible_count == 0:
+        asr_stage = _stage_status(
+            status="failed",
+            ok_count=0,
+            failed_count=incomplete_count or len(works),
+            degraded_count=0,
+            reason_codes=["asr_unavailable_for_all_works"],
+            failure_kind="runtime",
+        )
+    elif incomplete_count > 0:
+        asr_stage = _stage_status(
+            status="degraded",
+            ok_count=eligible_count,
+            failed_count=0,
+            degraded_count=incomplete_count,
+            reason_codes=["partial_asr_unavailable"],
+            failure_kind="runtime",
+        )
+    else:
+        asr_stage = _stage_status(
+            status="full",
+            ok_count=eligible_count,
+            failed_count=0,
+            degraded_count=0,
+            reason_codes=[],
+        )
+
+    stage_status: Dict[str, Dict[str, Any]] = {
+        "fetch": _stage_status(
+            status="full",
+            ok_count=len(works),
+            failed_count=0,
+            degraded_count=0,
+            reason_codes=[],
+        ),
+        "asr": asr_stage,
+        "author_sample_card": _build_card_stage_status(
+            expected_count=len(works),
+            results=author_sample_cards,
+        ),
+        "sample_work_card": _build_card_stage_status(
+            expected_count=len(sampled_work_ids),
+            results=sample_work_cards,
+        ),
+        "sampled_explanations": analysis.get("sampled_explanations_status") if isinstance(analysis.get("sampled_explanations_status"), dict) else _stage_status(
+            status="failed",
+            ok_count=0,
+            failed_count=1,
+            degraded_count=0,
+            reason_codes=["missing_sampled_explanations_status"],
+        ),
+        "author_analysis": analysis.get("author_analysis_status") if isinstance(analysis.get("author_analysis_status"), dict) else _stage_status(
+            status="failed",
+            ok_count=0,
+            failed_count=1,
+            degraded_count=0,
+            reason_codes=["missing_author_analysis_status"],
+        ),
+        "author_card": _stage_status(
+            status="skipped",
+            ok_count=0,
+            failed_count=0,
+            degraded_count=0,
+            reason_codes=["pending"],
+        ),
+    }
+
+    author_analysis_payload = dict(analysis)
+    author_analysis_payload["stage_status"] = stage_status
+    author_analysis_payload["quality_tier"] = analysis.get("quality_tier")
+    author_analysis_payload["sampled_work_ids"] = sampled_work_ids
+
+    try:
+        author_card_write = build_author_card(
+            platform=platform,
+            profile=profile,
+            analysis_payload=author_analysis_payload,
+            card_root=card_root,
+            storage_config=storage_config,
+            write_card=write_card,
+        )
+    except Exception as error:
+        author_card_write = {
+            "ok": False,
+            "card_type": "author",
+            "card_role": "author_card",
+            "error_reason": f"author_card_write_failed:{type(error).__name__}:{error}",
+            "routing": {
+                "card_role": "author_card",
+                "route_key": "author",
+                "primary_route_parts": "",
+                "explicit_override": False,
+                "storage_routes_configured": bool(isinstance(storage_config, dict) and isinstance(storage_config.get("storage_routes"), dict)),
+            },
+        }
+
+    stage_status["author_card"] = (
+        _stage_status(status="full", ok_count=1, failed_count=0, degraded_count=0, reason_codes=[])
+        if author_card_write.get("ok")
+        else _stage_status(
+            status="failed",
+            ok_count=0,
+            failed_count=1,
+            degraded_count=0,
+            reason_codes=[str(author_card_write.get("error_reason") or "author_card_write_failed").split(":", 1)[0]],
+            failure_kind="runtime",
+        )
+    )
+    stage_status["overall"] = _build_overall_status(stage_status)
+    if author_card_write.get("ok"):
+        author_analysis_payload["stage_status"] = stage_status
+        try:
+            author_card_write = build_author_card(
+                platform=platform,
+                profile=profile,
+                analysis_payload=author_analysis_payload,
+                card_root=card_root,
+                storage_config=storage_config,
+                write_card=write_card,
+            )
+        except Exception:
+            pass
 
     if progress is not None:
         progress.done(
@@ -398,8 +667,8 @@ def run_author_home_analysis(
             message="author_home card writing finished",
             data={
                 "author_card_ok": bool(author_card_write.get("ok")),
-                "work_cards_count": int(work_card_write.get("count") or 0),
-                "work_card_results": len(work_card_write.get("results") or []),
+                "author_sample_cards_count": int(author_sample_cards.get("count") or 0),
+                "sample_work_cards_count": int(sample_work_cards.get("count") or 0),
             },
         )
 
@@ -419,14 +688,23 @@ def run_author_home_analysis(
             f"work_queued={work_analysis_stats.get('queued_count', 0)}",
             f"work_failed={work_analysis_stats.get('failed_count', 0)}",
         ],
-        "confidence": "medium" if not analysis_missing else "low",
-        "error_reason": None,
-        "missing_fields": adapter_missing + analysis_missing + asr_missing + work_analysis_missing,
+        "confidence": (
+            "low"
+            if analysis.get("quality_tier") in {"fallback", "failed"} or analysis_missing
+            else "medium"
+        ),
+        "error_reason": (
+            ((stage_status.get("overall") or {}).get("reason_codes") or [None])[0]
+            if (stage_status.get("overall") or {}).get("status") == "failed"
+            else None
+        ),
+        "missing_fields": adapter_missing + analysis_missing + asr_missing,
         "extract_trace": all_extract_trace,
         "fallback_trace": fallback_trace,
         "request_id": raw.get("request_id"),
         "author_profile": profile,
         "works": works,
+        "sampled_work_ids": sampled_work_ids,
         "pagination": {
             **(raw.get("pagination") or {}),
             "total_collected": len(works),
@@ -436,6 +714,8 @@ def run_author_home_analysis(
         "author_analysis_v2": analysis.get("author_analysis_v2") if isinstance(analysis.get("author_analysis_v2"), dict) else {},
         "author_analysis_input_v1": analysis.get("author_analysis_input_v1") if isinstance(analysis.get("author_analysis_input_v1"), dict) else {},
         "analysis_validation": analysis.get("validation") if isinstance(analysis.get("validation"), dict) else {},
+        "stage_status": stage_status,
+        "quality_tier": analysis.get("quality_tier"),
         "asr_stats": asr_stats,
         "work_analysis": {
             "stats": work_analysis_stats,
@@ -443,10 +723,16 @@ def run_author_home_analysis(
             "artifact_root": work_analysis_bundle.get("artifact_root"),
             "analysis_logic_version": work_analysis_bundle.get("analysis_logic_version"),
             "prompt_contract_hash": work_analysis_bundle.get("prompt_contract_hash"),
+            "normalization_version": work_analysis_bundle.get("normalization_version"),
         },
         "card_write": {
             "author": author_card_write,
-            "works": work_card_write,
+            "author_sample_cards": author_sample_cards,
+            "sample_work_cards": sample_work_cards,
+            "works": {
+                **author_sample_cards,
+                "legacy_alias_of": "author_sample_cards",
+            },
         },
         "checkpoint": {
             "last_cursor": ((raw.get("pagination") or {}).get("pages") or [{}])[-1].get("cursor_out") if isinstance((raw.get("pagination") or {}).get("pages"), list) and (raw.get("pagination") or {}).get("pages") else "",
@@ -481,7 +767,8 @@ def run_author_home_analysis(
                 "works_count": len(works),
                 "request_id": result.get("request_id"),
                 "author_card_ok": bool((result.get("card_write") or {}).get("author", {}).get("ok")),
-                "work_cards_count": int(((result.get("card_write") or {}).get("works") or {}).get("count") or 0),
+                "author_sample_cards_count": int(((result.get("card_write") or {}).get("author_sample_cards") or {}).get("count") or 0),
+                "sample_work_cards_count": int(((result.get("card_write") or {}).get("sample_work_cards") or {}).get("count") or 0),
                 "cache_hit_count": work_analysis_stats.get("cache_hit_count", 0),
                 "queued_count": work_analysis_stats.get("queued_count", 0),
                 "failed_count": work_analysis_stats.get("failed_count", 0),

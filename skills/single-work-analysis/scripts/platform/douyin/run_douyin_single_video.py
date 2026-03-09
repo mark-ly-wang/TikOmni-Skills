@@ -22,16 +22,17 @@ bootstrap_for_direct_run(__file__, __package__)
 import hashlib
 import json
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from scripts.core.config_loader import config_get, load_tikomni_config, resolve_storage_paths
 from scripts.core.extract_pipeline import resolve_trace_error_context
-from scripts.core.progress_report import ProgressReporter
+from scripts.core.progress_report import ProgressReporter, build_progress_reporter
 from scripts.core.storage_router import render_output_filename, resolve_json_filename_pattern
 from scripts.platform.douyin.douyin_video_type_matrix import normalize_douyin_video_type
-from scripts.pipeline.asr.asr_pipeline import submit_u2_asr_with_retry
+from scripts.pipeline.asr.asr_pipeline import derive_asr_clean_text, submit_u2_asr_with_retry
 from scripts.pipeline.asr.poll_u2_task import poll_u2_task
 from scripts.platform.douyin.select_low_quality_video_url import select_low_quality_video_url
 from scripts.core.tikomni_common import (
@@ -47,6 +48,7 @@ from scripts.writers.write_benchmark_card import write_benchmark_card
 APP_ENDPOINT = "/api/u1/v1/douyin/app/v3/fetch_one_video_by_share_url"
 WEB_ENDPOINT = "/api/u1/v1/douyin/web/fetch_one_video_by_share_url"
 U2_SUBMIT_ENDPOINT = "/api/u2/v1/services/audio/asr/transcription"
+U2_REQUEST_TIMEOUT_CAP_MS = 15000
 
 
 def _format_published_date(value: Any) -> str:
@@ -84,6 +86,46 @@ def _traceable_identifier(source_input: Dict[str, Optional[str]], platform_work_
 
     digest = hashlib.sha1(share_url.encode("utf-8")).hexdigest()[:10]
     return f"url-{digest}"
+
+
+def _resolve_u2_timeout_ms(timeout_ms: Any) -> int:
+    try:
+        parsed = int(timeout_ms)
+    except Exception:
+        parsed = U2_REQUEST_TIMEOUT_CAP_MS
+    if parsed <= 0:
+        return U2_REQUEST_TIMEOUT_CAP_MS
+    return max(5000, min(parsed, U2_REQUEST_TIMEOUT_CAP_MS))
+
+
+def _report_u2_progress(progress: Optional[ProgressReporter], *, stage: str, event: Dict[str, Any], label: str) -> None:
+    if progress is None:
+        return
+
+    phase = normalize_text(event.get("phase")).lower()
+    state = normalize_text(event.get("state")).lower()
+    payload = {
+        "phase": phase or "poll",
+        "state": state or "",
+        "task_id": event.get("task_id"),
+        "attempt": event.get("attempt"),
+        "task_status": event.get("task_status"),
+        "platform_task_status": event.get("platform_task_status"),
+        "pending_count": event.get("pending_count"),
+        "status_code": event.get("status_code"),
+        "batch_progress": event.get("batch_progress"),
+        "wait_ms": event.get("wait_ms"),
+        "candidate_count": event.get("candidate_count"),
+        "ok": event.get("ok"),
+        "error_reason": event.get("error_reason"),
+        "retriable": event.get("retriable"),
+        "request_id": event.get("request_id"),
+    }
+    message = f"{label} u2 {phase or 'poll'} {state or 'progress'}"
+    if phase == "submit" and state == "heartbeat":
+        progress.heartbeat(stage=stage, message=message, data=payload)
+        return
+    progress.progress(stage=stage, message=message, data=payload)
 
 
 def _build_persist_payload(
@@ -330,12 +372,12 @@ def _extract_author(item: Dict[str, Any]) -> Dict[str, Optional[str]]:
     }
 
 
-def _extract_metrics(item: Dict[str, Any]) -> Dict[str, int]:
+def _extract_metrics(item: Dict[str, Any]) -> Dict[str, Optional[int]]:
     statistics = item.get("statistics")
     if not isinstance(statistics, dict):
         statistics = {}
 
-    def metric(*keys: str) -> int:
+    def metric(*keys: str, default: Optional[int] = 0) -> Optional[int]:
         for key in keys:
             value = _safe_int(statistics.get(key))
             if value is not None:
@@ -343,15 +385,25 @@ def _extract_metrics(item: Dict[str, Any]) -> Dict[str, int]:
             value = _safe_int(item.get(key))
             if value is not None:
                 return value
-        return 0
+        return default
 
-    return {
+    metrics = {
         "digg_count": metric("digg_count"),
         "comment_count": metric("comment_count"),
         "collect_count": metric("collect_count"),
         "share_count": metric("share_count", "forward_count"),
-        "play_count": metric("play_count"),
+        "play_count": metric("play_count", default=None),
     }
+    play_count = metrics.get("play_count")
+    engagement_floor = max(
+        int(metrics.get("digg_count") or 0),
+        int(metrics.get("comment_count") or 0),
+        int(metrics.get("collect_count") or 0),
+        int(metrics.get("share_count") or 0),
+    )
+    if play_count is not None and int(play_count) <= 0 and engagement_floor > 0:
+        metrics["play_count"] = None
+    return metrics
 
 
 def _extract_platform_work_id(item: Dict[str, Any]) -> Optional[str]:
@@ -550,6 +602,71 @@ def _trace_step(
     return payload
 
 
+def _empty_metrics() -> Dict[str, Optional[int]]:
+    return {
+        "digg_count": 0,
+        "comment_count": 0,
+        "collect_count": 0,
+        "share_count": 0,
+        "play_count": None,
+    }
+
+
+def _empty_timings() -> Dict[str, int]:
+    return {
+        "url_parse_ms": 0,
+        "u1_total_ms": 0,
+        "u2_submit_ms": 0,
+        "u2_poll_ms": 0,
+        "card_write_ms": 0,
+        "llm_analysis_ms": 0,
+        "total_ms": 0,
+    }
+
+
+def _elapsed_ms(started_at: float) -> int:
+    return int((time.perf_counter() - started_at) * 1000)
+
+
+def _u1_response_summary(response: Dict[str, Any]) -> Dict[str, Any]:
+    payload = response.get("data")
+    item = _extract_aweme_detail(payload)
+    return {
+        "platform_work_id": _extract_platform_work_id(item or {}) if isinstance(item, dict) else None,
+        "title_hit": bool(_pick_title(item or {})) if isinstance(item, dict) else False,
+        "desc_hit": bool(_pick_desc(item or {})) if isinstance(item, dict) else False,
+        "video_url_present": bool(normalize_text((item or {}).get("video_down_url"))) if isinstance(item, dict) else False,
+    }
+
+
+def _emit_http_progress(
+    progress: Optional[ProgressReporter],
+    *,
+    stage: str,
+    response: Dict[str, Any],
+    route_label: str,
+) -> None:
+    if progress is None:
+        return
+    progress.http_event(
+        stage=stage,
+        endpoint=str(response.get("_endpoint") or route_label),
+        response=response,
+        route_label=route_label,
+        summary=_u1_response_summary(response),
+    )
+
+
+def _update_pipeline_status(result: Dict[str, Any]) -> None:
+    card_write = result.get("card_write") if isinstance(result.get("card_write"), dict) else {}
+    deep_analysis = result.get("deep_analysis") if isinstance(result.get("deep_analysis"), dict) else {}
+    result["pipeline_status"] = {
+        "facts_ready": True,
+        "card_ready": bool(card_write.get("ok")),
+        "deep_analysis": deep_analysis.get("status") or "skipped",
+    }
+
+
 def _build_missing_fields(
     *,
     title: str,
@@ -594,7 +711,7 @@ def _build_result(
     duration_ms: Optional[int],
     video_down_url: Optional[str],
     author: Dict[str, Optional[str]],
-    metrics: Dict[str, int],
+    metrics: Dict[str, Optional[int]],
     tags: List[str],
     is_video: bool,
     video_type_reason: str,
@@ -607,9 +724,11 @@ def _build_result(
     u2_task_id: Optional[str],
     u2_task_status: str,
     u2_gate_reason: str,
+    analysis_mode: str,
     create_time_sec: Optional[int] = None,
     cover_image: Optional[str] = None,
     asr_source: str = "fallback_none",
+    timings: Optional[Dict[str, int]] = None,
 ) -> Dict[str, Any]:
     summary_block = summarize_content(raw_content, source="douyin:single-video-low-quality")
     insights = list(summary_block.get("insights", []))
@@ -627,13 +746,15 @@ def _build_result(
         for step in extract_trace
         if isinstance(step, dict) and isinstance(step.get("endpoint"), str)
     ]
-    primary_text = raw_content
+    asr_clean = derive_asr_clean_text(raw_content)
+    primary_text = asr_clean or raw_content
     analysis_eligibility = "eligible" if raw_content else "incomplete"
     analysis_exclusion_reason = "" if raw_content else "video_asr_unavailable"
 
     payload: Dict[str, Any] = {
         "platform": "douyin",
         "content_kind": "single_video",
+        "analysis_mode": analysis_mode,
         "source": source_input,
         "platform_work_id": platform_work_id,
         "title": title,
@@ -655,13 +776,15 @@ def _build_result(
         "comment_count": metrics.get("comment_count", 0),
         "collect_count": metrics.get("collect_count", 0),
         "share_count": metrics.get("share_count", 0),
-        "play_count": metrics.get("play_count", 0),
+        "play_count": metrics.get("play_count"),
         "tags": tags or [],
         "is_video": is_video,
         "video_type_reason": video_type_reason,
         "u2_task_id": u2_task_id,
         "u2_task_status": u2_task_status,
         "raw_content": raw_content,
+        "asr_raw": raw_content,
+        "asr_clean": asr_clean,
         "primary_text": primary_text,
         "primary_text_source": "asr_clean",
         "analysis_eligibility": analysis_eligibility,
@@ -682,6 +805,7 @@ def _build_result(
         "fallback_trace": fallback_trace,
         "request_id": request_id,
         "endpoint_list": endpoint_list,
+        "timings": dict(timings or {}),
     }
     return payload
 
@@ -701,6 +825,7 @@ def run_douyin_single_video(
     u2_submit_max_retries: int,
     u2_submit_backoff_ms: int,
     write_card: bool,
+    analysis_mode: str,
     card_type: str,
     card_root: Optional[str],
     content_kind: str = "single_video",
@@ -709,14 +834,17 @@ def run_douyin_single_video(
     persist_output: bool = True,
     progress: Optional[ProgressReporter] = None,
 ) -> Dict[str, Any]:
-    if not write_card or not persist_output:
-        raise ValueError(
-            f"fixed_pipeline_requires_full_persistence:douyin:{content_kind}:write_card={bool(write_card)}:persist_output={bool(persist_output)}"
-        )
-
+    workflow_started_at = time.perf_counter()
+    timings = _empty_timings()
+    parse_started_at = time.perf_counter()
     source_input = _normalize_input(input_value, share_url)
+    timings["url_parse_ms"] = _elapsed_ms(parse_started_at)
     if progress is not None:
-        progress.started(stage="single_video.workflow", message="douyin single_video workflow started")
+        progress.started(
+            stage="single_video.workflow",
+            message="douyin single_video workflow started",
+            data={"analysis_mode": analysis_mode, "write_card": bool(write_card), "persist_output": bool(persist_output)},
+        )
     if not source_input.get("share_url"):
         result = _build_result(
             source_input=source_input,
@@ -726,13 +854,7 @@ def run_douyin_single_video(
             duration_ms=None,
             video_down_url=None,
             author={"author_handle": None, "author_platform_id": None, "douyin_sec_uid": None, "douyin_aweme_author_id": None, "nickname": None, "signature": None},
-            metrics={
-                "digg_count": 0,
-                "comment_count": 0,
-                "collect_count": 0,
-                "share_count": 0,
-                "play_count": 0,
-            },
+            metrics=_empty_metrics(),
             tags=[],
             is_video=False,
             video_type_reason="missing_share_url",
@@ -745,8 +867,11 @@ def run_douyin_single_video(
             u2_task_id=None,
             u2_task_status="UNKNOWN",
             u2_gate_reason="not_started",
+            analysis_mode=analysis_mode,
+            timings=timings,
         )
         if write_card:
+            card_started_at = time.perf_counter()
             result["card_write"] = write_benchmark_card(
                 payload=result,
                 platform="douyin",
@@ -754,7 +879,14 @@ def run_douyin_single_video(
                 card_root=card_root,
                 content_kind=content_kind,
                 storage_config=storage_config,
+                analysis_mode=analysis_mode,
+                progress=progress.child(scope="card_write") if progress is not None else None,
             )
+            timings["card_write_ms"] = _elapsed_ms(card_started_at)
+            timings["llm_analysis_ms"] = _safe_int((result.get("card_write") or {}).get("llm_analysis_ms"))
+        timings["total_ms"] = _elapsed_ms(workflow_started_at)
+        result["timings"] = dict(timings)
+        _update_pipeline_status(result)
         return _finalize_result(
             result=result,
             source_input=source_input,
@@ -776,6 +908,7 @@ def run_douyin_single_video(
 
     trace: List[Dict[str, Any]] = []
 
+    u1_started_at = time.perf_counter()
     if progress is not None:
         progress.progress(stage="single_video.fetch", message="fetching douyin single_video payload")
     one_video_response = _u1_fetch_one_video(
@@ -785,9 +918,11 @@ def run_douyin_single_video(
         app_timeout_ms=app_timeout,
         web_timeout_ms=web_timeout,
     )
+    timings["u1_total_ms"] = _elapsed_ms(u1_started_at)
 
     app_failed = one_video_response.get("_app_failed")
     if app_failed:
+        _emit_http_progress(progress, stage="single_video.fetch", response=app_failed, route_label="app_primary")
         trace.append(
             _trace_step(
                 step="u1_fetch_one_video_primary",
@@ -797,6 +932,12 @@ def run_douyin_single_video(
             )
         )
 
+    _emit_http_progress(
+        progress,
+        stage="single_video.fetch",
+        response=one_video_response,
+        route_label="effective_route",
+    )
     trace.append(
         _trace_step(
             step="u1_fetch_one_video_effective",
@@ -823,13 +964,7 @@ def run_douyin_single_video(
             duration_ms=None,
             video_down_url=None,
             author={"author_handle": None, "author_platform_id": None, "douyin_sec_uid": None, "douyin_aweme_author_id": None, "nickname": None, "signature": None},
-            metrics={
-                "digg_count": 0,
-                "comment_count": 0,
-                "collect_count": 0,
-                "share_count": 0,
-                "play_count": 0,
-            },
+            metrics=_empty_metrics(),
             tags=[],
             is_video=False,
             video_type_reason="u1_failed",
@@ -842,8 +977,11 @@ def run_douyin_single_video(
             u2_task_id=None,
             u2_task_status="UNKNOWN",
             u2_gate_reason="u1_failed",
+            analysis_mode=analysis_mode,
+            timings=timings,
         )
         if write_card:
+            card_started_at = time.perf_counter()
             result["card_write"] = write_benchmark_card(
                 payload=result,
                 platform="douyin",
@@ -851,7 +989,14 @@ def run_douyin_single_video(
                 card_root=card_root,
                 content_kind=content_kind,
                 storage_config=storage_config,
+                analysis_mode=analysis_mode,
+                progress=progress.child(scope="card_write") if progress is not None else None,
             )
+            timings["card_write_ms"] = _elapsed_ms(card_started_at)
+            timings["llm_analysis_ms"] = _safe_int((result.get("card_write") or {}).get("llm_analysis_ms"))
+        timings["total_ms"] = _elapsed_ms(workflow_started_at)
+        result["timings"] = dict(timings)
+        _update_pipeline_status(result)
         return _finalize_result(
             result=result,
             source_input=source_input,
@@ -875,13 +1020,7 @@ def run_douyin_single_video(
             duration_ms=None,
             video_down_url=None,
             author={"author_handle": None, "author_platform_id": None, "douyin_sec_uid": None, "douyin_aweme_author_id": None, "nickname": None, "signature": None},
-            metrics={
-                "digg_count": 0,
-                "comment_count": 0,
-                "collect_count": 0,
-                "share_count": 0,
-                "play_count": 0,
-            },
+            metrics=_empty_metrics(),
             tags=[],
             is_video=False,
             video_type_reason="aweme_detail_missing",
@@ -894,8 +1033,11 @@ def run_douyin_single_video(
             u2_task_id=None,
             u2_task_status="UNKNOWN",
             u2_gate_reason="aweme_detail_missing",
+            analysis_mode=analysis_mode,
+            timings=timings,
         )
         if write_card:
+            card_started_at = time.perf_counter()
             result["card_write"] = write_benchmark_card(
                 payload=result,
                 platform="douyin",
@@ -903,7 +1045,14 @@ def run_douyin_single_video(
                 card_root=card_root,
                 content_kind=content_kind,
                 storage_config=storage_config,
+                analysis_mode=analysis_mode,
+                progress=progress.child(scope="card_write") if progress is not None else None,
             )
+            timings["card_write_ms"] = _elapsed_ms(card_started_at)
+            timings["llm_analysis_ms"] = _safe_int((result.get("card_write") or {}).get("llm_analysis_ms"))
+        timings["total_ms"] = _elapsed_ms(workflow_started_at)
+        result["timings"] = dict(timings)
+        _update_pipeline_status(result)
         return _finalize_result(
             result=result,
             source_input=source_input,
@@ -986,22 +1135,40 @@ def run_douyin_single_video(
     poll_result: Dict[str, Any] = {}
 
     if can_u2 and video_down_url:
+        u2_timeout_ms = _resolve_u2_timeout_ms(runtime["timeout_ms"])
         if progress is not None:
             progress.progress(
                 stage="single_video.u2",
                 message="starting douyin u2 submit",
-                data={"video_down_url_present": True},
+                data={"video_down_url_present": True, "timeout_ms": u2_timeout_ms},
             )
+        submit_started_at = time.perf_counter()
         submit_bundle = submit_u2_asr_with_retry(
             base_url=runtime["base_url"],
             token=runtime["token"],
-            timeout_ms=runtime["timeout_ms"],
+            timeout_ms=u2_timeout_ms,
             video_url=video_down_url,
             max_retries=u2_submit_max_retries,
             backoff_ms=u2_submit_backoff_ms,
+            progress_callback=(
+                lambda event: _report_u2_progress(progress, stage="single_video.u2", event=event, label="douyin")
+            ) if progress is not None else None,
         )
+        timings["u2_submit_ms"] = _elapsed_ms(submit_started_at)
         submit_response = submit_bundle["submit_response"]
         u2_task_id = submit_bundle.get("task_id")
+        if progress is not None:
+            progress.http_event(
+                stage="single_video.u2",
+                endpoint=U2_SUBMIT_ENDPOINT,
+                response=submit_response,
+                route_label="u2_submit",
+                summary={
+                    "task_id": u2_task_id,
+                    "final_submit_status": submit_bundle.get("final_submit_status"),
+                    "retry_count": len(submit_bundle.get("retry_chain", [])),
+                },
+            )
 
         trace.append(
             _trace_step(
@@ -1040,14 +1207,19 @@ def run_douyin_single_video(
         else:
             if progress is not None:
                 progress.progress(stage="single_video.u2", message="polling douyin u2 task", data={"task_id": u2_task_id})
+            poll_started_at = time.perf_counter()
             poll_result = poll_u2_task(
                 base_url=runtime["base_url"],
                 token=runtime["token"],
-                timeout_ms=runtime["timeout_ms"],
+                timeout_ms=u2_timeout_ms,
                 task_id=u2_task_id,
                 poll_interval_sec=poll_interval_sec,
                 max_polls=max_polls,
+                progress_callback=(
+                    lambda event: _report_u2_progress(progress, stage="single_video.u2", event=event, label="douyin")
+                ) if progress is not None else None,
             )
+            timings["u2_poll_ms"] = _elapsed_ms(poll_started_at)
             u2_task_status = poll_result.get("task_status") or "UNKNOWN"
             raw_content = poll_result.get("transcript_text", "") if poll_result.get("ok") else ""
             error_reason = poll_result.get("error_reason")
@@ -1111,12 +1283,15 @@ def run_douyin_single_video(
         u2_task_id=u2_task_id,
         u2_task_status=u2_task_status,
         u2_gate_reason=gate_reason,
+        analysis_mode=analysis_mode,
         asr_source="u2" if raw_content else "fallback_none",
+        timings=timings,
     )
 
     if write_card:
         if progress is not None:
             progress.progress(stage="single_video.card_write", message="writing douyin single_video card")
+        card_started_at = time.perf_counter()
         result["card_write"] = write_benchmark_card(
             payload=result,
             platform="douyin",
@@ -1124,7 +1299,15 @@ def run_douyin_single_video(
             card_root=card_root,
             content_kind=content_kind,
             storage_config=storage_config,
+            analysis_mode=analysis_mode,
+            progress=progress.child(scope="card_write") if progress is not None else None,
         )
+        timings["card_write_ms"] = _elapsed_ms(card_started_at)
+        timings["llm_analysis_ms"] = _safe_int((result.get("card_write") or {}).get("llm_analysis_ms"))
+
+    timings["total_ms"] = _elapsed_ms(workflow_started_at)
+    result["timings"] = dict(timings)
+    _update_pipeline_status(result)
 
     finalized = _finalize_result(
         result=result,
@@ -1142,6 +1325,7 @@ def run_douyin_single_video(
                 "request_id": finalized.get("request_id"),
                 "card_write_ok": bool((finalized.get("card_write") or {}).get("ok")),
                 "output_persist_ok": bool((finalized.get("output_persist") or {}).get("ok")),
+                "deep_analysis_status": ((finalized.get("deep_analysis") or {}).get("status")),
             },
         )
     return finalized
@@ -1173,8 +1357,14 @@ def main() -> None:
         default=1500,
         help="Base backoff ms for retriable U2 submit failures (exponential)",
     )
-    parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
-    parser.add_argument("--content-kind", default="single_video", help="Routing kind, e.g. single_video/author_home/author_analysis")
+    parser.add_argument("--card-type", choices=["work"], default="work", help="Primary card type")
+    parser.add_argument("--content-kind", default="single_video", help="Routing kind, e.g. single_video/work")
+    parser.add_argument("--analysis-mode", choices=["auto", "local"], default="auto", help="Card analysis mode")
+    parser.set_defaults(write_card=True, persist_output=True)
+    parser.add_argument("--write-card", dest="write_card", action="store_true", help="Write final work card")
+    parser.add_argument("--no-write-card", dest="write_card", action="store_false", help="Skip card writing")
+    parser.add_argument("--persist-output", dest="persist_output", action="store_true", help="Persist result JSON")
+    parser.add_argument("--no-persist-output", dest="persist_output", action="store_false", help="Skip result JSON persist")
     parser.add_argument("--card-root", default=None, help="Card root (absolute); falls back to TIKOMNI_CARD_ROOT when writing cards")
     args = parser.parse_args()
 
@@ -1187,6 +1377,13 @@ def main() -> None:
     api_key_env = args.api_key_env or config_get(config, "runtime.auth_env_key", "TIKOMNI_API_KEY")
     base_url = args.base_url or config_get(config, "runtime.base_url", None)
     timeout_ms = args.timeout_ms if args.timeout_ms is not None else config_get(config, "runtime.timeout_ms", None)
+
+    progress = build_progress_reporter(
+        workflow="single-work-analysis",
+        platform="douyin",
+        content_kind=args.content_kind,
+        input_value=args.share_url or args.input,
+    )
 
     try:
         result = run_douyin_single_video(
@@ -1202,13 +1399,15 @@ def main() -> None:
             max_polls=args.max_polls,
             u2_submit_max_retries=args.u2_submit_max_retries,
             u2_submit_backoff_ms=args.u2_submit_backoff_ms,
-            write_card=True,
+            write_card=bool(args.write_card),
+            analysis_mode=args.analysis_mode,
             card_type=args.card_type,
             card_root=args.card_root,
             content_kind=args.content_kind,
             storage_config=config,
             allow_process_env=args.allow_process_env,
-            persist_output=True,
+            persist_output=bool(args.persist_output),
+            progress=progress,
         )
     except ValueError as error:
         result = {

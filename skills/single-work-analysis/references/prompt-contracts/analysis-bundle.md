@@ -1,4 +1,4 @@
-# Prompt Contract · 洞察分析（insight）
+# Prompt Contract · 单次结构化作品分析（analysis-bundle）
 
 ## User Prompt (Verbatim)
 
@@ -32,16 +32,51 @@
 === 终极使命 ===
 帮助创作者建立"爆款直觉"——
 不是教他们追逐每一个热点，而是理解什么样的内容天生具有传播基因。
+
+任务：
+基于输入数据，一次性输出 5 个字段：
+- topic
+- style
+- hook
+- structure
+- insight
+
+输出要求：
+1. 只输出一个 JSON 对象，不要输出 markdown，不要输出解释。
+2. 每个字段的值必须是字符串数组。
+3. 中文输出。
+4. 缺少数据时直接写“数据不足”。
+5. 只能基于输入字段推断，不得臆造事实。
+
+JSON schema:
+{
+  "topic": ["..."],
+  "style": ["..."],
+  "hook": ["..."],
+  "structure": ["..."],
+  "insight": ["..."]
+}
+
+字段约束：
+- topic：聚焦选题类型、细分主题、受众痛点
+- style：聚焦句式、语气、人设表达
+- hook：聚焦开头、中段、结尾钩子
+- structure：聚焦结构标签、模板、缺失模块
+- insight：聚焦情绪共振点/认知势能差/社交货币值/行动驱动力
+必须保证表达方式和分析美学的要求，而不是因为格式约束为了精炼而精炼
 ```
 
 ## Inputs
+- `platform`
 - `title`
-- `asr_raw`（优先）
-- `raw_content`（`asr_raw` 缺失时回退）
-- `asr_clean`（遗留兼容字段）
-- 指标：`digg_count/comment_count/collect_count/share_count/play_count`
+- `caption_raw`
+- `asr_raw`
+- `asr_clean`
+- `work_modality`
+- `tags`
+- `metrics`
 
 ## Constraints
-- 仅基于输入字段推断，不得臆造事实。
-- 输出为中文，短句、可执行、可追溯。
-- 缺数据时明确标注“数据不足”。
+- 不得输出思维链。
+- 不得引用未提供的外部知识。
+- 若输入文本稀缺，允许多处返回“数据不足”。

@@ -14,10 +14,8 @@ storage_routes:
     errors_dir: "_errors"
   content_kind_card_type:
     single_video: work
+    note: work
     work: work
-    author_home: author_sample_work
-    author_sample_work: author_sample_work
-    author_analysis: author
   card_type_routes:
     work:
       prefix: "CBV"
@@ -25,27 +23,18 @@ storage_routes:
         - "内容系统"
         - "对标研究"
         - "作品卡"
-    author:
-      prefix: "CBA"
-      parts:
-        - "内容系统"
-        - "对标研究"
-        - "作者卡"
-    author_sample_work:
-      prefix: "CBV"
-      parts:
-        - "内容系统"
-        - "对标研究"
-        - "作者样本卡"
-        - "{platform}-{author_slug}"
 
 naming_rules:
-  card_filename_pattern: "{prefix}-{author_slug}-{title_slug}{ext}"
+  card_filename_pattern: "{prefix}-{platform}-{author_slug}-{title_slug}{ext}"
   json_filename_pattern: "{timestamp}-{platform}-{identifier}{ext}"
+
+analysis:
+  provider: auto
+  timeout_sec: 90
 
 asr_strategy:
   poll_interval_sec: 3.0
-  max_polls: 30
+  max_polls: 10
   submit_retry:
     douyin_video:
       max_retries: 2
@@ -55,4 +44,4 @@ asr_strategy:
       backoff_ms: 0
   u2_timeout_retry:
     enabled: true
-    max_retries: 3
+    max_retries: 0

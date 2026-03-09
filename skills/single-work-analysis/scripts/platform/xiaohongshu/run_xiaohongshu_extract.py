@@ -20,15 +20,16 @@ import argparse
 import hashlib
 import json
 import re
+import time
 import urllib.parse
 import urllib.request
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from scripts.pipeline.asr.asr_pipeline import run_u2_asr_candidates_with_timeout_retry
+from scripts.pipeline.asr.asr_pipeline import derive_asr_clean_text, run_u2_asr_candidates_with_timeout_retry
 from scripts.core.config_loader import config_get, load_tikomni_config, resolve_storage_paths
-from scripts.core.progress_report import ProgressReporter
+from scripts.core.progress_report import ProgressReporter, build_progress_reporter
 from scripts.core.storage_router import render_output_filename, resolve_json_filename_pattern
 from scripts.core.extract_pipeline import build_api_trace, resolve_trace_error_context
 from scripts.core.tikomni_common import (
@@ -49,6 +50,7 @@ APP_V1_ENDPOINT = "/api/u1/v1/xiaohongshu/app/get_note_info"
 WEB_V2_V2_ENDPOINT = "/api/u1/v1/xiaohongshu/web_v2/fetch_feed_notes_v2"
 WEB_V2_V3_ENDPOINT = "/api/u1/v1/xiaohongshu/web_v2/fetch_feed_notes_v3"
 WEB_ENDPOINT = "/api/u1/v1/xiaohongshu/web/get_note_info_v7"
+U2_REQUEST_TIMEOUT_CAP_MS = 15000
 U2_GATE_MIN_DURATION_MS = 13000
 U2_GATE_MAX_DURATION_MS = 1800000
 U2_GATE_RULE = "is_video && 13000<duration_ms<=1800000 && video_download_url_present"
@@ -78,6 +80,43 @@ def _to_int_or_none(value: Any) -> Optional[int]:
         return parsed if parsed > 0 else None
     except Exception:
         return None
+
+
+def _resolve_u2_timeout_ms(timeout_ms: Any) -> int:
+    parsed = _to_int_or_none(timeout_ms)
+    if parsed is None or parsed <= 0:
+        return U2_REQUEST_TIMEOUT_CAP_MS
+    return max(5000, min(parsed, U2_REQUEST_TIMEOUT_CAP_MS))
+
+
+def _report_u2_progress(progress: Optional[ProgressReporter], *, stage: str, event: Dict[str, Any], label: str) -> None:
+    if progress is None:
+        return
+
+    phase = normalize_text(event.get("phase")).lower()
+    state = normalize_text(event.get("state")).lower()
+    payload = {
+        "phase": phase or "poll",
+        "state": state or "",
+        "task_id": event.get("task_id"),
+        "attempt": event.get("attempt"),
+        "task_status": event.get("task_status"),
+        "platform_task_status": event.get("platform_task_status"),
+        "pending_count": event.get("pending_count"),
+        "status_code": event.get("status_code"),
+        "batch_progress": event.get("batch_progress"),
+        "wait_ms": event.get("wait_ms"),
+        "candidate_count": event.get("candidate_count"),
+        "ok": event.get("ok"),
+        "error_reason": event.get("error_reason"),
+        "retriable": event.get("retriable"),
+        "request_id": event.get("request_id"),
+    }
+    message = f"{label} u2 {phase or 'poll'} {state or 'progress'}"
+    if phase == "submit" and state == "heartbeat":
+        progress.heartbeat(stage=stage, message=message, data=payload)
+        return
+    progress.progress(stage=stage, message=message, data=payload)
 
 
 def _evaluate_u2_gate_for_xhs(*, note_content_type: str, duration_ms: Any, video_down_url: Optional[str]) -> Dict[str, Any]:
@@ -760,6 +799,70 @@ def _append_missing_metadata_fields(missing_fields: List[Dict[str, str]], metada
             _append(key)
 
 
+def _empty_timings() -> Dict[str, int]:
+    return {
+        "url_parse_ms": 0,
+        "u1_total_ms": 0,
+        "u2_submit_ms": 0,
+        "u2_poll_ms": 0,
+        "card_write_ms": 0,
+        "llm_analysis_ms": 0,
+        "total_ms": 0,
+    }
+
+
+def _elapsed_ms(started_at: float) -> int:
+    return int((time.perf_counter() - started_at) * 1000)
+
+
+def _http_summary_for_note(response: Dict[str, Any], source_input: Dict[str, Optional[str]]) -> Dict[str, Any]:
+    completeness = response.get("_field_completeness") if isinstance(response.get("_field_completeness"), dict) else {}
+    payload = response.get("data")
+    metadata = _extract_xhs_metadata(
+        payload=payload,
+        source_input=source_input,
+        selected_video_url=None,
+        selected_image_urls=[],
+    ) if response.get("ok") else {}
+    return {
+        "note_id": normalize_text(metadata.get("note_id")) or normalize_text(source_input.get("note_id")),
+        "title_hit": bool(normalize_text(metadata.get("title"))),
+        "author_hit": bool(normalize_text(metadata.get("author"))),
+        "media_present": bool(normalize_text(metadata.get("video_down_url")) or metadata.get("cover_image")),
+        "filled_count": completeness.get("filled_count"),
+        "ratio": completeness.get("ratio"),
+    }
+
+
+def _emit_http_progress(
+    progress: Optional[ProgressReporter],
+    *,
+    stage: str,
+    response: Dict[str, Any],
+    route_label: str,
+    source_input: Dict[str, Optional[str]],
+) -> None:
+    if progress is None:
+        return
+    progress.http_event(
+        stage=stage,
+        endpoint=str(response.get("_endpoint") or route_label),
+        response=response,
+        route_label=route_label,
+        summary=_http_summary_for_note(response, source_input),
+    )
+
+
+def _update_pipeline_status(result: Dict[str, Any]) -> None:
+    card_write = result.get("card_write") if isinstance(result.get("card_write"), dict) else {}
+    deep_analysis = result.get("deep_analysis") if isinstance(result.get("deep_analysis"), dict) else {}
+    result["pipeline_status"] = {
+        "facts_ready": True,
+        "card_ready": bool(card_write.get("ok")),
+        "deep_analysis": deep_analysis.get("status") or "skipped",
+    }
+
+
 def _fetch_sparse_metadata_enrich(
     *,
     base_url: str,
@@ -767,6 +870,7 @@ def _fetch_sparse_metadata_enrich(
     timeout_ms: int,
     source_input: Dict[str, Optional[str]],
     note_id: Optional[str],
+    progress: Optional[ProgressReporter] = None,
 ) -> Dict[str, Any]:
     share_text = source_input.get("share_text")
     resolved_note_id = note_id or source_input.get("note_id") or _extract_note_id_from_share(share_text)
@@ -782,6 +886,7 @@ def _fetch_sparse_metadata_enrich(
         )
         response["_endpoint"] = WEB_V2_V3_ENDPOINT
         response["_route_label"] = "web_v2_v3_sparse_enrich"
+        _emit_http_progress(progress, stage="note.fetch", response=response, route_label="web_v2_v3_sparse_enrich", source_input=source_input)
         return response
 
     if resolved_note_id:
@@ -795,6 +900,7 @@ def _fetch_sparse_metadata_enrich(
         )
         response["_endpoint"] = WEB_V2_V2_ENDPOINT
         response["_route_label"] = "web_v2_v2_sparse_enrich"
+        _emit_http_progress(progress, stage="note.fetch", response=response, route_label="web_v2_v2_sparse_enrich", source_input=source_input)
         return response
 
     return {
@@ -805,7 +911,14 @@ def _fetch_sparse_metadata_enrich(
     }
 
 
-def _fetch_note_info(*, base_url: str, token: str, timeout_ms: int, source_input: Dict[str, Optional[str]]) -> Dict[str, Any]:
+def _fetch_note_info(
+    *,
+    base_url: str,
+    token: str,
+    timeout_ms: int,
+    source_input: Dict[str, Optional[str]],
+    progress: Optional[ProgressReporter] = None,
+) -> Dict[str, Any]:
     attempts: List[Dict[str, Any]] = []
 
     share_text = source_input.get("share_text")
@@ -832,6 +945,7 @@ def _fetch_note_info(*, base_url: str, token: str, timeout_ms: int, source_input
             "missing_core": ["note_id", "title_or_desc", "media"],
             "core_ready": False,
         }
+        _emit_http_progress(progress, stage="note.fetch", response=response, route_label=label, source_input=source_input)
         attempts.append({"label": label, "endpoint": path, "response": response})
         return response
 
@@ -1323,6 +1437,7 @@ def _build_result(
     missing_fields: Optional[List[Dict[str, str]]] = None,
     metadata_fields: Optional[Dict[str, Any]] = None,
     asr_source: Optional[str] = None,
+    timings: Optional[Dict[str, int]] = None,
 ) -> Dict[str, Any]:
     metadata = metadata_fields or {}
     summary_block = summarize_content(raw_content, source=f"xiaohongshu:{text_source}")
@@ -1344,7 +1459,8 @@ def _build_result(
 
     work_modality = "video" if normalize_text(note_content_type).lower() in {"video", "mixed"} else "text"
     caption_raw = normalize_text(metadata.get("caption_raw"))
-    primary_text = raw_content if work_modality == "video" else (caption_raw or raw_content)
+    asr_clean = derive_asr_clean_text(raw_content)
+    primary_text = asr_clean if work_modality == "video" else (caption_raw or raw_content)
     primary_text_source = "asr_clean" if work_modality == "video" else "caption_raw"
     analysis_eligibility = "eligible" if primary_text else "incomplete"
     analysis_exclusion_reason = "" if analysis_eligibility == "eligible" else ("video_asr_unavailable" if work_modality == "video" else "caption_raw_missing")
@@ -1389,6 +1505,8 @@ def _build_result(
         "xhs_sec_token": metadata.get("xhs_sec_token"),
         "downloaded_assets": downloaded_assets,
         "raw_content": raw_content,
+        "asr_raw": raw_content,
+        "asr_clean": asr_clean,
         "primary_text": primary_text,
         "primary_text_source": primary_text_source,
         "analysis_eligibility": analysis_eligibility,
@@ -1401,6 +1519,7 @@ def _build_result(
         "extract_trace": extract_trace,
         "fallback_trace": fallback_trace,
         "request_id": request_id,
+        "timings": dict(timings or {}),
     }
 
 
@@ -1421,6 +1540,7 @@ def run_xiaohongshu_extract(
     u2_timeout_retry_max_retries: int,
     force_u2_fallback: bool,
     write_card: bool,
+    analysis_mode: str,
     card_type: str,
     card_root: Optional[str],
     storage_config: Optional[Dict[str, Any]] = None,
@@ -1428,14 +1548,17 @@ def run_xiaohongshu_extract(
     persist_output: bool = True,
     progress: Optional[ProgressReporter] = None,
 ) -> Dict[str, Any]:
-    if not write_card or not persist_output:
-        raise ValueError(
-            f"fixed_pipeline_requires_full_persistence:xiaohongshu:note:write_card={bool(write_card)}:persist_output={bool(persist_output)}"
-        )
-
+    workflow_started_at = time.perf_counter()
+    timings = _empty_timings()
+    parse_started_at = time.perf_counter()
     source_input = _normalize_input(input_value, share_text, note_id)
+    timings["url_parse_ms"] = _elapsed_ms(parse_started_at)
     if progress is not None:
-        progress.started(stage="note.workflow", message="xiaohongshu note workflow started")
+        progress.started(
+            stage="note.workflow",
+            message="xiaohongshu note workflow started",
+            data={"analysis_mode": analysis_mode, "write_card": bool(write_card), "persist_output": bool(persist_output)},
+        )
     metadata_fields: Dict[str, Any] = {}
     if not source_input["share_text"] and not source_input["note_id"]:
         result = _build_result(
@@ -1452,15 +1575,17 @@ def run_xiaohongshu_extract(
             u2_task_id=None,
             u2_task_status="UNKNOWN",
             note_content_type="unknown",
-            analysis_mode="none",
+            analysis_mode=analysis_mode,
             selected_video_url=None,
             selected_video_candidates=[],
             selected_image_urls=[],
             downloaded_assets=[],
             missing_fields=[{"field": "share_text_or_note_id", "reason": "missing_input"}],
             metadata_fields=metadata_fields,
+            timings=timings,
         )
         if write_card:
+            card_started_at = time.perf_counter()
             result["card_write"] = write_benchmark_card(
                 payload=result,
                 platform="xiaohongshu",
@@ -1468,7 +1593,14 @@ def run_xiaohongshu_extract(
                 card_root=card_root,
                 content_kind="note",
                 storage_config=storage_config,
+                analysis_mode=analysis_mode,
+                progress=progress.child(scope="card_write") if progress is not None else None,
             )
+            timings["card_write_ms"] = _elapsed_ms(card_started_at)
+            timings["llm_analysis_ms"] = _to_int_or_none((result.get("card_write") or {}).get("llm_analysis_ms")) or 0
+        timings["total_ms"] = _elapsed_ms(workflow_started_at)
+        result["timings"] = dict(timings)
+        _update_pipeline_status(result)
         return _finalize_result(
             result=result,
             source_input=source_input,
@@ -1487,6 +1619,7 @@ def run_xiaohongshu_extract(
 
     trace: List[Dict[str, Any]] = []
 
+    u1_started_at = time.perf_counter()
     if progress is not None:
         progress.progress(stage="note.fetch", message="fetching xiaohongshu note payload")
     note_response = _fetch_note_info(
@@ -1494,7 +1627,9 @@ def run_xiaohongshu_extract(
         token=runtime["token"],
         timeout_ms=runtime["timeout_ms"],
         source_input=source_input,
+        progress=progress,
     )
+    timings["u1_total_ms"] = _elapsed_ms(u1_started_at)
 
     attempts = note_response.get("_attempts") or []
     for index, attempt in enumerate(attempts, start=1):
@@ -1548,15 +1683,17 @@ def run_xiaohongshu_extract(
             u2_task_id=None,
             u2_task_status="UNKNOWN",
             note_content_type="unknown",
-            analysis_mode="none",
+            analysis_mode=analysis_mode,
             selected_video_url=None,
             selected_video_candidates=[],
             selected_image_urls=[],
             downloaded_assets=[],
             missing_fields=[{"field": "u1_note_info", "reason": "all_routes_failed"}],
             metadata_fields=metadata_fields,
+            timings=timings,
         )
         if write_card:
+            card_started_at = time.perf_counter()
             result["card_write"] = write_benchmark_card(
                 payload=result,
                 platform="xiaohongshu",
@@ -1564,7 +1701,14 @@ def run_xiaohongshu_extract(
                 card_root=card_root,
                 content_kind="note",
                 storage_config=storage_config,
+                analysis_mode=analysis_mode,
+                progress=progress.child(scope="card_write") if progress is not None else None,
             )
+            timings["card_write_ms"] = _elapsed_ms(card_started_at)
+            timings["llm_analysis_ms"] = _to_int_or_none((result.get("card_write") or {}).get("llm_analysis_ms")) or 0
+        timings["total_ms"] = _elapsed_ms(workflow_started_at)
+        result["timings"] = dict(timings)
+        _update_pipeline_status(result)
         return _finalize_result(
             result=result,
             source_input=source_input,
@@ -1589,13 +1733,16 @@ def run_xiaohongshu_extract(
     enrich_payload: Any = None
 
     if sparse_metadata_detected:
+        enrich_started_at = time.perf_counter()
         enrich_response = _fetch_sparse_metadata_enrich(
             base_url=runtime["base_url"],
             token=runtime["token"],
             timeout_ms=runtime["timeout_ms"],
             source_input=source_input,
             note_id=source_input.get("note_id"),
+            progress=progress,
         )
+        timings["u1_total_ms"] += _elapsed_ms(enrich_started_at)
         trace.append(
             build_api_trace(
                 step="u1_sparse_metadata_enrich",
@@ -1710,15 +1857,17 @@ def run_xiaohongshu_extract(
                 u2_task_id=None,
                 u2_task_status="SKIPPED",
                 note_content_type=note_content_type,
-                analysis_mode="video_full",
+                analysis_mode=analysis_mode,
                 selected_video_url=selected_video_url,
                 selected_video_candidates=video_candidates,
                 selected_image_urls=image_candidates,
                 downloaded_assets=[],
                 missing_fields=missing_fields,
                 metadata_fields=metadata_fields,
+                timings=timings,
             )
             if write_card:
+                card_started_at = time.perf_counter()
                 result["card_write"] = write_benchmark_card(
                     payload=result,
                     platform="xiaohongshu",
@@ -1726,7 +1875,14 @@ def run_xiaohongshu_extract(
                     card_root=card_root,
                     content_kind="single_video",
                     storage_config=storage_config,
+                    analysis_mode=analysis_mode,
+                    progress=progress.child(scope="card_write") if progress is not None else None,
                 )
+                timings["card_write_ms"] = _elapsed_ms(card_started_at)
+                timings["llm_analysis_ms"] = _to_int_or_none((result.get("card_write") or {}).get("llm_analysis_ms")) or 0
+            timings["total_ms"] = _elapsed_ms(workflow_started_at)
+            result["timings"] = dict(timings)
+            _update_pipeline_status(result)
             return _finalize_result(
                 result=result,
                 source_input=source_input,
@@ -1766,15 +1922,17 @@ def run_xiaohongshu_extract(
                 u2_task_id=None,
                 u2_task_status="SKIPPED",
                 note_content_type=note_content_type,
-                analysis_mode="video_full",
+                analysis_mode=analysis_mode,
                 selected_video_url=u2_gate.get("video_down_url") or selected_video_url,
                 selected_video_candidates=video_candidates,
                 selected_image_urls=image_candidates,
                 downloaded_assets=[],
                 missing_fields=missing_fields,
                 metadata_fields=metadata_fields,
+                timings=timings,
             )
             if write_card:
+                card_started_at = time.perf_counter()
                 result["card_write"] = write_benchmark_card(
                     payload=result,
                     platform="xiaohongshu",
@@ -1782,7 +1940,14 @@ def run_xiaohongshu_extract(
                     card_root=card_root,
                     content_kind="single_video",
                     storage_config=storage_config,
+                    analysis_mode=analysis_mode,
+                    progress=progress.child(scope="card_write") if progress is not None else None,
                 )
+                timings["card_write_ms"] = _elapsed_ms(card_started_at)
+                timings["llm_analysis_ms"] = _to_int_or_none((result.get("card_write") or {}).get("llm_analysis_ms")) or 0
+            timings["total_ms"] = _elapsed_ms(workflow_started_at)
+            result["timings"] = dict(timings)
+            _update_pipeline_status(result)
             return _finalize_result(
                 result=result,
                 source_input=source_input,
@@ -1792,16 +1957,18 @@ def run_xiaohongshu_extract(
             )
 
         u2_candidates = _dedupe_keep_order([u2_gate.get("video_down_url")] + list(video_candidates))
+        u2_timeout_ms = _resolve_u2_timeout_ms(runtime["timeout_ms"])
         if progress is not None:
             progress.progress(
                 stage="note.u2",
                 message="starting xiaohongshu u2 flow",
-                data={"candidate_count": len(u2_candidates)},
+                data={"candidate_count": len(u2_candidates), "timeout_ms": u2_timeout_ms},
             )
+        u2_started_at = time.perf_counter()
         u2_bundle = run_u2_asr_candidates_with_timeout_retry(
             base_url=runtime["base_url"],
             token=runtime["token"],
-            timeout_ms=runtime["timeout_ms"],
+            timeout_ms=u2_timeout_ms,
             candidates=u2_candidates,
             submit_max_retries=u2_submit_max_retries,
             submit_backoff_ms=u2_submit_backoff_ms,
@@ -1809,7 +1976,12 @@ def run_xiaohongshu_extract(
             max_polls=max_polls,
             timeout_retry_enabled=u2_timeout_retry_enabled,
             timeout_retry_max_retries=u2_timeout_retry_max_retries,
+            progress_callback=(
+                lambda event: _report_u2_progress(progress, stage="note.u2", event=event, label="xiaohongshu")
+            ) if progress is not None else None,
         )
+        timings["u2_submit_ms"] = _to_int_or_none(u2_bundle.get("submit_duration_ms")) or 0
+        timings["u2_poll_ms"] = _to_int_or_none(u2_bundle.get("poll_duration_ms")) or _elapsed_ms(u2_started_at)
         submit_bundle = u2_bundle.get("submit_bundle", {})
         submit_response = submit_bundle.get("submit_response", {})
         task_id = submit_bundle.get("task_id")
@@ -1817,6 +1989,19 @@ def run_xiaohongshu_extract(
         selected_video_url = u2_bundle.get("chosen_candidate") or selected_video_url
         if selected_video_url and not normalize_text(metadata_fields.get("video_down_url")):
             metadata_fields["video_down_url"] = selected_video_url
+
+        if progress is not None:
+            progress.http_event(
+                stage="note.u2",
+                endpoint="/api/u2/v1/services/audio/asr/transcription",
+                response=submit_response,
+                route_label="u2_submit",
+                summary={
+                    "task_id": task_id,
+                    "retry_count": len(submit_bundle.get("retry_chain", [])),
+                    "candidate_count": len(u2_candidates),
+                },
+            )
 
         trace.append(
             {
@@ -1879,15 +2064,17 @@ def run_xiaohongshu_extract(
                 u2_task_id=poll_result.get("task_id") or task_id,
                 u2_task_status=poll_result.get("task_status") or "UNKNOWN",
                 note_content_type=note_content_type,
-                analysis_mode="video_full",
+                analysis_mode=analysis_mode,
                 selected_video_url=selected_video_url,
                 selected_video_candidates=u2_candidates,
                 selected_image_urls=image_candidates,
                 downloaded_assets=[],
                 missing_fields=missing_fields,
                 metadata_fields=metadata_fields,
+                timings=timings,
             )
             if write_card:
+                card_started_at = time.perf_counter()
                 result["card_write"] = write_benchmark_card(
                     payload=result,
                     platform="xiaohongshu",
@@ -1895,7 +2082,14 @@ def run_xiaohongshu_extract(
                     card_root=card_root,
                     content_kind="single_video",
                     storage_config=storage_config,
+                    analysis_mode=analysis_mode,
+                    progress=progress.child(scope="card_write") if progress is not None else None,
                 )
+                timings["card_write_ms"] = _elapsed_ms(card_started_at)
+                timings["llm_analysis_ms"] = _to_int_or_none((result.get("card_write") or {}).get("llm_analysis_ms")) or 0
+            timings["total_ms"] = _elapsed_ms(workflow_started_at)
+            result["timings"] = dict(timings)
+            _update_pipeline_status(result)
             return _finalize_result(
                 result=result,
                 source_input=source_input,
@@ -1911,30 +2105,41 @@ def run_xiaohongshu_extract(
             explicit_error_reason=poll_result.get("error_reason"),
             explicit_request_id=poll_result.get("request_id") or submit_response.get("request_id") or note_response.get("request_id"),
         )
+        text_source = "u2"
+        confidence = "high" if poll_result.get("ok") and raw_content else "low"
+        error_reason = final_ctx.get("error_reason")
+        if not raw_content and caption_text:
+            missing_fields.append({"field": "asr_transcript", "reason": f"u2_failed:{error_reason or 'u2_poll_timeout'}"})
+            raw_content = caption_text
+            text_source = "caption_fallback"
+            confidence = "medium"
+            error_reason = None
         result = _build_result(
             source_input=source_input,
             raw_content=raw_content,
-            confidence="high" if poll_result.get("ok") and raw_content else "low",
-            error_reason=final_ctx.get("error_reason"),
+            confidence=confidence,
+            error_reason=error_reason,
             extract_trace=trace,
             fallback_trace=final_ctx.get("fallback_trace", []),
             request_id=final_ctx.get("request_id"),
-            text_source="u2",
+            text_source=text_source,
             note_id=str(resolved_note_id) if resolved_note_id else source_input.get("note_id"),
             subtitle_hit=False,
             u2_task_id=poll_result.get("task_id") or task_id,
             u2_task_status=poll_result.get("task_status"),
             note_content_type=note_content_type,
-            analysis_mode="video_full",
+            analysis_mode=analysis_mode,
             selected_video_url=selected_video_url,
             selected_video_candidates=u2_candidates,
             selected_image_urls=image_candidates,
             downloaded_assets=[],
             missing_fields=missing_fields,
             metadata_fields=metadata_fields,
+            timings=timings,
         )
 
         if write_card:
+            card_started_at = time.perf_counter()
             result["card_write"] = write_benchmark_card(
                 payload=result,
                 platform="xiaohongshu",
@@ -1942,7 +2147,15 @@ def run_xiaohongshu_extract(
                 card_root=card_root,
                 content_kind="single_video",
                 storage_config=storage_config,
+                analysis_mode=analysis_mode,
+                progress=progress.child(scope="card_write") if progress is not None else None,
             )
+            timings["card_write_ms"] = _elapsed_ms(card_started_at)
+            timings["llm_analysis_ms"] = _to_int_or_none((result.get("card_write") or {}).get("llm_analysis_ms")) or 0
+
+        timings["total_ms"] = _elapsed_ms(workflow_started_at)
+        result["timings"] = dict(timings)
+        _update_pipeline_status(result)
 
         return _finalize_result(
             result=result,
@@ -1989,16 +2202,18 @@ def run_xiaohongshu_extract(
         u2_task_id=None,
         u2_task_status="SKIPPED",
         note_content_type="image" if note_content_type == "unknown" else note_content_type,
-        analysis_mode="image_light_analysis",
+        analysis_mode=analysis_mode,
         selected_video_url=None,
         selected_video_candidates=video_candidates,
         selected_image_urls=image_candidates,
         downloaded_assets=downloaded_assets,
         missing_fields=missing_fields,
         metadata_fields=metadata_fields,
+        timings=timings,
     )
 
     if write_card:
+        card_started_at = time.perf_counter()
         result["card_write"] = write_benchmark_card(
             payload=result,
             platform="xiaohongshu",
@@ -2006,7 +2221,15 @@ def run_xiaohongshu_extract(
             card_root=card_root,
             content_kind="note",
             storage_config=storage_config,
+            analysis_mode=analysis_mode,
+            progress=progress.child(scope="card_write") if progress is not None else None,
         )
+        timings["card_write_ms"] = _elapsed_ms(card_started_at)
+        timings["llm_analysis_ms"] = _to_int_or_none((result.get("card_write") or {}).get("llm_analysis_ms")) or 0
+
+    timings["total_ms"] = _elapsed_ms(workflow_started_at)
+    result["timings"] = dict(timings)
+    _update_pipeline_status(result)
 
     finalized = _finalize_result(
         result=result,
@@ -2025,6 +2248,7 @@ def run_xiaohongshu_extract(
                 "card_write_ok": bool((finalized.get("card_write") or {}).get("ok")),
                 "output_persist_ok": bool((finalized.get("output_persist") or {}).get("ok")),
                 "text_source": finalized.get("text_source"),
+                "deep_analysis_status": ((finalized.get("deep_analysis") or {}).get("status")),
             },
         )
     return finalized
@@ -2069,7 +2293,13 @@ def main() -> None:
         help="Conservative max retries for U2 timeout-only retry (0~3)",
     )
     parser.add_argument("--force-u2-fallback", action="store_true", help="Skip subtitle usage and force U2 fallback (test)")
-    parser.add_argument("--card-type", choices=["work", "author", "author_sample_work"], default="work", help="Primary card type")
+    parser.add_argument("--card-type", choices=["work"], default="work", help="Primary card type")
+    parser.add_argument("--analysis-mode", choices=["auto", "local"], default="auto", help="Card analysis mode")
+    parser.set_defaults(write_card=True, persist_output=True)
+    parser.add_argument("--write-card", dest="write_card", action="store_true", help="Write final work card")
+    parser.add_argument("--no-write-card", dest="write_card", action="store_false", help="Skip card writing")
+    parser.add_argument("--persist-output", dest="persist_output", action="store_true", help="Persist result JSON")
+    parser.add_argument("--no-persist-output", dest="persist_output", action="store_false", help="Skip result JSON persist")
     parser.add_argument("--card-root", default=None, help="Card root (absolute); falls back to TIKOMNI_CARD_ROOT when writing cards")
     args = parser.parse_args()
 
@@ -2109,6 +2339,12 @@ def main() -> None:
         if args.u2_timeout_retry_max_retries is not None
         else config_get(config, "asr_strategy.u2_timeout_retry.max_retries", 3)
     )
+    progress = build_progress_reporter(
+        workflow="single-work-analysis",
+        platform="xiaohongshu",
+        content_kind="note",
+        input_value=args.share_text or args.note_id or args.input,
+    )
 
     try:
         result = run_xiaohongshu_extract(
@@ -2126,12 +2362,14 @@ def main() -> None:
             u2_timeout_retry_enabled=bool(u2_timeout_retry_enabled),
             u2_timeout_retry_max_retries=int(u2_timeout_retry_max_retries),
             force_u2_fallback=args.force_u2_fallback,
-            write_card=True,
+            write_card=bool(args.write_card),
+            analysis_mode=args.analysis_mode,
             card_type=args.card_type,
             card_root=args.card_root,
             storage_config=config,
             allow_process_env=args.allow_process_env,
-            persist_output=True,
+            persist_output=bool(args.persist_output),
+            progress=progress,
         )
     except ValueError as error:
         result = {

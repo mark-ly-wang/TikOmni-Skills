@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Storage routing helpers for benchmark card outputs."""
+"""Storage routing helpers for single-work card outputs."""
 
 from __future__ import annotations
 
@@ -8,53 +8,33 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+
 DEFAULT_CARD_TYPE_ROUTES: Dict[str, Dict[str, Any]] = {
     "work": {
         "prefix": "CBV",
         "parts": ["内容系统", "对标研究", "作品卡"],
     },
-    "author": {
-        "prefix": "CBA",
-        "parts": ["内容系统", "对标研究", "作者卡"],
-    },
-    "author_sample_work": {
-        "prefix": "CBV",
-        "parts": ["内容系统", "对标研究", "作者样本卡", "{platform}-{author_slug}"],
-    },
 }
 
 DEFAULT_CONTENT_KIND_CARD_TYPE: Dict[str, str] = {
     "single_video": "work",
+    "note": "work",
     "work": "work",
-    "author_home": "author_sample_work",
-    "author_sample_work": "author_sample_work",
-    "author_analysis": "author",
-}
-
-CARD_TYPE_ALIASES: Dict[str, str] = {
-    "sample": "author_sample_work",
-    "sample_work": "author_sample_work",
-    "homepage_sample": "author_sample_work",
-    "author_homepage_sample": "author_sample_work",
-    "author_home": "author_sample_work",
-    "author_analysis": "author",
 }
 
 CONTENT_KIND_ALIASES: Dict[str, str] = {
-    "author_homepage": "author_home",
-    "author_homepage_sample": "author_home",
-    "homepage_sample": "author_home",
-    "analysis_author": "author_analysis",
+    "single-work": "work",
 }
+
+DEFAULT_CARD_FILENAME_PATTERN = "{prefix}-{platform}-{author_slug}-{title_slug}{ext}"
+DEFAULT_JSON_FILENAME_PATTERN = "{timestamp}-{platform}-{identifier}{ext}"
+_INVALID_FILENAME_CHARS = re.compile(r"[\\\\/:*?\"<>|]+")
+_SPACE_RUN = re.compile(r"\s+")
 
 
 def normalize_card_type(card_type: str) -> str:
     normalized = (card_type or "").strip().lower().replace("-", "_")
-    if normalized in CARD_TYPE_ALIASES:
-        normalized = CARD_TYPE_ALIASES[normalized]
-    if normalized in {"work", "author", "author_sample_work"}:
-        return normalized
-    return "work"
+    return "work" if normalized == "work" else "work"
 
 
 def normalize_content_kind(content_kind: Optional[str]) -> str:
@@ -75,14 +55,13 @@ def _configured_content_kind_map(storage_config: Optional[Dict[str, Any]]) -> Di
     routes = _storage_routes_cfg(storage_config)
     configured = routes.get("content_kind_card_type")
     if not isinstance(configured, dict):
-        return DEFAULT_CONTENT_KIND_CARD_TYPE
+        return dict(DEFAULT_CONTENT_KIND_CARD_TYPE)
 
     merged = dict(DEFAULT_CONTENT_KIND_CARD_TYPE)
     for key, value in configured.items():
-        k = normalize_content_kind(str(key))
-        v = normalize_card_type(str(value))
-        if k:
-            merged[k] = v
+        normalized_key = normalize_content_kind(str(key))
+        if normalized_key:
+            merged[normalized_key] = normalize_card_type(str(value))
     return merged
 
 
@@ -90,30 +69,22 @@ def _configured_card_routes(storage_config: Optional[Dict[str, Any]]) -> Dict[st
     routes = _storage_routes_cfg(storage_config)
     configured = routes.get("card_type_routes")
     if not isinstance(configured, dict):
-        return DEFAULT_CARD_TYPE_ROUTES
+        return {key: dict(value) for key, value in DEFAULT_CARD_TYPE_ROUTES.items()}
 
-    merged: Dict[str, Dict[str, Any]] = {k: dict(v) for k, v in DEFAULT_CARD_TYPE_ROUTES.items()}
+    merged = {key: dict(value) for key, value in DEFAULT_CARD_TYPE_ROUTES.items()}
     for key, value in configured.items():
         card_type = normalize_card_type(str(key))
-        if not isinstance(value, dict):
+        if card_type != "work" or not isinstance(value, dict):
             continue
-
-        prefix = value.get("prefix")
         parts = value.get("parts")
-        if not isinstance(parts, list) or not all(isinstance(x, str) and x for x in parts):
+        if not isinstance(parts, list) or not all(isinstance(item, str) and item for item in parts):
             continue
-
-        merged[card_type] = {
-            "prefix": str(prefix) if isinstance(prefix, str) and prefix else merged.get(card_type, {}).get("prefix", ""),
+        prefix = str(value.get("prefix") or merged["work"]["prefix"])
+        merged["work"] = {
+            "prefix": prefix,
             "parts": parts,
         }
     return merged
-
-
-DEFAULT_CARD_FILENAME_PATTERN = "{prefix}-{author_slug}-{title_slug}{ext}"
-DEFAULT_JSON_FILENAME_PATTERN = "{timestamp}-{platform}-{identifier}{ext}"
-_INVALID_FILENAME_CHARS = re.compile(r"[\\\\/:*?\"<>|]+")
-_SPACE_RUN = re.compile(r"\s+")
 
 
 def _sanitize_filename_token(value: Any, fallback: str = "item") -> str:
@@ -185,12 +156,8 @@ def resolve_effective_card_type(
     if not normalized_content_kind:
         return normalized_card_type
 
-    card_type_map = _configured_content_kind_map(storage_config)
-    mapped = card_type_map.get(normalized_content_kind)
-    if mapped is not None:
-        return normalize_card_type(str(mapped))
-
-    return normalized_card_type
+    mapped = _configured_content_kind_map(storage_config).get(normalized_content_kind)
+    return normalize_card_type(str(mapped)) if mapped is not None else normalized_card_type
 
 
 def render_route_parts(parts: List[str], *, context: Dict[str, str]) -> List[str]:
@@ -232,7 +199,7 @@ def build_card_output_path(
     directory = os.path.join(card_root, *rendered_parts)
     os.makedirs(directory, exist_ok=True)
 
-    default_filename = f"{prefix}-{author_slug}-{title_slug}.md"
+    default_filename = f"{prefix}-{platform}-{author_slug}-{title_slug}.md"
     filename = render_output_filename(
         pattern=resolve_card_filename_pattern(storage_config),
         context={

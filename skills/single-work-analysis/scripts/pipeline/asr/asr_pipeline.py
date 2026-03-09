@@ -2,11 +2,13 @@
 """Shared ASR pipeline helpers for runner scripts."""
 
 import json
+import re
+import threading
 import time
 import urllib.error
 import urllib.request
 from urllib.parse import urlparse, urlunparse
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from scripts.core.tikomni_common import (
     call_json_api,
@@ -83,6 +85,7 @@ def submit_u2_asr_batch_with_retry(
     file_urls: List[str],
     max_retries: int,
     backoff_ms: int,
+    progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
 ) -> Dict[str, Any]:
     retries = max(0, int(max_retries))
     base_backoff = max(0, int(backoff_ms))
@@ -110,19 +113,74 @@ def submit_u2_asr_batch_with_retry(
     final_task_id: Optional[str] = None
     final_submit_status = "failed_unknown"
 
+    def _emit_submit_progress(event: Dict[str, Any]) -> None:
+        if progress_callback is None:
+            return
+        try:
+            progress_callback(event)
+        except Exception:
+            pass
+
     for attempt in range(1, max_attempts + 1):
         wait_ms = 0 if attempt == 1 else base_backoff * (2 ** (attempt - 2))
         if wait_ms > 0:
             time.sleep(wait_ms / 1000.0)
 
-        submit_response = submit_u2_asr_batch(
-            base_url=base_url,
-            token=token,
-            timeout_ms=timeout_ms,
-            file_urls=limited_urls,
+        _emit_submit_progress(
+            {
+                "phase": "submit",
+                "state": "started",
+                "attempt": attempt,
+                "wait_ms": wait_ms,
+                "candidate_count": len(limited_urls),
+            }
         )
+
+        heartbeat_stop = threading.Event()
+
+        def _heartbeat() -> None:
+            while not heartbeat_stop.wait(5.0):
+                _emit_submit_progress(
+                    {
+                        "phase": "submit",
+                        "state": "heartbeat",
+                        "attempt": attempt,
+                        "wait_ms": wait_ms,
+                        "candidate_count": len(limited_urls),
+                    }
+                )
+
+        heartbeat_thread = threading.Thread(target=_heartbeat, daemon=True)
+        heartbeat_thread.start()
+
+        try:
+            submit_response = submit_u2_asr_batch(
+                base_url=base_url,
+                token=token,
+                timeout_ms=timeout_ms,
+                file_urls=limited_urls,
+            )
+        finally:
+            heartbeat_stop.set()
+            heartbeat_thread.join(timeout=0.2)
         task_id = extract_task_id(submit_response.get("data"))
         retriable = is_retriable_submit_failure(submit_response)
+
+        _emit_submit_progress(
+            {
+                "phase": "submit",
+                "state": "finished",
+                "attempt": attempt,
+                "wait_ms": wait_ms,
+                "candidate_count": len(limited_urls),
+                "task_id": task_id,
+                "status_code": submit_response.get("status_code"),
+                "ok": bool(submit_response.get("ok")),
+                "error_reason": submit_response.get("error_reason"),
+                "request_id": submit_response.get("request_id"),
+                "retriable": retriable,
+            }
+        )
 
         retry_chain.append(
             {
@@ -172,6 +230,7 @@ def submit_u2_asr_with_retry(
     video_url: str,
     max_retries: int,
     backoff_ms: int,
+    progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
 ) -> Dict[str, Any]:
     return submit_u2_asr_batch_with_retry(
         base_url=base_url,
@@ -180,13 +239,55 @@ def submit_u2_asr_with_retry(
         file_urls=[video_url],
         max_retries=max_retries,
         backoff_ms=backoff_ms,
+        progress_callback=progress_callback,
     )
 
 
 def clean_transcript_text(raw_text: Any) -> str:
     if raw_text is None:
         return ""
-    return str(raw_text).strip()
+    return normalize_text(raw_text)
+
+
+def _ensure_sentence_end(text: str) -> str:
+    if not text:
+        return text
+    if text[-1] in "。！？!?" or text.endswith("..."):
+        return text
+    return f"{text}。"
+
+
+def derive_asr_clean_text(asr_raw: Any, legacy_clean: Any = None) -> str:
+    base = clean_transcript_text(asr_raw) or clean_transcript_text(legacy_clean)
+    if not base:
+        return ""
+
+    denoised = re.sub(r"\b(嗯|啊|呃|额|那个|这个|然后|就是)\b", " ", base)
+    denoised = re.sub(r"(嗯+|啊+|呃+)", " ", denoised)
+    denoised = re.sub(r"(就是就是|然后然后|这个这个|那个那个)", " ", denoised)
+    denoised = re.sub(r"\s+", " ", denoised).strip()
+
+    units = [clean_transcript_text(part) for part in re.split(r"[。！？!?；;\n]+", denoised)]
+    sentences = [_ensure_sentence_end(unit) for unit in units if unit]
+    if not sentences:
+        fallback = _ensure_sentence_end(denoised)
+        return fallback if fallback else ""
+
+    paragraphs: List[str] = []
+    bucket: List[str] = []
+    for sentence in sentences:
+        bucket.append(sentence)
+        if len(bucket) >= 3:
+            paragraphs.append("\n".join(bucket))
+            bucket = []
+
+    if bucket:
+        if len(bucket) == 1 and paragraphs:
+            paragraphs[-1] = f"{paragraphs[-1]}\n{bucket[0]}"
+        else:
+            paragraphs.append("\n".join(bucket))
+
+    return "\n\n".join(paragraphs)
 
 
 def extract_u2_task_metrics(payload: Any) -> Dict[str, Any]:
@@ -612,6 +713,7 @@ def poll_u2_task_core(
     max_polls: int,
     require_batch_complete: bool = False,
     expected_total: int = 0,
+    progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
 ) -> Dict[str, Any]:
     trace = []
     last_request_id = None
@@ -665,6 +767,25 @@ def poll_u2_task_core(
                 "batch_progress": batch_progress,
             }
         )
+
+        if progress_callback is not None:
+            try:
+                progress_callback(
+                    {
+                        "attempt": attempt,
+                        "task_id": task_id,
+                        "task_status": status or "UNKNOWN",
+                        "platform_task_status": platform_status or "UNKNOWN",
+                        "pending_count": pending_count,
+                        "request_id": response.get("request_id"),
+                        "status_code": response.get("status_code"),
+                        "ok": bool(response.get("ok")),
+                        "error_reason": response.get("error_reason"),
+                        "batch_progress": batch_progress,
+                    }
+                )
+            except Exception:
+                pass
 
         if not response.get("ok"):
             if attempt < max_polls:
@@ -797,6 +918,7 @@ def run_u2_asr_candidates_with_timeout_retry(
     max_polls: int,
     timeout_retry_enabled: bool = True,
     timeout_retry_max_retries: int = 3,
+    progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
 ) -> Dict[str, Any]:
     normalized_candidates = normalize_media_candidates(candidates)
     attempts: List[Dict[str, Any]] = []
@@ -831,6 +953,7 @@ def run_u2_asr_candidates_with_timeout_retry(
             max_polls=max_polls,
             timeout_retry_enabled=timeout_retry_enabled,
             timeout_retry_max_retries=timeout_retry_max_retries,
+            progress_callback=progress_callback,
         )
         poll_result = bundle.get("poll_result", {})
         error_reason = str(poll_result.get("error_reason") or "")
@@ -871,6 +994,7 @@ def run_u2_asr_batch_with_timeout_retry(
     max_polls: int,
     timeout_retry_enabled: bool = True,
     timeout_retry_max_retries: int = 3,
+    progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
 ) -> Dict[str, Any]:
     normalized_urls = normalize_media_candidates(file_urls)
     limited_urls = normalized_urls[:U2_BATCH_SUBMIT_HARD_LIMIT]
@@ -921,6 +1045,7 @@ def run_u2_asr_batch_with_timeout_retry(
         }
 
     for round_index in range(1, max_rounds + 1):
+        submit_started_at = time.perf_counter()
         submit_bundle = submit_u2_asr_batch_with_retry(
             base_url=base_url,
             token=token,
@@ -928,12 +1053,16 @@ def run_u2_asr_batch_with_timeout_retry(
             file_urls=limited_urls,
             max_retries=submit_max_retries,
             backoff_ms=submit_backoff_ms,
+            progress_callback=progress_callback,
         )
+        submit_duration_ms = int((time.perf_counter() - submit_started_at) * 1000)
         submit_response = submit_bundle.get("submit_response", {})
         task_id = submit_bundle.get("task_id")
 
         poll_result: Dict[str, Any]
+        poll_duration_ms = 0
         if submit_response.get("ok") and task_id:
+            poll_started_at = time.perf_counter()
             poll_result = poll_u2_task_core(
                 base_url=base_url,
                 token=token,
@@ -943,7 +1072,9 @@ def run_u2_asr_batch_with_timeout_retry(
                 max_polls=max_polls,
                 require_batch_complete=True,
                 expected_total=len(limited_urls),
+                progress_callback=progress_callback,
             )
+            poll_duration_ms = int((time.perf_counter() - poll_started_at) * 1000)
         else:
             poll_result = {
                 "ok": False,
@@ -975,6 +1106,7 @@ def run_u2_asr_batch_with_timeout_retry(
                     "error_reason": submit_response.get("error_reason"),
                     "retry_chain": submit_bundle.get("retry_chain", []),
                     "file_url_count": len(limited_urls),
+                    "duration_ms": submit_duration_ms,
                 },
                 "poll": {
                     "task_id": poll_result.get("task_id") or task_id,
@@ -986,6 +1118,7 @@ def run_u2_asr_batch_with_timeout_retry(
                     "task_metrics": poll_result.get("task_metrics", {}),
                     "batch_complete": bool(poll_result.get("batch_complete")),
                     "batch_progress": poll_result.get("batch_progress", {}),
+                    "duration_ms": poll_duration_ms,
                 },
             }
         )
@@ -1071,6 +1204,8 @@ def run_u2_asr_batch_with_timeout_retry(
         "task_metrics": final_poll_result.get("task_metrics") if isinstance(final_poll_result.get("task_metrics"), dict) else extract_u2_task_metrics(raw_task_payload),
         "batch_progress": final_poll_result.get("batch_progress") if isinstance(final_poll_result.get("batch_progress"), dict) else build_u2_batch_progress(payload=raw_task_payload, expected_total=len(limited_urls)),
         "batch_complete": bool(final_poll_result.get("batch_complete")),
+        "submit_duration_ms": _safe_int((rounds[-1].get("submit") if rounds else {}).get("duration_ms")),
+        "poll_duration_ms": _safe_int((rounds[-1].get("poll") if rounds else {}).get("duration_ms")),
     }
 
 
@@ -1086,6 +1221,7 @@ def run_u2_asr_with_timeout_retry(
     max_polls: int,
     timeout_retry_enabled: bool = True,
     timeout_retry_max_retries: int = 3,
+    progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
 ) -> Dict[str, Any]:
     video_url = normalize_media_url(video_url)
     conservative_retries = max(0, min(3, int(timeout_retry_max_retries)))
@@ -1103,6 +1239,7 @@ def run_u2_asr_with_timeout_retry(
     timeout_retry_result = "not_triggered"
 
     for round_index in range(1, max_rounds + 1):
+        submit_started_at = time.perf_counter()
         submit_bundle = submit_u2_asr_with_retry(
             base_url=base_url,
             token=token,
@@ -1110,12 +1247,16 @@ def run_u2_asr_with_timeout_retry(
             video_url=video_url,
             max_retries=submit_max_retries,
             backoff_ms=submit_backoff_ms,
+            progress_callback=progress_callback,
         )
+        submit_duration_ms = int((time.perf_counter() - submit_started_at) * 1000)
         submit_response = submit_bundle.get("submit_response", {})
         task_id = submit_bundle.get("task_id")
 
         poll_result: Dict[str, Any]
+        poll_duration_ms = 0
         if submit_response.get("ok") and task_id:
+            poll_started_at = time.perf_counter()
             poll_result = poll_u2_task_core(
                 base_url=base_url,
                 token=token,
@@ -1123,7 +1264,9 @@ def run_u2_asr_with_timeout_retry(
                 task_id=str(task_id),
                 poll_interval_sec=poll_interval_sec,
                 max_polls=max_polls,
+                progress_callback=progress_callback,
             )
+            poll_duration_ms = int((time.perf_counter() - poll_started_at) * 1000)
         else:
             poll_result = {
                 "ok": False,
@@ -1145,6 +1288,7 @@ def run_u2_asr_with_timeout_retry(
                     "ok": submit_response.get("ok"),
                     "error_reason": submit_response.get("error_reason"),
                     "retry_chain": submit_bundle.get("retry_chain", []),
+                    "duration_ms": submit_duration_ms,
                 },
                 "poll": {
                     "task_id": poll_result.get("task_id") or task_id,
@@ -1153,6 +1297,7 @@ def run_u2_asr_with_timeout_retry(
                     "ok": poll_result.get("ok"),
                     "error_reason": poll_result.get("error_reason"),
                     "attempts": len(poll_result.get("trace", [])),
+                    "duration_ms": poll_duration_ms,
                 },
             }
         )
@@ -1186,4 +1331,6 @@ def run_u2_asr_with_timeout_retry(
             "triggered": timeout_retry_triggered,
             "result": timeout_retry_result,
         },
+        "submit_duration_ms": _safe_int((rounds[-1].get("submit") if rounds else {}).get("duration_ms")),
+        "poll_duration_ms": _safe_int((rounds[-1].get("poll") if rounds else {}).get("duration_ms")),
     }

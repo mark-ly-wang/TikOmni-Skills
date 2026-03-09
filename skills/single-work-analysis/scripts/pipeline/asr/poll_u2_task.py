@@ -17,7 +17,7 @@ from scripts.core.bootstrap_env import bootstrap_for_direct_run
 bootstrap_for_direct_run(__file__, __package__)
 
 import argparse
-from typing import Any, Dict
+from typing import Any, Callable, Dict, Optional
 
 from scripts.pipeline.asr.asr_pipeline import poll_u2_task_core
 from scripts.core.tikomni_common import extract_error_reason, resolve_runtime, write_json_stdout
@@ -31,6 +31,7 @@ def poll_u2_task(
     task_id: str,
     poll_interval_sec: float,
     max_polls: int,
+    progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
 ) -> Dict[str, Any]:
     return poll_u2_task_core(
         base_url=base_url,
@@ -39,6 +40,7 @@ def poll_u2_task(
         task_id=task_id,
         poll_interval_sec=poll_interval_sec,
         max_polls=max_polls,
+        progress_callback=progress_callback,
     )
 
 

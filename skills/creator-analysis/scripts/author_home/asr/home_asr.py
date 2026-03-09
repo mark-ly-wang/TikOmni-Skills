@@ -363,17 +363,68 @@ def _iter_xhs_interface_text_candidates(work: Dict[str, Any]) -> List[Tuple[str,
     return deduped
 
 
-def _resolve_xhs_subtitle(work: Dict[str, Any], timeout_ms: int) -> Tuple[str, str, List[str], str]:
+def _classify_xhs_subtitle_failure(*, work: Dict[str, Any], interface_candidates: List[Tuple[str, str]], subtitle_urls: List[str], invalid_reason: str) -> str:
+    raw_ref = work.get("raw_ref") if isinstance(work.get("raw_ref"), dict) else {}
+    has_subtitle_signal = any(
+        normalize_text(raw_ref.get(key))
+        for key in (
+            "subtitle_inline",
+            "subtitle_text",
+            "subtitle_raw",
+            "caption_text",
+            "transcript_text",
+        )
+    )
+    if interface_candidates:
+        return "subtitle_content_invalid"
+    if subtitle_urls:
+        return "subtitle_url_unavailable"
+    if has_subtitle_signal:
+        return "subtitle_structure_unrecognized"
+    if invalid_reason == "subtitle_empty":
+        return "subtitle_missing"
+    return "subtitle_content_invalid"
+
+
+def _resolve_xhs_subtitle(work: Dict[str, Any], timeout_ms: int) -> Dict[str, Any]:
     raw_ref = work.get("raw_ref") if isinstance(work.get("raw_ref"), dict) else {}
     subtitle_urls = raw_ref.get("subtitle_urls") if isinstance(raw_ref.get("subtitle_urls"), list) else []
     subtitle_urls = [normalize_text(item) for item in subtitle_urls if normalize_text(item)]
+    interface_candidates = _iter_xhs_interface_text_candidates(work)
+    invalid_reasons: List[Dict[str, str]] = []
 
-    for source, candidate in _iter_xhs_interface_text_candidates(work):
-        if _invalid_subtitle_reason(candidate) is None:
-            return candidate, "interface", subtitle_urls, source
+    for source, candidate in interface_candidates:
+        invalid_reason = _invalid_subtitle_reason(candidate)
+        if invalid_reason is None:
+            return {
+                "text": candidate,
+                "subtitle_source": "interface",
+                "subtitle_field": source,
+                "subtitle_urls": subtitle_urls,
+                "invalid_reasons": invalid_reasons,
+                "failure_category": "",
+            }
+        invalid_reasons.append({"field": source, "reason": invalid_reason})
 
     fetched = _fetch_subtitle_text(subtitle_urls, timeout_ms=timeout_ms)
-    return _clean_text(fetched), "url", subtitle_urls, "subtitle_url"
+    cleaned = _clean_text(fetched)
+    fetched_invalid = _invalid_subtitle_reason(cleaned)
+    if fetched_invalid is not None and subtitle_urls:
+        invalid_reasons.append({"field": "subtitle_url", "reason": fetched_invalid})
+
+    return {
+        "text": cleaned,
+        "subtitle_source": "url" if subtitle_urls else "missing",
+        "subtitle_field": "subtitle_url" if subtitle_urls else "",
+        "subtitle_urls": subtitle_urls,
+        "invalid_reasons": invalid_reasons,
+        "failure_category": _classify_xhs_subtitle_failure(
+            work=work,
+            interface_candidates=interface_candidates,
+            subtitle_urls=subtitle_urls,
+            invalid_reason=fetched_invalid or "subtitle_empty",
+        ),
+    }
 
 
 def _dedupe_works_by_platform_id(works: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], int]:
@@ -734,7 +785,11 @@ def enrich_author_home_asr(
                 )
                 continue
 
-            subtitle_text, subtitle_source, subtitle_urls, subtitle_field = _resolve_xhs_subtitle(work, timeout_ms=timeout_ms)
+            subtitle_probe = _resolve_xhs_subtitle(work, timeout_ms=timeout_ms)
+            subtitle_text = normalize_text(subtitle_probe.get("text"))
+            subtitle_source = normalize_text(subtitle_probe.get("subtitle_source"))
+            subtitle_urls = subtitle_probe.get("subtitle_urls") if isinstance(subtitle_probe.get("subtitle_urls"), list) else []
+            subtitle_field = normalize_text(subtitle_probe.get("subtitle_field"))
             subtitle_invalid = _invalid_subtitle_reason(subtitle_text)
             if subtitle_invalid is None:
                 work.update(
@@ -761,6 +816,7 @@ def enrich_author_home_asr(
                         "subtitle_source": subtitle_source,
                         "subtitle_field": subtitle_field,
                         "subtitle_url_count": len(subtitle_urls),
+                        "failure_category": "",
                     }
                 )
             else:
@@ -774,6 +830,8 @@ def enrich_author_home_asr(
                         "subtitle_source": subtitle_source,
                         "subtitle_field": subtitle_field,
                         "subtitle_url_count": len(subtitle_urls),
+                        "failure_category": subtitle_probe.get("failure_category"),
+                        "invalid_reasons": subtitle_probe.get("invalid_reasons"),
                     }
                 )
 

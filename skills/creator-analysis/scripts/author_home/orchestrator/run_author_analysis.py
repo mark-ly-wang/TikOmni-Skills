@@ -127,6 +127,22 @@ def _build_card_stage_status(*, expected_count: int, results: Dict[str, Any], fa
     return _stage_status(status="full", ok_count=ok_count, failed_count=0, degraded_count=0, reason_codes=[])
 
 
+def _build_persist_stage_status(persist_result: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(persist_result, dict) or not persist_result.get("enabled", True):
+        return _stage_status(status="skipped", ok_count=0, failed_count=0, degraded_count=0, reason_codes=["persist_disabled"])
+    if persist_result.get("ok"):
+        return _stage_status(status="full", ok_count=1, failed_count=0, degraded_count=0, reason_codes=[])
+    error_reason = str(persist_result.get("error") or persist_result.get("failure_reason") or "persist_failed")
+    return _stage_status(
+        status="failed",
+        ok_count=0,
+        failed_count=1,
+        degraded_count=0,
+        reason_codes=[error_reason.split(":", 1)[0]],
+        failure_kind="configuration" if error_reason.startswith("resolve_storage_paths_failed:") else "runtime",
+    )
+
+
 def _build_overall_status(stage_status: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
     ordered = [
         "fetch",
@@ -176,6 +192,7 @@ def _unsupported(platform: str) -> Dict[str, Any]:
             "sampled_explanations": _stage_status(status="skipped", ok_count=0, failed_count=0, degraded_count=0, reason_codes=["unsupported_platform"]),
             "author_analysis": _stage_status(status="skipped", ok_count=0, failed_count=0, degraded_count=0, reason_codes=["unsupported_platform"]),
             "author_card": _stage_status(status="skipped", ok_count=0, failed_count=0, degraded_count=0, reason_codes=["unsupported_platform"]),
+            "persist": _stage_status(status="skipped", ok_count=0, failed_count=0, degraded_count=0, reason_codes=["unsupported_platform"]),
             "overall": _stage_status(status="failed", ok_count=0, failed_count=1, degraded_count=0, reason_codes=["unsupported_platform"]),
         },
         "quality_tier": "failed",
@@ -247,14 +264,29 @@ def _build_persist_payload(*, result: Dict[str, Any], status: str, written_at: d
     }
 
 
-def _persist_output_artifact(*, result: Dict[str, Any], input_value: str, storage_config: Dict[str, Any], persist_output: bool) -> Dict[str, Any]:
+def _persist_output_artifact(*, result: Dict[str, Any], input_value: str, storage_config: Dict[str, Any], persist_output: bool, card_root: Optional[str]) -> Dict[str, Any]:
     if not persist_output:
         return {"enabled": False, "skipped": True, "reason": "disabled_by_flag"}
 
+    diagnostics = {
+        "effective_card_root": str(card_root or ""),
+        "results_root": "",
+        "errors_root": "",
+    }
     try:
         paths = resolve_storage_paths(storage_config or {})
     except Exception as error:
-        return {"enabled": True, "ok": False, "error": f"resolve_storage_paths_failed:{error}"}
+        return {
+            "enabled": True,
+            "ok": False,
+            "error": f"resolve_storage_paths_failed:{error}",
+            "failure_reason": f"resolve_storage_paths_failed:{error}",
+            "paths": diagnostics,
+        }
+
+    diagnostics["effective_card_root"] = str(card_root or paths.get("root_dir") or "")
+    diagnostics["results_root"] = str(paths.get("results_root") or "")
+    diagnostics["errors_root"] = str(paths.get("errors_root") or "")
 
     now = datetime.now()
     date_key = now.strftime("%Y%m%d")
@@ -269,7 +301,17 @@ def _persist_output_artifact(*, result: Dict[str, Any], input_value: str, storag
     else:
         target_dir = Path(paths.get("results_root", "")) / date_key
 
-    target_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        target_dir.mkdir(parents=True, exist_ok=True)
+    except Exception as error:
+        return {
+            "enabled": True,
+            "ok": False,
+            "error": f"persist_target_dir_failed:{type(error).__name__}:{error}",
+            "failure_reason": f"persist_target_dir_failed:{type(error).__name__}:{error}",
+            "paths": diagnostics,
+            "target_dir": str(target_dir),
+        }
     file_name = render_output_filename(
         pattern=resolve_json_filename_pattern(storage_config),
         context={
@@ -293,12 +335,23 @@ def _persist_output_artifact(*, result: Dict[str, Any], input_value: str, storag
         written_at=now,
         identifier=identifier,
     )
-    file_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        file_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    except Exception as error:
+        return {
+            "enabled": True,
+            "ok": False,
+            "error": f"persist_write_failed:{type(error).__name__}:{error}",
+            "failure_reason": f"persist_write_failed:{type(error).__name__}:{error}",
+            "paths": diagnostics,
+            "path": str(file_path),
+        }
     return {
         "enabled": True,
         "ok": True,
         "status": status,
         "path": str(file_path),
+        "paths": diagnostics,
     }
 
 
@@ -757,7 +810,10 @@ def run_author_home_analysis(
         input_value=input_value,
         storage_config=storage_config or {},
         persist_output=bool(persist_output),
+        card_root=card_root,
     )
+    stage_status["persist"] = _build_persist_stage_status(result.get("output_persist") if isinstance(result.get("output_persist"), dict) else {})
+    result["stage_status"] = stage_status
     if progress is not None:
         final_event = progress.failed if result.get("error_reason") else progress.done
         final_event(

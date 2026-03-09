@@ -8,7 +8,7 @@ from urllib.parse import parse_qs, urlparse
 
 from scripts.core.extract_pipeline import build_api_trace
 from scripts.core.progress_report import ProgressReporter
-from scripts.core.tikomni_common import call_json_api, deep_find_first
+from scripts.core.tikomni_common import call_json_api, deep_find_all, deep_find_first
 
 
 def _to_text(value: Any) -> str:
@@ -140,6 +140,30 @@ def _pick_request_id(responses: List[Optional[Dict[str, Any]]], trace: Optional[
     return None
 
 
+def _extract_first_url(value: Any) -> str:
+    if isinstance(value, str):
+        text = value.strip()
+        return text if text.startswith("http://") or text.startswith("https://") else ""
+    if isinstance(value, list):
+        for item in value:
+            url = _extract_first_url(item)
+            if url:
+                return url
+        return ""
+    if isinstance(value, dict):
+        for key in ("url_list", "url", "src", "avatar_url", "cover_url", "image", "images", "default"):
+            if key in value:
+                url = _extract_first_url(value.get(key))
+                if url:
+                    return url
+        for nested in value.values():
+            url = _extract_first_url(nested)
+            if url:
+                return url
+        return ""
+    return ""
+
+
 def _build_field_completeness(fields: Dict[str, bool], *, core_keys: List[str]) -> Dict[str, Any]:
     filled_count = sum(1 for value in fields.values() if value)
     missing_core = [key for key in core_keys if not fields.get(key)]
@@ -155,31 +179,149 @@ def _build_field_completeness(fields: Dict[str, bool], *, core_keys: List[str]) 
 
 def _xhs_profile_field_completeness(payload: Any, resolved_author_id: str) -> Dict[str, Any]:
     fields = {
-        "user_id": bool(_pick_text(payload, ["user_id", "userid", "uid", "id"]) or resolved_author_id),
+        "platform_author_id": bool(_pick_text(payload, ["user_id", "userid", "uid", "id"]) or resolved_author_id),
         "nickname": bool(_pick_text(payload, ["nickname", "name"])),
-        "avatar": bool(_pick_text(payload, ["image", "avatar", "avatar_url"])),
-        "fans": _pick_int(payload, ["fans", "fans_count", "follower_count"], default=0) > 0,
+        "avatar_url": bool(_extract_first_url(_first_url_candidate(payload, ["image", "avatar", "avatar_url", "images"]))),
+        "fans_count": _pick_int(payload, ["fans", "fans_count", "follower_count"], default=0) > 0,
         "works_count": _pick_int(payload, ["notes", "note_count", "works_count"], default=0) > 0,
     }
-    return _build_field_completeness(fields, core_keys=["user_id", "nickname"])
+    return _build_field_completeness(fields, core_keys=["platform_author_id", "nickname"])
+
+
+def _first_url_candidate(payload: Any, keys: List[str]) -> Any:
+    for key in keys:
+        for value in deep_find_all(payload, [key]):
+            url = _extract_first_url(value)
+            if url:
+                return value
+    return ""
+
+
+def _pick_first_mapping(items: List[Any]) -> Dict[str, Any]:
+    for item in items:
+        if isinstance(item, dict):
+            return item
+    return {}
 
 
 def _xhs_posts_field_completeness(payload: Any) -> Dict[str, Any]:
     page_items = _pick_list(payload, ["notes", "note_list", "noteList", "items", "list"])
+    first_item = _pick_first_mapping(page_items)
     has_more_flag = _pick_int(payload, ["has_more", "hasMore"], default=-1) >= 0
     cursor_hit = bool(_pick_text(payload, ["cursor", "next_cursor", "last_cursor", "last_note_id"]))
+    cover_hit = bool(_extract_first_url(_first_url_candidate(first_item, ["cover", "cover_url", "cover_image", "image", "image_url"])))
+    share_or_source = bool(_pick_text(first_item, ["share_url", "share_link", "url", "note_url"])) or bool(_pick_text(first_item, ["note_id", "id", "item_id"]))
+    interaction_values = [
+        _pick_int(first_item, ["liked_count", "like_count", "digg_count"], default=-1),
+        _pick_int(first_item, ["comment_count"], default=-1),
+        _pick_int(first_item, ["collected_count", "collect_count"], default=-1),
+        _pick_int(first_item, ["share_count"], default=-1),
+        _pick_int(first_item, ["view_count", "play_count"], default=-1),
+    ]
     fields = {
         "items": len(page_items) > 0,
-        "note_id": bool(_pick_text(payload, ["note_id", "id", "item_id"])),
+        "platform_work_id": bool(_pick_text(first_item, ["note_id", "id", "item_id"])),
+        "title_or_caption": bool(_pick_text(first_item, ["title", "display_title", "desc", "content"])),
+        "published_date": bool(_pick_text(first_item, ["publish_time", "time", "create_time"])),
+        "base_link_fields": cover_hit or share_or_source,
+        "interaction_fields": any(value >= 0 for value in interaction_values),
         "cursor": cursor_hit,
         "has_more_flag": has_more_flag,
-        "response_shape": len(page_items) > 0 or bool(_pick_text(payload, ["note_id", "id", "item_id"])) or cursor_hit or has_more_flag,
+        "response_shape": len(page_items) > 0 or cursor_hit or has_more_flag,
     }
-    return _build_field_completeness(fields, core_keys=["response_shape"])
+    return _build_field_completeness(fields, core_keys=["items", "platform_work_id", "title_or_caption", "published_date"])
 
 
-def _xhs_route_should_accept(response: Dict[str, Any], completeness: Dict[str, Any]) -> bool:
-    return bool(response.get("ok") and completeness.get("core_ready"))
+def _xhs_route_failure_reason(response: Dict[str, Any]) -> str:
+    if response.get("timeout_retry_exhausted"):
+        return "primary_timeout_retry_exhausted"
+    if response.get("error_reason"):
+        return "primary_non_timeout_failure"
+    return "primary_unknown_failure"
+
+
+def _xhs_profile_accept_decision(response: Dict[str, Any], completeness: Dict[str, Any]) -> Dict[str, Any]:
+    if not response.get("ok"):
+        return {
+            "accepted": False,
+            "accept_reason": "response_not_ok",
+            "fallback_reason": _xhs_route_failure_reason(response),
+        }
+
+    missing_core = list(completeness.get("missing_core") or [])
+    if missing_core:
+        return {
+            "accepted": False,
+            "accept_reason": "profile_missing_core_fields",
+            "fallback_reason": f"profile_missing_core:{','.join(missing_core)}",
+        }
+
+    fields = completeness.get("fields") if isinstance(completeness.get("fields"), dict) else {}
+    optional_missing = [
+        field_name
+        for field_name in ("avatar_url", "fans_count", "works_count")
+        if not fields.get(field_name)
+    ]
+    accept_reason = "profile_core_fields_ready"
+    if optional_missing:
+        accept_reason = f"profile_core_fields_ready_optional_missing:{','.join(optional_missing)}"
+    return {
+        "accepted": True,
+        "accept_reason": accept_reason,
+        "fallback_reason": "",
+    }
+
+
+def _xhs_posts_accept_decision(response: Dict[str, Any], completeness: Dict[str, Any]) -> Dict[str, Any]:
+    if not response.get("ok"):
+        return {
+            "accepted": False,
+            "accept_reason": "response_not_ok",
+            "fallback_reason": _xhs_route_failure_reason(response),
+        }
+
+    missing_core = list(completeness.get("missing_core") or [])
+    if missing_core:
+        return {
+            "accepted": False,
+            "accept_reason": "posts_missing_core_fields",
+            "fallback_reason": f"posts_missing_core:{','.join(missing_core)}",
+        }
+
+    fields = completeness.get("fields") if isinstance(completeness.get("fields"), dict) else {}
+    if not fields.get("base_link_fields"):
+        return {
+            "accepted": False,
+            "accept_reason": "posts_missing_base_link_fields",
+            "fallback_reason": "posts_missing_base_link_fields",
+        }
+    if not fields.get("interaction_fields"):
+        return {
+            "accepted": False,
+            "accept_reason": "posts_missing_interaction_fields",
+            "fallback_reason": "posts_missing_interaction_fields",
+        }
+    return {
+        "accepted": True,
+        "accept_reason": "posts_contract_fields_ready",
+        "fallback_reason": "",
+    }
+
+
+def _xhs_route_plan(kind: str) -> List[Tuple[str, str, str]]:
+    if kind == "profile":
+        return [
+            ("xhs.profile.app_v2", "/api/u1/v1/xiaohongshu/app_v2/get_user_info", "app_v2"),
+            ("xhs.profile.app", "/api/u1/v1/xiaohongshu/app/get_user_info", "app"),
+            ("xhs.profile.web_v2", "/api/u1/v1/xiaohongshu/web_v2/fetch_user_info_app", "web_v2"),
+        ]
+    if kind == "posts":
+        return [
+            ("xhs.posts.app_v2", "/api/u1/v1/xiaohongshu/app_v2/get_user_posted_notes", "app_v2"),
+            ("xhs.posts.app", "/api/u1/v1/xiaohongshu/app/get_user_notes", "app"),
+            ("xhs.posts.web_v2", "/api/u1/v1/xiaohongshu/web_v2/fetch_home_notes_app", "web_v2"),
+        ]
+    raise ValueError(f"unsupported_xhs_route_kind:{kind}")
 
 
 def _call_xhs_route(
@@ -459,13 +601,10 @@ def collect_xhs_author_home_raw(
         if not xsec_token:
             xsec_token = _pick_text(data, ["xsec_token", "xsecToken"])
 
-    profile_routes = [
-        ("xhs.profile.primary", "/api/u1/v1/xiaohongshu/app_v2/get_user_info", "app_v2_primary"),
-        ("xhs.profile.secondary", "/api/u1/v1/xiaohongshu/web_v2/fetch_user_info_app", "web_v2_secondary"),
-        ("xhs.profile.fallback", "/api/u1/v1/xiaohongshu/app/get_user_info", "app_v1_fallback"),
-    ]
+    profile_routes = _xhs_route_plan("profile")
     profile_resp: Dict[str, Any] = {}
     profile_reason: Optional[str] = None
+    profile_attempts: List[Dict[str, Any]] = []
     for step_name, path, route_label in profile_routes:
         profile_resp = _call_xhs_route(
             base_url=base_url,
@@ -477,6 +616,18 @@ def collect_xhs_author_home_raw(
             fallback_reason=profile_reason,
             completeness_builder=lambda data, resolved_author_id=user_id: _xhs_profile_field_completeness(data, resolved_author_id),
         )
+        profile_decision = _xhs_profile_accept_decision(profile_resp, profile_resp.get("_field_completeness") or {})
+        profile_attempts.append(
+            {
+                "route_label": route_label,
+                "endpoint": path,
+                "accepted": bool(profile_decision.get("accepted")),
+                "accept_reason": profile_decision.get("accept_reason"),
+                "fallback_reason": profile_decision.get("fallback_reason"),
+                "field_completeness": profile_resp.get("_field_completeness"),
+                "request_id": profile_resp.get("request_id"),
+            }
+        )
         trace.append(
             build_api_trace(
                 step=step_name,
@@ -485,17 +636,17 @@ def collect_xhs_author_home_raw(
                 extra={
                     "route_label": route_label,
                     "field_completeness": profile_resp.get("_field_completeness"),
+                    "accept_reason": profile_decision.get("accept_reason"),
+                    "route_accepted": bool(profile_decision.get("accepted")),
                 },
             )
         )
         request_id_candidates.append(profile_resp)
-        if _xhs_route_should_accept(profile_resp, profile_resp.get("_field_completeness") or {}):
+        if profile_decision.get("accepted"):
+            profile_resp["_accept_reason"] = profile_decision.get("accept_reason")
             break
-        if profile_resp.get("ok"):
-            profile_resp["fallback_trigger_reason"] = "field_completeness_below_threshold"
-            profile_reason = "field_completeness_below_threshold"
-        else:
-            profile_reason = "primary_timeout_retry_exhausted" if profile_resp.get("timeout_retry_exhausted") else "primary_non_timeout_failure"
+        profile_reason = str(profile_decision.get("fallback_reason") or "field_completeness_below_threshold")
+        profile_resp["fallback_trigger_reason"] = profile_reason
 
     trace.append(
         {
@@ -503,6 +654,9 @@ def collect_xhs_author_home_raw(
             "chosen_route": profile_resp.get("_route_label"),
             "request_id": profile_resp.get("request_id"),
             "field_completeness": profile_resp.get("_field_completeness"),
+            "accept_reason": profile_resp.get("_accept_reason"),
+            "fallback_reason": profile_reason,
+            "attempted_routes": profile_attempts,
         }
     )
 
@@ -521,13 +675,10 @@ def collect_xhs_author_home_raw(
                 message="xiaohongshu pagination page requested",
                 data={"page": page, "cursor_in": cursor},
             )
-        posts_routes = [
-            ("xhs.posts.primary", "/api/u1/v1/xiaohongshu/app_v2/get_user_posted_notes", "app_v2_primary"),
-            ("xhs.posts.secondary", "/api/u1/v1/xiaohongshu/web_v2/fetch_home_notes_app", "web_v2_secondary"),
-            ("xhs.posts.fallback", "/api/u1/v1/xiaohongshu/app/get_user_notes", "app_v1_fallback"),
-        ]
+        posts_routes = _xhs_route_plan("posts")
         posts_resp: Dict[str, Any] = {}
         posts_reason: Optional[str] = None
+        posts_attempts: List[Dict[str, Any]] = []
         for step_name, path, route_label in posts_routes:
             posts_resp = _call_xhs_route(
                 base_url=base_url,
@@ -545,6 +696,18 @@ def collect_xhs_author_home_raw(
                 fallback_reason=posts_reason,
                 completeness_builder=_xhs_posts_field_completeness,
             )
+            posts_decision = _xhs_posts_accept_decision(posts_resp, posts_resp.get("_field_completeness") or {})
+            posts_attempts.append(
+                {
+                    "route_label": route_label,
+                    "endpoint": path,
+                    "accepted": bool(posts_decision.get("accepted")),
+                    "accept_reason": posts_decision.get("accept_reason"),
+                    "fallback_reason": posts_decision.get("fallback_reason"),
+                    "field_completeness": posts_resp.get("_field_completeness"),
+                    "request_id": posts_resp.get("request_id"),
+                }
+            )
             trace.append(
                 build_api_trace(
                     step=step_name,
@@ -555,17 +718,17 @@ def collect_xhs_author_home_raw(
                         "cursor": cursor,
                         "route_label": route_label,
                         "field_completeness": posts_resp.get("_field_completeness"),
+                        "accept_reason": posts_decision.get("accept_reason"),
+                        "route_accepted": bool(posts_decision.get("accepted")),
                     },
                 )
             )
             request_id_candidates.append(posts_resp)
-            if _xhs_route_should_accept(posts_resp, posts_resp.get("_field_completeness") or {}):
+            if posts_decision.get("accepted"):
+                posts_resp["_accept_reason"] = posts_decision.get("accept_reason")
                 break
-            if posts_resp.get("ok"):
-                posts_resp["fallback_trigger_reason"] = "field_completeness_below_threshold"
-                posts_reason = "field_completeness_below_threshold"
-            else:
-                posts_reason = "primary_timeout_retry_exhausted" if posts_resp.get("timeout_retry_exhausted") else "primary_non_timeout_failure"
+            posts_reason = str(posts_decision.get("fallback_reason") or "field_completeness_below_threshold")
+            posts_resp["fallback_trigger_reason"] = posts_reason
 
         trace.append(
             {
@@ -575,6 +738,9 @@ def collect_xhs_author_home_raw(
                 "chosen_route": posts_resp.get("_route_label"),
                 "request_id": posts_resp.get("request_id"),
                 "field_completeness": posts_resp.get("_field_completeness"),
+                "accept_reason": posts_resp.get("_accept_reason"),
+                "fallback_reason": posts_reason,
+                "attempted_routes": posts_attempts,
             }
         )
 

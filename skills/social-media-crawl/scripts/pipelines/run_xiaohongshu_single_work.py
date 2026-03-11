@@ -27,7 +27,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from scripts.core.asr_pipeline import derive_asr_clean_text, run_u2_asr_candidates_with_timeout_retry
+from scripts.core.asr_pipeline import derive_asr_clean_text, run_u3_then_u2_asr_candidates_with_timeout_retry
 from scripts.core.config_loader import config_get, load_tikomni_config
 from scripts.core.progress_report import ProgressReporter, build_progress_reporter
 from scripts.core.extract_pipeline import build_api_trace, resolve_trace_error_context
@@ -576,6 +576,14 @@ def _extract_xhs_metadata(
         ["noteList", "publishTime"],
         ["noteList", "time"],
         ["noteList", "timestamp"],
+        ["data", "data", "create_time_sec"],
+        ["data", "data", "create_time"],
+        ["data", "data", "createTime"],
+        ["data", "data", "publish_time_sec"],
+        ["data", "data", "publish_time"],
+        ["data", "data", "publishTime"],
+        ["data", "data", "time"],
+        ["data", "data", "timestamp"],
     ]
     create_time_sec, create_time_source = _pick_int_with_source_from_paths(
         payload,
@@ -930,12 +938,39 @@ def _fetch_note_info(
 
 def _extract_subtitle_urls(payload: Any) -> List[str]:
     urls: List[str] = []
+    preferred_language_keys = ("source", "zh-CN", "zh_CN", "zh-Hans", "zh", "zh-Hant", "zh-TW", "zh-HK")
+
+    def _append_url(value: Any) -> None:
+        if isinstance(value, str):
+            text = value.strip()
+            if text.startswith("http://") or text.startswith("https://"):
+                urls.append(text)
+
+    def _walk_subtitle_container(node: Any) -> None:
+        if isinstance(node, dict):
+            for key in preferred_language_keys:
+                if key in node and isinstance(node.get(key), (dict, list)):
+                    _walk_subtitle_container(node.get(key))
+            _append_url(node.get("url"))
+            _append_url(node.get("src"))
+            for key, value in node.items():
+                if key in preferred_language_keys:
+                    continue
+                if isinstance(value, (dict, list)):
+                    _walk_subtitle_container(value)
+        elif isinstance(node, list):
+            for item in node:
+                if isinstance(item, (dict, list)):
+                    _walk_subtitle_container(item)
+                else:
+                    _append_url(item)
+
     for key in ["subtitle_url", "subtitleUrl", "srt_url", "srtUrl", "vtt_url", "vttUrl"]:
         for value in deep_find_all(payload, [key]):
-            if isinstance(value, str):
-                text = value.strip()
-                if text.startswith("http://") or text.startswith("https://"):
-                    urls.append(text)
+            _append_url(value)
+
+    for container in deep_find_all(payload, ["subtitles", "subtitle_list", "subtitleList"]):
+        _walk_subtitle_container(container)
 
     unique: List[str] = []
     seen = set()
@@ -1672,8 +1707,9 @@ def run_xiaohongshu_extract(
 
     subtitle_inline_text = "" if force_u2_fallback else _extract_subtitle_inline_text(effective_payload)
     subtitle_urls = [] if force_u2_fallback else _extract_subtitle_urls(effective_payload)
-    subtitle_url_text = "" if force_u2_fallback else _fetch_subtitle_text(subtitle_urls, runtime["timeout_ms"])
-    subtitle_text = subtitle_inline_text or subtitle_url_text
+    subtitle_text = subtitle_inline_text
+    if not subtitle_text and subtitle_urls:
+        subtitle_text = _fetch_subtitle_text(subtitle_urls, runtime["timeout_ms"])
 
     app_video_candidates = _extract_video_candidates(note_response.get("data"))
     app_image_candidates, image_quality_strategy = _extract_image_candidates_with_strategy(note_response.get("data"))
@@ -1869,11 +1905,11 @@ def run_xiaohongshu_extract(
         if progress is not None:
             progress.progress(
                 stage="note.u2",
-                message="starting xiaohongshu u2 flow",
+                message="starting xiaohongshu u3->u2 flow",
                 data={"candidate_count": len(u2_candidates), "timeout_ms": u2_timeout_ms},
             )
         u2_started_at = time.perf_counter()
-        u2_bundle = run_u2_asr_candidates_with_timeout_retry(
+        u2_bundle = run_u3_then_u2_asr_candidates_with_timeout_retry(
             base_url=runtime["base_url"],
             token=runtime["token"],
             timeout_ms=u2_timeout_ms,
@@ -1914,16 +1950,18 @@ def run_xiaohongshu_extract(
 
         trace.append(
             {
-                "step": "u2_asr_timeout_retry",
+                "step": "u3_then_u2_asr",
                 "endpoint": "/api/u2/v1/services/audio/asr/transcription + /api/u2/v1/tasks/{task_id}",
                 "selected_video_url": selected_video_url,
                 "selected_video_candidates": u2_candidates,
+                "chosen_public_url": u2_bundle.get("chosen_public_url"),
                 "candidate_attempts": u2_bundle.get("candidate_attempts", []),
                 "submit_retries_config": {
                     "u2_submit_max_retries": max(0, int(u2_submit_max_retries)),
                     "u2_submit_backoff_ms": max(0, int(u2_submit_backoff_ms)),
                 },
                 "timeout_retry": u2_bundle.get("timeout_retry", {}),
+                "u3_bridge": u2_bundle.get("u3_bridge", {}),
                 "u3_fallback": u2_bundle.get("u3_fallback", {}),
                 "rounds": u2_bundle.get("rounds", []),
                 "final_task_id": poll_result.get("task_id") or task_id,
@@ -1934,7 +1972,7 @@ def run_xiaohongshu_extract(
         if progress is not None:
             (progress.done if poll_result.get("ok") else progress.failed)(
                 stage="note.u2",
-                message="xiaohongshu u2 flow finished" if poll_result.get("ok") else "xiaohongshu u2 flow failed",
+                message="xiaohongshu u3->u2 flow finished" if poll_result.get("ok") else "xiaohongshu u3->u2 flow failed",
                 data={
                     "task_id": poll_result.get("task_id") or task_id,
                     "task_status": poll_result.get("task_status"),

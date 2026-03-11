@@ -217,7 +217,8 @@ def _extract_xhs_subtitle_inline(item: Dict[str, Any]) -> str:
 
 
 def _extract_xhs_subtitle_urls(item: Dict[str, Any]) -> List[str]:
-    return _pick_http_urls(
+    preferred_language_keys = ("source", "zh-CN", "zh_CN", "zh-Hans", "zh", "zh-Hant", "zh-TW", "zh-HK")
+    urls = _pick_http_urls(
         item,
         [
             "subtitle_url",
@@ -232,6 +233,42 @@ def _extract_xhs_subtitle_urls(item: Dict[str, Any]) -> List[str]:
             "subtitleUrls",
         ],
     )
+
+    def _append(value: Any) -> None:
+        text = _t(value)
+        if text.startswith("http://") or text.startswith("https://"):
+            urls.append(text)
+
+    def _walk(node: Any) -> None:
+        if isinstance(node, dict):
+            for key in preferred_language_keys:
+                if key in node and isinstance(node.get(key), (dict, list)):
+                    _walk(node.get(key))
+            _append(node.get("url"))
+            _append(node.get("src"))
+            for key, value in node.items():
+                if key in preferred_language_keys:
+                    continue
+                if isinstance(value, (dict, list)):
+                    _walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                if isinstance(item, (dict, list)):
+                    _walk(item)
+                else:
+                    _append(item)
+
+    for container in deep_find_all(item, ["subtitles", "subtitle_list", "subtitleList"]):
+        _walk(container)
+
+    deduped: List[str] = []
+    seen = set()
+    for url in urls:
+        if url in seen:
+            continue
+        seen.add(url)
+        deduped.append(url)
+    return deduped
 
 
 def _extract_xhs_work_modality(item: Dict[str, Any], *, video_download_url: str, subtitle_inline: str) -> str:

@@ -36,7 +36,7 @@
     "comment_count": { "type": "integer" },
     "collect_count": { "type": "integer" },
     "share_count": { "type": "integer" },
-    "play_count": { "type": "integer" },
+    "play_count": { "type": ["integer", "null"] },
     "cover_image": { "type": "string" },
     "source_url": { "type": "string" },
     "share_url": { "type": "string" },
@@ -64,4 +64,3 @@
   },
   "additionalProperties": false
 }
-

@@ -44,6 +44,7 @@ def _write_collection_artifacts(
         "xiaohongshu",
         str(profile.get("author_handle") or ""),
         str(profile.get("platform_author_id") or ""),
+        str(profile.get("nickname") or ""),
     )
     author_dir = Path(card_root) / "内容系统" / "作品库" / author_dir_name
     author_dir.mkdir(parents=True, exist_ok=True)

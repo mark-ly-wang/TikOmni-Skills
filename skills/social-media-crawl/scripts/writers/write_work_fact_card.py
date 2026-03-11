@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -43,6 +42,24 @@ def _safe_int(value: Any) -> int:
         return int(float(text.replace(",", "")))
     except Exception:
         return 0
+
+
+def _safe_optional_int(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return int(value)
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    text = _safe_text(value)
+    if not text:
+        return None
+    try:
+        return int(float(text.replace(",", "")))
+    except Exception:
+        return None
 
 
 def _source_dict(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -234,7 +251,7 @@ def build_work_fact_card(payload: Dict[str, Any], platform: Optional[str] = None
         "comment_count": _safe_int(payload.get("comment_count")),
         "collect_count": _safe_int(payload.get("collect_count")),
         "share_count": _safe_int(payload.get("share_count")),
-        "play_count": _safe_int(payload.get("play_count")),
+        "play_count": _safe_optional_int(payload.get("play_count")),
         "cover_image": _safe_text(payload.get("cover_image")),
         "source_url": source_url,
         "share_url": share_url,
@@ -280,38 +297,68 @@ def build_work_output_envelope(payload: Dict[str, Any], platform: Optional[str] 
     }
 
 
-def _markdown_lines(card: Dict[str, Any]) -> List[str]:
-    lines = [
-        f"# {card.get('title') or card.get('platform_work_id') or 'Work'}",
-        "",
-        "## Facts",
-        f"- platform: {card.get('platform') or ''}",
-        f"- platform_work_id: {card.get('platform_work_id') or ''}",
-        f"- platform_author_id: {card.get('platform_author_id') or ''}",
-        f"- author_handle: {card.get('author_handle') or ''}",
-        f"- author: {card.get('author') or ''}",
-        f"- published_date: {card.get('published_date') or ''}",
-        f"- work_modality: {card.get('work_modality') or ''}",
-        f"- digg_count: {card.get('digg_count')}",
-        f"- comment_count: {card.get('comment_count')}",
-        f"- collect_count: {card.get('collect_count')}",
-        f"- share_count: {card.get('share_count')}",
-        f"- play_count: {card.get('play_count')}",
-        f"- source_url: {card.get('source_url') or ''}",
-        f"- share_url: {card.get('share_url') or ''}",
-        f"- video_download_url: {card.get('video_download_url') or ''}",
-        "",
-        "## Text",
-        card.get("primary_text") or "",
-        "",
-        "## Meta",
-        f"- primary_text_source: {card.get('primary_text_source') or ''}",
-        f"- completeness: {card.get('completeness') or ''}",
-        f"- request_id: {card.get('request_id') or ''}",
-        f"- error_reason: {card.get('error_reason') or ''}",
+def _yaml_scalar(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return str(value)
+    text = _safe_text(value)
+    if not text:
+        return ""
+    return json.dumps(text, ensure_ascii=False)
+
+
+def _frontmatter_lines(card: Dict[str, Any]) -> List[str]:
+    fields = [
+        ("card_type", "work"),
+        ("platform", card.get("platform")),
+        ("platform_work_id", card.get("platform_work_id")),
+        ("platform_author_id", card.get("platform_author_id")),
+        ("author_handle", card.get("author_handle")),
+        ("author", card.get("author")),
+        ("title", card.get("title")),
+        ("published_date", card.get("published_date")),
+        ("work_modality", card.get("work_modality")),
+        ("digg_count", card.get("digg_count")),
+        ("comment_count", card.get("comment_count")),
+        ("collect_count", card.get("collect_count")),
+        ("share_count", card.get("share_count")),
+        ("play_count", card.get("play_count")),
+        ("cover_image", card.get("cover_image")),
+        ("source_url", card.get("source_url")),
+        ("share_url", card.get("share_url")),
+        ("video_download_url", card.get("video_download_url")),
+        ("primary_text_source", card.get("primary_text_source")),
+        ("completeness", card.get("completeness")),
+        ("request_id", card.get("request_id")),
+        ("error_reason", card.get("error_reason")),
     ]
+    lines = ["---"]
+    for key, value in fields:
+        rendered = _yaml_scalar(value)
+        lines.append(f"{key}: {rendered}" if rendered else f"{key}:")
+    lines.append("---")
+    return lines
+
+
+def _markdown_lines(card: Dict[str, Any]) -> List[str]:
+    lines = _frontmatter_lines(card)
+    primary_text = _safe_text(card.get("primary_text"))
+    caption_raw = _safe_text(card.get("caption_raw"))
+    subtitle_raw = _safe_text(card.get("subtitle_raw"))
+    asr_raw = _safe_text(card.get("asr_raw"))
+
+    lines.extend(["", "## 主文本", primary_text or ""])
+    if caption_raw and caption_raw != primary_text:
+        lines.extend(["", "## 原始文案", caption_raw])
+    if subtitle_raw and subtitle_raw != primary_text:
+        lines.extend(["", "## 原始字幕", subtitle_raw])
+    if asr_raw and asr_raw not in {primary_text, subtitle_raw}:
+        lines.extend(["", "## 原始转写", asr_raw])
     if card.get("missing_fields"):
-        lines.extend(["", "## Missing Fields"])
+        lines.extend(["", "## 缺失字段"])
         for entry in card["missing_fields"]:
             lines.append(f"- {entry.get('field')}: {entry.get('reason')}")
     return lines
@@ -326,6 +373,7 @@ def write_work_fact_card(
     **_: Any,
 ) -> Dict[str, Any]:
     card = build_work_fact_card(payload, platform=platform)
+    published_date = card["published_date"] or _resolve_published_date(payload)
     resolved_card_root = resolve_card_root(storage_config, explicit_card_root=card_root)
     fallback_identifier = card["share_url"] or card["source_url"] or card["title"] or card["request_id"]
     paths = build_work_fact_card_paths(
@@ -334,12 +382,18 @@ def write_work_fact_card(
         platform_work_id=card["platform_work_id"],
         author_handle=card["author_handle"],
         platform_author_id=card["platform_author_id"],
+        author_name=card["author"],
+        title=card["title"],
+        published_date=published_date,
         storage_config=storage_config,
         fallback_identifier=fallback_identifier,
     )
 
     Path(paths["json_path"]).write_text(json.dumps(card, ensure_ascii=False, indent=2), encoding="utf-8")
-    Path(paths["markdown_path"]).write_text("\n".join(_markdown_lines(card)).strip() + "\n", encoding="utf-8")
+    Path(paths["markdown_path"]).write_text(
+        "\n".join(_markdown_lines(card)).strip() + "\n",
+        encoding="utf-8",
+    )
 
     return {
         "enabled": True,

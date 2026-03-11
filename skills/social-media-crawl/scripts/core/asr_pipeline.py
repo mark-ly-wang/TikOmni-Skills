@@ -1014,6 +1014,159 @@ def run_u2_asr_candidates_with_timeout_retry(
     return final_bundle
 
 
+def run_u3_then_u2_asr_candidates_with_timeout_retry(
+    *,
+    base_url: str,
+    token: str,
+    timeout_ms: int,
+    candidates: List[str],
+    submit_max_retries: int,
+    submit_backoff_ms: int,
+    poll_interval_sec: float,
+    max_polls: int,
+    timeout_retry_enabled: bool = True,
+    timeout_retry_max_retries: int = 3,
+    pending_timeout_sec: int = DEFAULT_U2_PENDING_TIMEOUT_SEC,
+    progress_callback: Optional[Callable[[Dict[str, Any]], None]] = None,
+) -> Dict[str, Any]:
+    normalized_candidates = normalize_media_candidates(candidates)
+    attempts: List[Dict[str, Any]] = []
+
+    final_bundle: Dict[str, Any] = {
+        "submit_bundle": {},
+        "poll_result": {"ok": False, "task_status": "UNKNOWN", "error_reason": "no_candidates"},
+        "rounds": [],
+        "timeout_retry": {
+            "enabled": bool(timeout_retry_enabled),
+            "configured_max_retries": max(0, min(3, int(timeout_retry_max_retries))),
+            "triggered": False,
+            "result": "not_triggered",
+        },
+        "u3_fallback": {
+            "enabled": False,
+            "triggered": False,
+            "ok": False,
+            "result": "not_triggered",
+            "public_url": "",
+            "trace": [],
+        },
+    }
+    chosen_url: Optional[str] = None
+    chosen_public_url: Optional[str] = None
+
+    for index, candidate in enumerate(normalized_candidates, start=1):
+        valid = is_valid_u2_media_candidate(candidate)
+        if not valid:
+            attempts.append(
+                {
+                    "index": index,
+                    "candidate": candidate,
+                    "valid": False,
+                    "result": "skipped_non_media_candidate",
+                }
+            )
+            continue
+
+        u3_result = run_u3_public_url_fallback(
+            base_url=base_url,
+            token=token,
+            timeout_ms=timeout_ms,
+            source_url=candidate,
+        )
+        u3_bundle = {
+            "enabled": True,
+            "triggered": True,
+            "ok": bool(u3_result.get("ok")),
+            "result": "u3_completed" if u3_result.get("ok") else "u3_failed",
+            "public_url": normalize_media_url(u3_result.get("public_url")),
+            "request_id": u3_result.get("request_id"),
+            "error_reason": u3_result.get("error_reason"),
+            "trace": u3_result.get("trace", []),
+        }
+
+        attempts.append(
+            {
+                "index": index,
+                "candidate": candidate,
+                "valid": True,
+                "u3_bridge": u3_bundle,
+            }
+        )
+
+        if not u3_bundle.get("ok") or not u3_bundle.get("public_url"):
+            final_bundle = {
+                "submit_bundle": {},
+                "poll_result": {
+                    "ok": False,
+                    "task_status": "UNKNOWN",
+                    "error_reason": u3_bundle.get("error_reason") or "u3_bridge_failed",
+                    "request_id": u3_bundle.get("request_id"),
+                    "trace": list(u3_bundle.get("trace", [])),
+                },
+                "rounds": [],
+                "timeout_retry": {
+                    "enabled": bool(timeout_retry_enabled),
+                    "configured_max_retries": max(0, min(3, int(timeout_retry_max_retries))),
+                    "triggered": False,
+                    "result": "not_triggered",
+                },
+                "u3_fallback": {
+                    "enabled": False,
+                    "triggered": False,
+                    "ok": False,
+                    "result": "not_triggered",
+                    "public_url": "",
+                    "trace": [],
+                },
+                "u3_bridge": u3_bundle,
+            }
+            continue
+
+        bundle = run_u2_asr_with_timeout_retry(
+            base_url=base_url,
+            token=token,
+            timeout_ms=timeout_ms,
+            video_url=str(u3_bundle.get("public_url")),
+            submit_max_retries=submit_max_retries,
+            submit_backoff_ms=submit_backoff_ms,
+            poll_interval_sec=poll_interval_sec,
+            max_polls=max_polls,
+            timeout_retry_enabled=timeout_retry_enabled,
+            timeout_retry_max_retries=timeout_retry_max_retries,
+            pending_timeout_sec=pending_timeout_sec,
+            u3_fallback_enabled=False,
+            progress_callback=progress_callback,
+        )
+        poll_result = bundle.get("poll_result", {})
+        error_reason = str(poll_result.get("error_reason") or "")
+        ok = bool(poll_result.get("ok"))
+
+        attempts[-1].update(
+            {
+                "ok": ok,
+                "error_reason": error_reason,
+                "task_status": poll_result.get("task_status"),
+                "u2_public_url": u3_bundle.get("public_url"),
+            }
+        )
+
+        final_bundle = dict(bundle)
+        final_bundle["u3_bridge"] = u3_bundle
+        chosen_url = candidate
+        chosen_public_url = str(u3_bundle.get("public_url") or "")
+        if ok:
+            break
+        if error_reason == "INVALID_SOURCE_URL":
+            continue
+        break
+
+    final_bundle["candidate_attempts"] = attempts
+    final_bundle["chosen_candidate"] = chosen_url
+    final_bundle["chosen_public_url"] = chosen_public_url
+    final_bundle["normalized_candidates"] = normalized_candidates
+    return final_bundle
+
+
 def run_u2_asr_batch_with_timeout_retry(
     *,
     base_url: str,

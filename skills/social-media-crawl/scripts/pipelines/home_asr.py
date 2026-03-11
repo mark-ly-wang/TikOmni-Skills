@@ -16,9 +16,11 @@ from scripts.core.asr_pipeline import (
     run_u2_asr_batch_with_timeout_retry,
     run_u2_asr_candidates_with_timeout_retry,
 )
+from scripts.core.u3_fallback import run_u3_public_url_fallback
 
 DEFAULT_BATCH_SUBMIT_SIZE = 50
 MAX_BATCH_SUBMIT_SIZE = 100
+XHS_U3_U2_BATCH_SIZE = 20
 U2_GATE_MIN_DURATION_MS = 13000
 U2_GATE_MAX_DURATION_MS = 1800000
 U2_GATE_RULE = "is_video && 13000<duration_ms<=1800000 && video_download_url_present"
@@ -406,23 +408,31 @@ def _resolve_xhs_subtitle(work: Dict[str, Any], timeout_ms: int) -> Dict[str, An
             }
         invalid_reasons.append({"field": source, "reason": invalid_reason})
 
-    fetched = _fetch_subtitle_text(subtitle_urls, timeout_ms=timeout_ms)
-    cleaned = _clean_text(fetched)
-    fetched_invalid = _invalid_subtitle_reason(cleaned)
-    if fetched_invalid is not None and subtitle_urls:
-        invalid_reasons.append({"field": "subtitle_url", "reason": fetched_invalid})
+    subtitle_text = _fetch_subtitle_text(subtitle_urls, timeout_ms)
+    if subtitle_text:
+        invalid_reason = _invalid_subtitle_reason(subtitle_text)
+        if invalid_reason is None:
+            return {
+                "text": subtitle_text,
+                "subtitle_source": "subtitle_url",
+                "subtitle_field": "raw_ref.subtitle_urls",
+                "subtitle_urls": subtitle_urls,
+                "invalid_reasons": invalid_reasons,
+                "failure_category": "",
+            }
+        invalid_reasons.append({"field": "raw_ref.subtitle_urls", "reason": invalid_reason})
 
     return {
-        "text": cleaned,
-        "subtitle_source": "url" if subtitle_urls else "missing",
-        "subtitle_field": "subtitle_url" if subtitle_urls else "",
+        "text": "",
+        "subtitle_source": "missing",
+        "subtitle_field": "",
         "subtitle_urls": subtitle_urls,
         "invalid_reasons": invalid_reasons,
         "failure_category": _classify_xhs_subtitle_failure(
             work=work,
             interface_candidates=interface_candidates,
             subtitle_urls=subtitle_urls,
-            invalid_reason=fetched_invalid or "subtitle_empty",
+            invalid_reason="subtitle_empty",
         ),
     }
 
@@ -459,6 +469,127 @@ def _fallback_none_result(reason: str) -> Dict[str, Any]:
         "asr_status": "failed",
         "asr_error_reason": normalize_text(reason) or "asr_failed",
         "asr_source": "fallback_none",
+    }
+
+
+def _run_xhs_u3_then_u2_batch_for_entries(
+    *,
+    batch_id: str,
+    entries: List[Dict[str, Any]],
+    base_url: str,
+    token: str,
+    timeout_ms: int,
+    poll_interval_sec: float,
+    max_polls: int,
+    submit_max_retries: int,
+    submit_backoff_ms: int,
+    timeout_retry_enabled: bool,
+    timeout_retry_max_retries: int,
+) -> Dict[str, Any]:
+    trace: List[Dict[str, Any]] = []
+    u2_entries: List[Dict[str, Any]] = []
+    u3_failed_count = 0
+
+    for entry in entries:
+        work = entry.get("work")
+        if not isinstance(work, dict):
+            continue
+
+        source_url = normalize_media_url(entry.get("video_download_url") or work.get("video_download_url") or work.get("video_down_url"))
+        work_id = normalize_text(entry.get("work_id") or work.get("platform_work_id"))
+        subtitle_invalid = normalize_text(entry.get("subtitle_invalid")) or "subtitle_missing"
+
+        if not source_url:
+            work.update(_fallback_none_result("skip:video_download_url_missing"))
+            trace.append(
+                {
+                    "step": "author_home.asr.xhs_u3",
+                    "batch_id": batch_id,
+                    "platform_work_id": work_id,
+                    "ok": False,
+                    "error_reason": "skip:video_download_url_missing",
+                    "subtitle_invalid": subtitle_invalid,
+                    "public_url_present": False,
+                }
+            )
+            u3_failed_count += 1
+            continue
+
+        u3_result = run_u3_public_url_fallback(
+            base_url=base_url,
+            token=token,
+            timeout_ms=timeout_ms,
+            source_url=source_url,
+        )
+        public_url = normalize_media_url(u3_result.get("public_url"))
+        trace.append(
+            {
+                "step": "author_home.asr.xhs_u3",
+                "batch_id": batch_id,
+                "platform_work_id": work_id,
+                "ok": bool(u3_result.get("ok") and public_url),
+                "error_reason": u3_result.get("error_reason"),
+                "subtitle_invalid": subtitle_invalid,
+                "source_url": source_url,
+                "public_url_present": bool(public_url),
+                "u3_trace": u3_result.get("trace", []),
+            }
+        )
+
+        if not u3_result.get("ok") or not public_url:
+            work.update(_fallback_none_result(normalize_text(u3_result.get("error_reason")) or "u3_bridge_failed"))
+            u3_failed_count += 1
+            continue
+
+        u2_entries.append(
+            {
+                "work": work,
+                "work_id": work_id,
+                "video_download_url": public_url,
+                "fallback_reason": f"xhs_u3_then_u2_failed:{subtitle_invalid}",
+                "u3_public_url": public_url,
+            }
+        )
+
+    batch_bundle = {
+        "trace": [],
+        "submitted": False,
+        "completed": False,
+        "mapped_count": 0,
+        "unmapped_entries": [],
+        "batch_progress": {},
+    }
+    if u2_entries:
+        batch_bundle = _run_u2_batch_for_entries(
+            batch_id=batch_id,
+            entries=u2_entries,
+            base_url=base_url,
+            token=token,
+            timeout_ms=timeout_ms,
+            poll_interval_sec=poll_interval_sec,
+            max_polls=max_polls,
+            submit_max_retries=submit_max_retries,
+            submit_backoff_ms=submit_backoff_ms,
+            timeout_retry_enabled=timeout_retry_enabled,
+            timeout_retry_max_retries=timeout_retry_max_retries,
+        )
+        trace.extend(batch_bundle.get("trace") if isinstance(batch_bundle.get("trace"), list) else [])
+
+    unmapped_entries = list(batch_bundle.get("unmapped_entries") or [])
+    for entry in unmapped_entries:
+        work = entry.get("work")
+        if not isinstance(work, dict):
+            continue
+        work.update(_fallback_none_result(normalize_text(entry.get("fallback_reason")) or "xhs_u3_then_u2_failed"))
+
+    return {
+        "trace": trace,
+        "submitted": bool(batch_bundle.get("submitted")),
+        "completed": bool(batch_bundle.get("completed")),
+        "mapped_count": int(batch_bundle.get("mapped_count") or 0),
+        "unmapped_count": len(unmapped_entries),
+        "u3_ready_count": len(u2_entries),
+        "u3_failed_count": u3_failed_count,
     }
 
 
@@ -669,6 +800,8 @@ def enrich_author_home_asr(
         default=DEFAULT_BATCH_SUBMIT_SIZE,
         hard_limit=MAX_BATCH_SUBMIT_SIZE,
     )
+    if platform == "xiaohongshu":
+        effective_batch = min(effective_batch, XHS_U3_U2_BATCH_SIZE)
 
     trace.append(
         {
@@ -738,6 +871,7 @@ def enrich_author_home_asr(
             )
 
         batch_u2_entries: List[Dict[str, Any]] = []
+        batch_xhs_u3_entries: List[Dict[str, Any]] = []
 
         for work in batch:
             work_id = normalize_text(work.get("platform_work_id"))
@@ -834,7 +968,6 @@ def enrich_author_home_asr(
                         "invalid_reasons": subtitle_probe.get("invalid_reasons"),
                     }
                 )
-
                 gate = _evaluate_u2_gate(work, platform=platform)
                 trace.append(
                     {
@@ -848,19 +981,17 @@ def enrich_author_home_asr(
                         "is_video": gate.get("is_video"),
                         "duration_ms": gate.get("duration_ms"),
                         "video_download_url_present": gate.get("video_download_url_present"),
-                        "subtitle_invalid": subtitle_invalid,
                     }
                 )
-
                 if not gate.get("can_u2"):
                     work.update(_fallback_none_result(str(gate.get("gate_reason") or "skip:unknown")))
                 else:
-                    batch_u2_entries.append(
+                    batch_xhs_u3_entries.append(
                         {
                             "work": work,
                             "work_id": work_id,
                             "video_download_url": gate.get("video_download_url"),
-                            "fallback_reason": f"xhs_subtitle_invalid:{subtitle_invalid}",
+                            "subtitle_invalid": subtitle_invalid,
                         }
                     )
 
@@ -889,6 +1020,28 @@ def enrich_author_home_asr(
             batch_mapped_count += int(batch_bundle.get("mapped_count") or 0)
             fallback_entries = list(batch_bundle.get("unmapped_entries") or [])
             batch_unmapped_count += len(fallback_entries)
+
+        if batch_xhs_u3_entries:
+            xhs_batch_bundle = _run_xhs_u3_then_u2_batch_for_entries(
+                batch_id=batch_id,
+                entries=batch_xhs_u3_entries,
+                base_url=base_url,
+                token=token,
+                timeout_ms=timeout_ms,
+                poll_interval_sec=poll_interval_sec,
+                max_polls=max_polls,
+                submit_max_retries=max(0, int(xhs_submit_max_retries)),
+                submit_backoff_ms=max(0, int(xhs_submit_backoff_ms)),
+                timeout_retry_enabled=timeout_retry_enabled,
+                timeout_retry_max_retries=max(0, int(timeout_retry_max_retries)),
+            )
+            trace.extend(xhs_batch_bundle.get("trace") if isinstance(xhs_batch_bundle.get("trace"), list) else [])
+            if xhs_batch_bundle.get("submitted"):
+                submitted_batches += 1
+            if xhs_batch_bundle.get("completed"):
+                completed_batches += 1
+            batch_mapped_count += int(xhs_batch_bundle.get("mapped_count") or 0)
+            batch_unmapped_count += int(xhs_batch_bundle.get("unmapped_count") or 0)
 
         for fallback_entry in fallback_entries:
             fallback_work = fallback_entry.get("work")

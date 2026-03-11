@@ -32,7 +32,8 @@ description: Use this skill when the user asks about social media links, posts, 
 - 先看用户给的对象是什么，再选固定 pipeline 或 MCP 工具。
 - 优先返回事实字段，不补充主观分析。
 - 视频文本优先使用平台原生字幕；拿不到再走 ASR。
-- 默认输出以结构化 JSON 为主。
+- 默认输出以结构化 JSON 和Markdown并主动落库。
+- 当固定pipeline时，默认执行抓取并落库（强制）。
 
 ## Workflow
 

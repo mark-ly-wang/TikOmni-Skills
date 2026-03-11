@@ -34,6 +34,18 @@ def _i(value: Any, default: int = 0) -> int:
         return default
 
 
+def _optional_i(value: Any) -> int | None:
+    try:
+        if value is None:
+            return None
+        if isinstance(value, (int, float)):
+            return int(value)
+        text = _t(value)
+        return int(float(text.replace(",", ""))) if text else None
+    except Exception:
+        return None
+
+
 def _first(payload: Any, keys: List[str], default: Any = "") -> Any:
     hit = deep_find_first(payload, keys)
     return default if hit is None else hit
@@ -339,7 +351,7 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
             "comment": _i(_first(item, ["comment_count"], 0)),
             "collect": _i(_first(item, ["collect_count"], 0)),
             "share": _i(_first(item, ["share_count"], 0)),
-            "play": _i(_first(item, ["play_count", "view_count"], 0)),
+            "play": _optional_i(_first(item, ["play_count", "view_count"], None)),
         }
         video_down_url = _extract_douyin_video_down_url(item)
         tags = _normalize_douyin_tags(_first(item, ["hashtags", "tags", "text_extra"], []))
@@ -429,7 +441,7 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
             "comment": _i(_first(item, ["comment_count"], 0)),
             "collect": _i(_first(item, ["collected_count", "collect_count"], 0)),
             "share": _i(_first(item, ["share_count"], 0)),
-            "play": _i(_first(item, ["view_count", "play_count"], 0)),
+            "play": _optional_i(_first(item, ["view_count", "play_count"], None)),
         }
         subtitle_inline = _extract_xhs_subtitle_inline(item)
         subtitle_urls = _extract_xhs_subtitle_urls(item)

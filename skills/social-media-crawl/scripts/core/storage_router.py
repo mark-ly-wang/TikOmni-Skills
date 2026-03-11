@@ -12,6 +12,7 @@ DEFAULT_JSON_FILENAME_PATTERN = "{timestamp}-{platform}-{identifier}{ext}"
 _INVALID_FILENAME_CHARS = re.compile(r"[\\\\/:*?\"<>|]+")
 _SPACE_RUN = re.compile(r"\s+")
 _INVALID_AUTHOR_SLUGS = {"0", "unknown", "none", "null", "nil", "na", "n-a"}
+_CARD_TOKEN_INVALID_CHARS = re.compile(r"[^\w\-.]+", re.UNICODE)
 
 
 def slugify_token(value: Any, fallback: str = "unknown") -> str:
@@ -22,6 +23,17 @@ def slugify_token(value: Any, fallback: str = "unknown") -> str:
     text = _INVALID_FILENAME_CHARS.sub("-", text)
     text = re.sub(r"[^a-z0-9_-]+", "-", text)
     text = re.sub(r"-{2,}", "-", text).strip("-_")
+    return text or fallback
+
+
+def cardify_token(value: Any, fallback: str = "unknown") -> str:
+    text = str(value or "").strip()
+    if not text:
+        text = fallback
+    text = _INVALID_FILENAME_CHARS.sub("-", text)
+    text = _SPACE_RUN.sub("", text)
+    text = _CARD_TOKEN_INVALID_CHARS.sub("", text)
+    text = re.sub(r"-{2,}", "-", text).strip("-_.")
     return text or fallback
 
 
@@ -66,6 +78,30 @@ def render_output_filename(
     return rendered
 
 
+def render_card_filename(
+    *,
+    pattern: str,
+    context: Dict[str, Any],
+    default_filename: str,
+    default_ext: str,
+) -> str:
+    safe_context = {key: cardify_token(value, fallback="") for key, value in context.items()}
+    safe_context["ext"] = default_ext
+    try:
+        rendered = str(pattern).format(**safe_context).strip()
+    except Exception:
+        rendered = default_filename
+    rendered = _INVALID_FILENAME_CHARS.sub("-", rendered)
+    rendered = _SPACE_RUN.sub("", rendered)
+    rendered = _CARD_TOKEN_INVALID_CHARS.sub("", rendered)
+    rendered = re.sub(r"-{2,}", "-", rendered).strip("-_.")
+    if not rendered:
+        rendered = default_filename
+    if not Path(rendered).suffix:
+        rendered = f"{rendered}{default_ext}"
+    return rendered
+
+
 def _storage_routes_cfg(storage_config: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     if not isinstance(storage_config, dict):
         return {}
@@ -88,18 +124,45 @@ def resolve_card_root(storage_config: Optional[Dict[str, Any]], explicit_card_ro
     return str(Path(card_root).expanduser().resolve())
 
 
-def resolve_author_slug(platform: str, author_handle: str, platform_author_id: str) -> str:
-    handle_slug = slugify_token(author_handle, fallback="")
-    if handle_slug and handle_slug not in _INVALID_AUTHOR_SLUGS:
+def resolve_author_slug(platform: str, author_handle: str, platform_author_id: str, author_display: str = "") -> str:
+    display_slug = cardify_token(author_display, fallback="")
+    if display_slug and display_slug.lower() not in _INVALID_AUTHOR_SLUGS:
+        return display_slug
+    handle_slug = cardify_token(author_handle, fallback="")
+    if handle_slug and handle_slug.lower() not in _INVALID_AUTHOR_SLUGS:
         return handle_slug
-    author_id_slug = slugify_token(platform_author_id, fallback="")
+    author_id_slug = cardify_token(platform_author_id, fallback="")
     if author_id_slug:
         return author_id_slug
     return f"{slugify_token(platform)}-unknown"
 
 
-def resolve_author_directory_name(platform: str, author_handle: str, platform_author_id: str) -> str:
-    return f"{slugify_token(platform)}-{resolve_author_slug(platform, author_handle, platform_author_id)}"
+def resolve_author_directory_name(
+    platform: str,
+    author_handle: str,
+    platform_author_id: str,
+    author_display: str = "",
+) -> str:
+    return f"{slugify_token(platform)}-{resolve_author_slug(platform, author_handle, platform_author_id, author_display)}"
+
+
+def build_card_identifier(
+    *,
+    published_date: str,
+    title: str,
+    fallback_identifier: str,
+    platform_work_id: str,
+) -> str:
+    published_token = cardify_token(published_date, fallback="")
+    title_token = cardify_token(title, fallback="")
+    if published_token and title_token:
+        return f"{published_token}-{title_token}"
+    if title_token:
+        return title_token
+    fallback_token = cardify_token(fallback_identifier, fallback="")
+    if published_token and fallback_token:
+        return f"{published_token}-{fallback_token}"
+    return fallback_token or slugify_token(platform_work_id, fallback="unknown")
 
 
 def resolve_card_route_parts(
@@ -129,29 +192,58 @@ def build_work_fact_card_paths(
     platform_work_id: str,
     author_handle: str,
     platform_author_id: str,
+    author_name: str,
+    title: str,
+    published_date: str,
     storage_config: Optional[Dict[str, Any]],
     fallback_identifier: str,
 ) -> Dict[str, str]:
-    author_slug = resolve_author_slug(platform, author_handle, platform_author_id)
+    author_slug = resolve_author_slug(platform, author_handle, platform_author_id, author_name)
     route_parts = resolve_card_route_parts(storage_config, platform=platform, author_slug=author_slug)
     directory = Path(card_root).joinpath(*route_parts)
     directory.mkdir(parents=True, exist_ok=True)
 
-    identifier = slugify_token(platform_work_id, fallback="") or slugify_token(fallback_identifier, fallback="unknown")
+    json_identifier = slugify_token(platform_work_id, fallback="") or slugify_token(fallback_identifier, fallback="unknown")
+    card_identifier = build_card_identifier(
+        published_date=published_date,
+        title=title,
+        fallback_identifier=fallback_identifier,
+        platform_work_id=platform_work_id,
+    )
     json_filename = render_output_filename(
         pattern=resolve_card_filename_pattern(storage_config),
-        context={"identifier": identifier, "platform": platform, "author_slug": author_slug, "ext": ".json"},
-        default_filename=f"{identifier}.json",
+        context={
+            "identifier": json_identifier,
+            "platform": platform,
+            "author_slug": author_slug,
+            "published_at": published_date,
+            "published_date": published_date,
+            "title": title,
+            "title_slug": title,
+            "ext": ".json",
+        },
+        default_filename=f"{json_identifier}.json",
         default_ext=".json",
     )
-    markdown_filename = render_output_filename(
+    markdown_filename = render_card_filename(
         pattern=resolve_card_filename_pattern(storage_config),
-        context={"identifier": identifier, "platform": platform, "author_slug": author_slug, "ext": ".md"},
-        default_filename=f"{identifier}.md",
+        context={
+            "identifier": card_identifier,
+            "platform": platform,
+            "author_slug": author_slug,
+            "published_at": published_date,
+            "published_date": published_date,
+            "title": title,
+            "title_slug": title,
+            "ext": ".md",
+        },
+        default_filename=f"{card_identifier}.md",
         default_ext=".md",
     )
     return {
-        "identifier": identifier,
+        "identifier": card_identifier,
+        "json_identifier": json_identifier,
+        "card_identifier": card_identifier,
         "author_slug": author_slug,
         "directory": str(directory),
         "route": "/".join(route_parts),

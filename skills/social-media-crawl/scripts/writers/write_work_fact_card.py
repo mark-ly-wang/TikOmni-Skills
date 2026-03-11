@@ -389,7 +389,6 @@ def write_work_fact_card(
         fallback_identifier=fallback_identifier,
     )
 
-    Path(paths["json_path"]).write_text(json.dumps(card, ensure_ascii=False, indent=2), encoding="utf-8")
     Path(paths["markdown_path"]).write_text(
         "\n".join(_markdown_lines(card)).strip() + "\n",
         encoding="utf-8",
@@ -400,7 +399,7 @@ def write_work_fact_card(
         "ok": True,
         "count": 1,
         "path": paths["markdown_path"],
-        "json_path": paths["json_path"],
+        "json_path": None,
         "markdown_path": paths["markdown_path"],
         "route": paths["route"],
         "identifier": paths["identifier"],

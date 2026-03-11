@@ -1,1 +1,0 @@
-"""Meta capability runtime scripts."""

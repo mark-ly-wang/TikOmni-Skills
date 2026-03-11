@@ -1,4 +1,2 @@
 # Skill directories included in distributable .skill packages
-skills/meta-capability
-skills/single-work-analysis
-skills/creator-analysis
+skills/social-media-crawl

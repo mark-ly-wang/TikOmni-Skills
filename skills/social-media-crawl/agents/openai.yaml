@@ -1,0 +1,5 @@
+interface:
+  display_name: "Social Media Crawl"
+  short_description: "Structured social-media retrieval, transcription, and archival"
+  default_prompt: "Use $social-media-crawl to fetch, transcribe, normalize, and archive a concrete social-media object into structured JSON and work fact cards."
+

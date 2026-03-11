@@ -19,11 +19,7 @@ test("cli entrypoint is executable", () => {
 
 test("listAvailableSkills returns distributable skills", () => {
   const skills = listAvailableSkills().map((entry) => entry.name);
-  assert.deepEqual(skills, [
-    "meta-capability",
-    "single-work-analysis",
-    "creator-analysis"
-  ]);
+  assert.deepEqual(skills, ["social-media-crawl"]);
 });
 
 test("resolveRuntimeDestination respects CODEX_HOME", () => {
@@ -48,11 +44,11 @@ test("installSkills copies a selected skill into the target directory", () => {
   const result = installSkills({
     runtime: "codex",
     explicitDir: destinationRoot,
-    skillNames: ["meta-capability"]
+    skillNames: ["social-media-crawl"]
   });
 
   assert.equal(result.installed.length, 1);
-  assert.ok(fs.existsSync(path.join(destinationRoot, "meta-capability", "SKILL.md")));
+  assert.ok(fs.existsSync(path.join(destinationRoot, "social-media-crawl", "SKILL.md")));
   assert.ok(fs.existsSync(path.join(destinationRoot, "env.example")));
   assert.match(
     fs.readFileSync(path.join(destinationRoot, "env.example"), "utf8"),
@@ -67,7 +63,7 @@ test("installSkills rejects overwriting without force", () => {
   installSkills({
     runtime: "codex",
     explicitDir: destinationRoot,
-    skillNames: ["meta-capability"]
+    skillNames: ["social-media-crawl"]
   });
 
   assert.throws(
@@ -75,7 +71,7 @@ test("installSkills rejects overwriting without force", () => {
       installSkills({
         runtime: "codex",
         explicitDir: destinationRoot,
-        skillNames: ["meta-capability"]
+        skillNames: ["social-media-crawl"]
       }),
     /--force/
   );

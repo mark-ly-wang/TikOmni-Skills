@@ -24,9 +24,7 @@ DEFAULT_HEADERS = {
     "User-Agent": os.getenv("TIKOMNI_OPENAPI_USER_AGENT", "Mozilla/5.0"),
 }
 REFERENCE_ROOTS = [
-    ROOT / "skills" / "meta-capability" / "references",
-    ROOT / "skills" / "single-work-analysis" / "references",
-    ROOT / "skills" / "creator-analysis" / "references",
+    ROOT / "skills" / "social-media-crawl" / "references",
 ]
 INDEX_FILENAME = "api-capability-index.md"
 TAGS_DIRNAME = "api-tags"

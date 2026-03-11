@@ -16,8 +16,8 @@ function printUsage() {
 示例:
   tikomni-skills list
   tikomni-skills install codex all
-  tikomni-skills install claude-code creator-analysis
-  tikomni-skills install openclaw meta-capability --dir "/custom/skills"
+  tikomni-skills install codex social-media-crawl
+  tikomni-skills install openclaw social-media-crawl --dir "/custom/skills"
 `);
 }
 

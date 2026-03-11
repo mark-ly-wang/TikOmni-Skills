@@ -1,7 +1,7 @@
 {
   "name": "@tikomni/skills",
   "version": "0.1.3",
-  "description": "TikOmni skill installer CLI for Codex, Claude Code, and OpenClaw",
+  "description": "TikOmni skill installer CLI for structured social media crawling in Codex, Claude Code, and OpenClaw",
   "license": "MIT",
   "homepage": "https://github.com/mark-ly-wang/TikOmni-Skills#readme",
   "bugs": {
@@ -13,9 +13,11 @@
   "files": [
     "bin/",
     "lib/",
-    "skills/creator-analysis/",
-    "skills/meta-capability/",
-    "skills/single-work-analysis/",
+    "skills/social-media-crawl/**",
+    "!skills/social-media-crawl/**/__pycache__/**",
+    "!skills/social-media-crawl/**/*.py[cod]",
+    "!skills/social-media-crawl/**/.pytest_cache/**",
+    "!skills/social-media-crawl/scripts/pipelines/home_builders.py",
     ".skill-package-allowlist.txt",
     "env.example",
     "README.md",

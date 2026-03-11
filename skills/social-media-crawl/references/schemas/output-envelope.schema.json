@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "social-media-crawl/output-envelope.schema.json",
+  "type": "object",
+  "required": [
+    "object_type",
+    "platform",
+    "input",
+    "normalized",
+    "completeness",
+    "missing_fields",
+    "extract_trace",
+    "request_id"
+  ],
+  "properties": {
+    "object_type": { "type": "string" },
+    "platform": { "type": "string" },
+    "input": {},
+    "normalized": {},
+    "completeness": {
+      "type": "string",
+      "enum": ["complete", "partial", "incomplete"]
+    },
+    "missing_fields": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "error_reason": {
+      "type": ["string", "null"]
+    },
+    "extract_trace": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "request_id": {
+      "type": ["string", "null"]
+    }
+  },
+  "additionalProperties": true
+}
+

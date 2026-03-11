@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "social-media-crawl/creator-profile.schema.json",
+  "type": "object",
+  "required": [
+    "platform",
+    "platform_author_id",
+    "author_handle",
+    "nickname",
+    "request_id",
+    "extract_trace"
+  ],
+  "properties": {
+    "platform": { "type": "string" },
+    "platform_author_id": { "type": "string" },
+    "author_handle": { "type": "string" },
+    "nickname": { "type": "string" },
+    "signature": { "type": "string" },
+    "avatar_url": { "type": "string" },
+    "fans_count": { "type": "integer" },
+    "liked_count": { "type": "integer" },
+    "collected_count": { "type": "integer" },
+    "works_count": { "type": "integer" },
+    "verified": { "type": "boolean" },
+    "request_id": { "type": ["string", "null"] },
+    "extract_trace": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  },
+  "additionalProperties": true
+}
+

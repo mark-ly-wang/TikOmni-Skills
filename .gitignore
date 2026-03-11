@@ -17,6 +17,7 @@ reports/
 .private/
 RELEASING.md
 RELEASING.zh-CN.md
+tikomni-output/
 
 # python cache artifacts
 __pycache__/

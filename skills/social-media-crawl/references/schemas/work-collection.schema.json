@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "social-media-crawl/work-collection.schema.json",
+  "type": "object",
+  "required": [
+    "platform",
+    "platform_author_id",
+    "count",
+    "items",
+    "request_id",
+    "extract_trace"
+  ],
+  "properties": {
+    "platform": { "type": "string" },
+    "platform_author_id": { "type": "string" },
+    "count": { "type": "integer" },
+    "items": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "request_id": { "type": ["string", "null"] },
+    "extract_trace": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  },
+  "additionalProperties": true
+}
+

@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "social-media-crawl/work-fact-card.schema.json",
+  "type": "object",
+  "required": [
+    "platform",
+    "platform_work_id",
+    "platform_author_id",
+    "author_handle",
+    "author",
+    "title",
+    "caption_raw",
+    "work_modality",
+    "published_date",
+    "source_url",
+    "share_url",
+    "primary_text",
+    "primary_text_source",
+    "request_id",
+    "completeness",
+    "missing_fields",
+    "extract_trace"
+  ],
+  "properties": {
+    "platform": { "type": "string" },
+    "platform_work_id": { "type": "string" },
+    "platform_author_id": { "type": "string" },
+    "author_handle": { "type": "string" },
+    "author": { "type": "string" },
+    "title": { "type": "string" },
+    "caption_raw": { "type": "string" },
+    "subtitle_raw": { "type": "string" },
+    "work_modality": { "type": "string" },
+    "published_date": { "type": "string" },
+    "digg_count": { "type": "integer" },
+    "comment_count": { "type": "integer" },
+    "collect_count": { "type": "integer" },
+    "share_count": { "type": "integer" },
+    "play_count": { "type": "integer" },
+    "cover_image": { "type": "string" },
+    "source_url": { "type": "string" },
+    "share_url": { "type": "string" },
+    "video_download_url": { "type": "string" },
+    "primary_text": { "type": "string" },
+    "primary_text_source": { "type": "string" },
+    "asr_raw": { "type": "string" },
+    "asr_clean": { "type": "string" },
+    "request_id": { "type": ["string", "null"] },
+    "completeness": {
+      "type": "string",
+      "enum": ["complete", "partial", "incomplete"]
+    },
+    "missing_fields": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "error_reason": {
+      "type": ["string", "null"]
+    },
+    "extract_trace": {
+      "type": "array",
+      "items": { "type": "object" }
+    }
+  },
+  "additionalProperties": false
+}
+

@@ -2,10 +2,10 @@
 
 中文 | [English](./README.md)
 
-让 AI Agent 直接使用 TikOmni 的跨平台内容获取与结构化分析能力。
+让 AI Agent 直接使用 TikOmni 的跨平台内容获取与结构化数据能力。
 
 适用于 `Codex`、`Claude Code`、`OpenClaw`。  
-面向内容抓取、单作品分析、创作者分析、搜索结果、评论线程、榜单、直播间和结构化结果产出。
+面向内容抓取、结构化提取、ASR 文本获取、结构化 JSON 结果和事实卡落盘。
 
 - Website: https://tikomni.com
 - Dashboard: https://app.tikomni.com
@@ -16,19 +16,19 @@
 
 `TikOmni-Skills` 是 TikOmni 面向 AI Agent 的 Skill 交付层。
 
-它的目标不是堆一批平台脚本，也不只是沉淀几个固定模板；它更重要的作用，是把 TikOmni 的原能力组织成 Agent 可安装、可调用、可组合的 Skills，让 Agent 能直接完成：
+它的目标不是堆一批平台脚本，也不只是沉淀几个固定模板；更重要的是把 TikOmni 的原能力组织成 Agent 可安装、可调用、可组合的 Skill，让 Agent 能直接完成：
 
 - 获取单条内容、账号主页和内容集合
 - 获取评论线程、搜索结果、榜单、直播间和商品页等具体对象
 - 提取标题、文案、字幕、转写和结构化字段
-- 输出标准化 JSON 与 Markdown 卡片
-- 基于真实抓取结果继续做分析、总结和归档
+- 输出标准化 JSON 与事实卡
+- 将结果继续接入归档、知识库或后续工作流
 
 如果你把 TikOmni 看作跨平台能力底座，这个仓库就是把这些能力交付给 Agent 的使用层。
 
-## 📦 支持平台
+## 支持平台
 
-当前目录覆盖主流平台（示例）：
+当前能力覆盖主流平台（示例）：
 
 - 抖音、小红书、快手、B站、微博
 - TikTok、YouTube、Instagram、Threads、Twitter/X、Reddit、LinkedIn
@@ -36,47 +36,38 @@
 
 完整列表见官方文档目录：https://docs.tikomni.com
 
-## 🧩 可获取哪些结构化数据
+## 可获取哪些结构化数据
 
-按不同平台/接口可返回：
+按不同平台和接口能力，可返回：
 
 - 作者/账号信息
 - 作品/视频基础信息
 - 评论与回复数据
 - 搜索结果、榜单结果、直播间信息、商品相关数据
-- 互动指标（点赞、评论、分享等，视接口可用性）
-- 字幕/转写/文案文本（接口支持时）
+- 互动指标（点赞、评论、收藏、分享等，视接口可用性）
+- 字幕、转写、文案等文本字段（接口支持时）
 - 媒体地址等可提取资源（接口支持时）
-- 路由与请求追踪信息（方便复现）
+- 路由与请求追踪信息（方便复现和归档）
 
-## Skill 模块
+## 当前更成熟的固定 Pipeline
 
-| Skill | 作用 | 典型任务 |
-| --- | --- | --- |
-| `meta-capability` | 通用能力层 | 跨平台获取、路由探索、结构化抓取，以及评论线程、搜索、榜单、直播间、商品页等对象的通用执行与兜底 |
-| `single-work-analysis` | 单作品专项 Skill | 单个视频、单篇笔记、单条帖子、单篇文章的提取与分析 |
-| `creator-analysis` | 创作者专项 Skill | 账号主页、作者页、频道页、内容集合的抓取与聚合分析 |
+在这些通用能力之上，当前已经固定并重点验证了 4 条高频 pipeline：
 
-选择建议：
+- 抖音作品
+- 抖音主页
+- 小红书作品
+- 小红书主页
 
-- 想分析单个内容对象：安装 `single-work-analysis`
-- 想分析账号主页或内容集合：安装 `creator-analysis`
-- 想保留通用 TikOmni 能力入口：安装 `meta-capability`
-- 不确定会用到哪些场景：直接安装 `all`
-
-## 当前更成熟的高频链路
-
-在通用能力层之上，本仓库已经沉淀出一批更适合直接复用的高频方案。
-
-当前重点验证和持续打磨的方向包括：
-
-- Douyin 单作品分析
-- Xiaohongshu 单作品分析
-- Douyin 创作者主页分析
-- Xiaohongshu 创作者主页分析
-
-这些链路代表当前最成熟、最适合直接上手的实践路径。  
+这些固定 pipeline 是当前更成熟、可直接复用的高频链路。  
 它们很重要，但不等于本仓库能力边界的全部定义。
+
+## 对外 Skill
+
+当前 npm 包对外公开的 Skill 为：
+
+| Skill | 作用 |
+| --- | --- |
+| `social-media-crawl` | 跨平台结构化抓取、固定 pipeline、事实卡入库、MCP-first 通用调用 |
 
 ## 30 秒快速开始
 
@@ -96,14 +87,16 @@
 npx @tikomni/skills list
 ```
 
+当前 npm 包对外提供 `social-media-crawl`。
+
 安装到 Codex：
 
 ```bash
-# 安装全部 Skills
+# 安装公开 Skill
 npx @tikomni/skills install codex all
 
-# 只安装一个 Skill
-npx @tikomni/skills install codex single-work-analysis
+# 显式安装同一个 Skill
+npx @tikomni/skills install codex social-media-crawl
 ```
 
 默认目录：`$CODEX_HOME/skills`，默认值 `~/.codex/skills`
@@ -111,11 +104,11 @@ npx @tikomni/skills install codex single-work-analysis
 安装到 Claude Code：
 
 ```bash
-# 安装全部 Skills
+# 安装公开 Skill
 npx @tikomni/skills install claude-code all
 
-# 只安装创作者分析 Skill
-npx @tikomni/skills install claude-code creator-analysis
+# 显式安装同一个 Skill
+npx @tikomni/skills install claude-code social-media-crawl
 ```
 
 默认目录：`~/.claude/skills`
@@ -123,11 +116,11 @@ npx @tikomni/skills install claude-code creator-analysis
 安装到 OpenClaw：
 
 ```bash
-# 安装全部 Skills
+# 安装公开 Skill
 npx @tikomni/skills install openclaw all
 
 # 安装到自定义目录
-npx @tikomni/skills install openclaw meta-capability --dir "/custom/skills"
+npx @tikomni/skills install openclaw social-media-crawl --dir "/custom/skills"
 ```
 
 默认目录：优先 `~/.openclaw/workspace/skills`，否则 `~/.openclaw/skills`
@@ -161,20 +154,19 @@ TIKOMNI_CARD_ROOT="/absolute/path/to/tikomni-cards"
 
 除了手动执行命令，你也可以直接对 Agent 说：
 
-- “帮我把 TikOmni skills 全部安装到 Codex。”
-- “把 `creator-analysis` 安装到 Claude Code 的 skills 目录。”
-- “把 `meta-capability` 安装到 OpenClaw，目标目录是 `/custom/skills`。”
+- “把 `social-media-crawl` 安装到 Codex。”
+- “把 `social-media-crawl` 安装到 Claude Code 的 skills 目录。”
+- “把 `social-media-crawl` 安装到 OpenClaw，目标目录是 `/custom/skills`。”
 
 ## 安装完成后怎么用
 
 配置完成后，可以直接通过自然语言发起任务，例如：
 
-- “提取这个抖音视频的结构化信息和字幕。”
-- “分析这个小红书笔记，输出作品卡和内容拆解。”
-- “抓取这个抖音主页近 20 条内容，并总结选题方向。”
-- “分析这个小红书账号，输出作者画像和代表性内容特征。”
-- “搜索这个关键词下的抖音结果，并整理前 20 条内容特征。”
-- “获取这个直播间的信息并输出结构化摘要。”
+- “提取这个抖音视频的结构化字段和主文本。”
+- “抓取这个小红书作品并写入事实卡。”
+- “抓取这个主页的作品并持续入库到作者目录。”
+- “通过 TikOmni MCP 获取这个评论线程并输出标准 JSON。”
+- “通过 TikOmni MCP 获取搜索或榜单结果，并保持结构化返回。”
 
 ## 版本与发布
 

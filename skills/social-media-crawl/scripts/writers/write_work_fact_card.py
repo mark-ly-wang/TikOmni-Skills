@@ -215,10 +215,10 @@ def _resolve_primary_text(payload: Dict[str, Any], caption_raw: str) -> Dict[str
     subtitle_raw = _safe_text(payload.get("subtitle_raw"))
     asr_clean = _safe_text(payload.get("asr_clean"))
     asr_raw = _safe_text(payload.get("asr_raw"))
-    if subtitle_raw:
-        return {"primary_text": subtitle_raw, "primary_text_source": "subtitle_raw"}
     if asr_clean:
         return {"primary_text": asr_clean, "primary_text_source": "asr_clean"}
+    if subtitle_raw:
+        return {"primary_text": subtitle_raw, "primary_text_source": "subtitle_raw"}
     if asr_raw:
         return {"primary_text": asr_raw, "primary_text_source": "asr_raw"}
     if caption_raw:
@@ -356,7 +356,9 @@ def _markdown_lines(card: Dict[str, Any]) -> List[str]:
     lines.extend(["", "## 主文本", primary_text or ""])
     if caption_raw and caption_raw != primary_text:
         lines.extend(["", "## 原始文案", caption_raw])
-    if subtitle_raw and subtitle_raw != primary_text:
+    if asr_raw and subtitle_raw and asr_raw == subtitle_raw and asr_raw != primary_text:
+        lines.extend(["", "## 原始转写", asr_raw])
+    elif subtitle_raw and subtitle_raw != primary_text:
         lines.extend(["", "## 原始字幕", subtitle_raw])
     if asr_raw and asr_raw not in {primary_text, subtitle_raw}:
         lines.extend(["", "## 原始转写", asr_raw])

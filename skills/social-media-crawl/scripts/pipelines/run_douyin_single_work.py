@@ -31,6 +31,13 @@ from scripts.core.config_loader import config_get, load_tikomni_config
 from scripts.core.extract_pipeline import resolve_trace_error_context
 from scripts.core.progress_report import ProgressReporter, build_progress_reporter
 from scripts.pipelines.douyin_video_type_matrix import normalize_douyin_video_type
+from scripts.pipelines.douyin_metadata import (
+    extract_douyin_author as extract_shared_douyin_author,
+    extract_douyin_caption as extract_shared_douyin_caption,
+    extract_douyin_metrics as extract_shared_douyin_metrics,
+    extract_douyin_title as extract_shared_douyin_title,
+)
+from scripts.pipelines.input_contracts import normalize_douyin_work_input
 from scripts.core.asr_pipeline import derive_asr_clean_text, run_u2_asr_with_timeout_retry
 from scripts.pipelines.select_low_quality_video_url import select_low_quality_video_url
 from scripts.core.tikomni_common import (
@@ -156,14 +163,8 @@ def _normalize_input(
     input_value: Optional[str],
     share_url: Optional[str],
 ) -> Dict[str, Optional[str]]:
-    normalized_share = (share_url or "").strip() or None
-
-    if input_value and not normalized_share:
-        candidate = input_value.strip()
-        if candidate.startswith("http://") or candidate.startswith("https://"):
-            normalized_share = candidate
-
-    return {"share_url": normalized_share}
+    normalized = normalize_douyin_work_input(input_value, share_url)
+    return {"share_url": normalize_text(normalized.get("share_url")) or None}
 
 
 def _extract_aweme_detail(payload: Any) -> Optional[Dict[str, Any]]:
@@ -238,76 +239,19 @@ def _normalize_duration_ms(item: Dict[str, Any]) -> Optional[int]:
 
 
 def _pick_title(item: Dict[str, Any]) -> str:
-    for key in ("item_title", "title", "desc", "preview_title"):
-        value = item.get(key)
-        text = normalize_text(value)
-        if text:
-            return text
-    return ""
+    return extract_shared_douyin_title(item)
 
 
 def _pick_desc(item: Dict[str, Any]) -> str:
-    for key in ("desc", "item_title", "title", "preview_title"):
-        value = item.get(key)
-        text = normalize_text(value)
-        if text:
-            return text
-    return ""
+    return extract_shared_douyin_caption(item)
 
 
 def _extract_author(item: Dict[str, Any]) -> Dict[str, Optional[str]]:
-    author = item.get("author")
-    if not isinstance(author, dict):
-        author = {}
-
-    author_platform_id = normalize_text(author.get("uid")) or normalize_text(author.get("id")) or normalize_text(item.get("author_user_id"))
-    author_handle = normalize_text(author.get("short_id")) or normalize_text(author.get("nickname"))
-    douyin_sec_uid = normalize_text(author.get("sec_uid"))
-    douyin_aweme_author_id = normalize_text(item.get("author_user_id")) or author_platform_id
-
-    return {
-        "author_handle": author_handle or None,
-        "platform_author_id": author_platform_id or None,
-        "author_platform_id": author_platform_id or None,
-        "douyin_sec_uid": douyin_sec_uid or None,
-        "douyin_aweme_author_id": douyin_aweme_author_id or None,
-        "nickname": normalize_text(author.get("nickname")) or None,
-        "signature": normalize_text(author.get("signature")) or None,
-    }
+    return extract_shared_douyin_author(item)
 
 
 def _extract_metrics(item: Dict[str, Any]) -> Dict[str, Optional[int]]:
-    statistics = item.get("statistics")
-    if not isinstance(statistics, dict):
-        statistics = {}
-
-    def metric(*keys: str, default: Optional[int] = 0) -> Optional[int]:
-        for key in keys:
-            value = _safe_int(statistics.get(key))
-            if value is not None:
-                return value
-            value = _safe_int(item.get(key))
-            if value is not None:
-                return value
-        return default
-
-    metrics = {
-        "digg_count": metric("digg_count"),
-        "comment_count": metric("comment_count"),
-        "collect_count": metric("collect_count"),
-        "share_count": metric("share_count", "forward_count"),
-        "play_count": metric("play_count", default=None),
-    }
-    play_count = metrics.get("play_count")
-    engagement_floor = max(
-        int(metrics.get("digg_count") or 0),
-        int(metrics.get("comment_count") or 0),
-        int(metrics.get("collect_count") or 0),
-        int(metrics.get("share_count") or 0),
-    )
-    if play_count is not None and int(play_count) <= 0 and engagement_floor > 0:
-        metrics["play_count"] = None
-    return metrics
+    return extract_shared_douyin_metrics(item)
 
 
 def _extract_platform_work_id(item: Dict[str, Any]) -> Optional[str]:
@@ -633,6 +577,7 @@ def _build_result(
     cover_image: Optional[str] = None,
     asr_source: str = "fallback_none",
     timings: Optional[Dict[str, int]] = None,
+    missing_fields: Optional[List[Dict[str, str]]] = None,
 ) -> Dict[str, Any]:
     summary_block = summarize_content(raw_content, source="douyin:single-video-low-quality")
     insights = list(summary_block.get("insights", []))
@@ -698,13 +643,13 @@ def _build_result(
         "insights": insights,
         "confidence": confidence,
         "error_reason": error_reason,
-        "missing_fields": _build_missing_fields(
+        "missing_fields": list(missing_fields or _build_missing_fields(
             title=title,
             desc=desc,
             platform_work_id=platform_work_id,
             video_down_url=video_down_url,
             author=author,
-        ),
+        )),
         "extract_trace": extract_trace,
         "fallback_trace": fallback_trace,
         "request_id": request_id,
@@ -741,13 +686,74 @@ def run_douyin_single_video(
     workflow_started_at = time.perf_counter()
     timings = _empty_timings()
     parse_started_at = time.perf_counter()
-    source_input = _normalize_input(input_value, share_url)
+    preflight = normalize_douyin_work_input(input_value, share_url)
+    source_input = {"share_url": normalize_text(preflight.get("share_url")) or None}
     timings["url_parse_ms"] = _elapsed_ms(parse_started_at)
     if progress is not None:
         progress.started(
             stage="single_video.workflow",
             message="douyin single_video workflow started",
             data={"analysis_mode": analysis_mode, "write_card": bool(write_card), "persist_output": bool(persist_output)},
+        )
+    preflight_trace = [
+        {
+            "step": "input.preflight",
+            "ok": preflight.get("error_reason") is None,
+            "input_kind": "share_url",
+            "normalized_share_url": source_input.get("share_url"),
+            "error_reason": preflight.get("error_reason"),
+            "missing_fields": list(preflight.get("missing_fields") or []),
+        }
+    ]
+    if preflight.get("error_reason"):
+        result = _build_result(
+            source_input=source_input,
+            platform_work_id=None,
+            title="",
+            desc="",
+            duration_ms=None,
+            video_down_url=None,
+            author={"author_handle": None, "author_platform_id": None, "douyin_sec_uid": None, "douyin_aweme_author_id": None, "nickname": None, "signature": None},
+            metrics=_empty_metrics(),
+            tags=[],
+            is_video=False,
+            video_type_reason="invalid_input",
+            raw_content="",
+            confidence="low",
+            error_reason=str(preflight.get("error_reason") or "invalid_share_url"),
+            extract_trace=preflight_trace,
+            fallback_trace=[],
+            request_id=None,
+            u2_task_id=None,
+            u2_task_status="UNKNOWN",
+            u2_gate_reason="invalid_input",
+            analysis_mode=analysis_mode,
+            timings=timings,
+            missing_fields=list(preflight.get("missing_fields") or []),
+        )
+        if write_card:
+            card_started_at = time.perf_counter()
+            result["card_write"] = write_work_fact_card(
+                payload=result,
+                platform="douyin",
+                card_type=card_type,
+                card_root=card_root,
+                content_kind=content_kind,
+                storage_config=storage_config,
+                analysis_mode=analysis_mode,
+                progress=progress.child(scope="card_write") if progress is not None else None,
+            )
+            timings["card_write_ms"] = _elapsed_ms(card_started_at)
+            timings["llm_analysis_ms"] = _safe_int((result.get("card_write") or {}).get("llm_analysis_ms"))
+        timings["total_ms"] = _elapsed_ms(workflow_started_at)
+        result["timings"] = dict(timings)
+        _update_pipeline_status(result)
+        return _finalize_result(
+            result=result,
+            source_input=source_input,
+            platform_work_id=None,
+            storage_config=storage_config,
+            persist_output=persist_output,
         )
     if not source_input.get("share_url"):
         result = _build_result(
@@ -765,7 +771,7 @@ def run_douyin_single_video(
             raw_content="",
             confidence="low",
             error_reason="missing_share_url",
-            extract_trace=[],
+            extract_trace=preflight_trace,
             fallback_trace=[],
             request_id=None,
             u2_task_id=None,

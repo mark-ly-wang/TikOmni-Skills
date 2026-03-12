@@ -18,5 +18,4 @@
 - `completeness` 允许值：`complete`、`partial`、`incomplete`。
 - `missing_fields` 是缺失字段列表。
 - `error_reason` 成功时可为空字符串或 `null`。
-- `extract_trace` 记录固定 pipeline 或 MCP 调度步骤。
-
+- `extract_trace` 记录固定 pipeline 或 MCP 调度步骤；若最终进入 browser/CDP 兜底，必须同时记录前置 MCP 尝试与兜底原因。

@@ -1,5 +1,4 @@
 interface:
   display_name: "Social Media Crawl"
-  short_description: "Structured social-media retrieval, transcription, and archival"
-  default_prompt: "Use $social-media-crawl to fetch, transcribe, normalize, and archive a concrete social-media object into structured JSON and work fact cards."
-
+  short_description: "Cross-platform structured social-media retrieval and archival"
+  default_prompt: "Use $social-media-crawl to fetch, transcribe, normalize, and archive social-media objects into structured JSON and work fact cards. Supported platforms include Douyin, Xiaohongshu, Kuaishou, Bilibili, Weibo, TikTok, YouTube, Instagram, Threads, Twitter/X, Reddit, LinkedIn, WeChat Channels, WeChat Official Accounts, Toutiao, Xigua, Zhihu, Lemon8, and Pipixia. Use fixed pipelines for Douyin/Xiaohongshu single-work and creator-home requests; use the MCP generic flow for other supported platforms and objects; use browser fallback only when the fixed pipelines and MCP path are insufficient."

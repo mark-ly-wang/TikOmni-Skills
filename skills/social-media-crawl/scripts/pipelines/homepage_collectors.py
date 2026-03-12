@@ -9,6 +9,7 @@ from urllib.parse import parse_qs, urlparse
 from scripts.core.extract_pipeline import build_api_trace
 from scripts.core.progress_report import ProgressReporter
 from scripts.core.tikomni_common import call_json_api, deep_find_all, deep_find_first
+from scripts.pipelines.input_contracts import extract_douyin_sec_uid, extract_xhs_user_id, looks_like_xhs_user_id
 
 
 def _to_text(value: Any) -> str:
@@ -359,23 +360,16 @@ def _call_xhs_route(
 
 
 def _guess_douyin_sec_user_id(input_value: str) -> str:
-    value = (input_value or "").strip()
-    if not value:
-        return ""
-    if "sec_uid=" in value:
-        query = parse_qs(urlparse(value).query)
-        sec = query.get("sec_uid") or query.get("sec_user_id")
-        if sec and sec[0]:
-            return sec[0]
-    if value.startswith("MS4wLjAB") or value.startswith("MS4wLjA"):
-        return value
-    return ""
+    return str(extract_douyin_sec_uid(input_value) or "")
 
 
 def _guess_xhs_ids(input_value: str) -> Tuple[str, str]:
     value = (input_value or "").strip()
     if not value:
         return "", ""
+    direct_user_id = str(extract_xhs_user_id(value) or "")
+    if direct_user_id and looks_like_xhs_user_id(direct_user_id) and not value.startswith(("http://", "https://")):
+        return direct_user_id, ""
     parsed = urlparse(value)
     if parsed.query:
         query = parse_qs(parsed.query)

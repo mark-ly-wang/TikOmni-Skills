@@ -40,6 +40,12 @@ from scripts.core.tikomni_common import (
     summarize_content,
     write_json_stdout,
 )
+from scripts.pipelines.input_contracts import (
+    extract_xhs_note_id as extract_shared_xhs_note_id,
+    normalize_xhs_note_input,
+    text_has_xhs_short_link,
+)
+from scripts.pipelines.media_url_rules import filter_video_urls, is_probable_video_url
 from scripts.writers.write_work_fact_card import (
     build_work_output_envelope,
     persist_output_envelope,
@@ -194,36 +200,15 @@ def _finalize_result(
 
 
 def _normalize_input(input_value: Optional[str], share_text: Optional[str], note_id: Optional[str]) -> Dict[str, Optional[str]]:
-    normalized_share = normalize_text(share_text) or None
-    normalized_note_id = normalize_text(note_id) or None
-
-    if input_value and not normalized_share and not normalized_note_id:
-        candidate = input_value.strip()
-        if candidate.startswith("http://") or candidate.startswith("https://"):
-            normalized_share = candidate
-        else:
-            normalized_note_id = candidate
-
+    normalized = normalize_xhs_note_input(input_value, share_text, note_id)
     return {
-        "share_text": normalized_share,
-        "note_id": normalized_note_id,
+        "share_text": normalize_text(normalized.get("share_text")) or None,
+        "note_id": normalize_text(normalized.get("note_id")) or None,
     }
 
 
 def _extract_note_id_from_share(share_text: Optional[str]) -> Optional[str]:
-    if not share_text:
-        return None
-    text = share_text.strip()
-    patterns = [
-        r"/explore/([0-9a-zA-Z]+)",
-        r"/discovery/item/([0-9a-zA-Z]+)",
-        r"note_id=([0-9a-zA-Z]+)",
-    ]
-    for pattern in patterns:
-        match = re.search(pattern, text)
-        if match:
-            return match.group(1)
-    return None
+    return extract_shared_xhs_note_id(share_text)
 
 
 def _resolve_note_id(payload: Any, source_input: Dict[str, Optional[str]]) -> Optional[str]:
@@ -256,13 +241,7 @@ def _resolve_note_id(payload: Any, source_input: Dict[str, Optional[str]]) -> Op
 
 
 def _is_short_share_url(share_text: Optional[str]) -> bool:
-    if not share_text:
-        return False
-    try:
-        host = urllib.parse.urlparse(share_text).netloc.lower()
-    except Exception:
-        return False
-    return "xhslink.com" in host
+    return text_has_xhs_short_link(share_text)
 
 
 def _app_response_has_core_fields(response_data: Any) -> bool:
@@ -609,17 +588,19 @@ def _extract_xhs_metadata(
     if not cover_image and selected_image_urls:
         cover_image = selected_image_urls[0]
 
-    video_down_url = _pick_text_from_paths(
-        payload,
-        [
+    video_down_url_candidates = [
+        _pick_text_from_paths(payload, [path])
+        for path in [
             ["video_down_url"],
             ["original_video_url"],
             ["video_url"],
             ["play_url"],
             ["master_url"],
             ["selected_video_url"],
-        ],
-    )
+        ]
+    ]
+    filtered_video_down_urls = filter_video_urls(video_down_url_candidates)
+    video_down_url = filtered_video_down_urls[0] if filtered_video_down_urls else ""
     if not video_down_url:
         video_down_url = normalize_text(selected_video_url)
 
@@ -1091,24 +1072,9 @@ def _url_likely_image(url: str) -> bool:
 
 
 def _url_likely_video(url: str) -> bool:
-    lower = url.lower()
-    video_tokens = [
-        ".mp4",
-        ".m3u8",
-        ".m4a",
-        ".mp3",
-        "video",
-        "play",
-        "stream",
-        "master",
-        "sns-video",
-        "redvideo",
-        "vod",
-        "/audio/",
-    ]
     if _url_likely_image(url):
         return False
-    return any(token in lower for token in video_tokens)
+    return is_probable_video_url(url)
 
 
 def _video_quality_hint(url: str) -> int:
@@ -1174,7 +1140,7 @@ def _extract_video_candidates(payload: Any) -> List[str]:
             unique.append(url)
             seen.add(url)
 
-    video_only = [u for u in unique if _url_likely_video(u)]
+    video_only = filter_video_urls([u for u in unique if _url_likely_video(u)])
     if not video_only:
         return []
 
@@ -1299,10 +1265,7 @@ def _detect_note_content_type(payload: Any, video_candidates: List[str], image_c
     if "image" in note_type_value:
         return "image"
 
-    note_sound_url = normalize_text(deep_find_first(payload, ["note_sound_info", "url"])).lower()
-    has_note_audio = bool(note_sound_url and any(token in note_sound_url for token in [".m4a", ".mp3", "/audio/"]))
-
-    has_video = bool(video_candidates) or has_note_audio
+    has_video = bool(video_candidates)
     has_image = bool(image_candidates)
     if has_video and has_image:
         return "mixed"
@@ -1494,7 +1457,11 @@ def run_xiaohongshu_extract(
     workflow_started_at = time.perf_counter()
     timings = _empty_timings()
     parse_started_at = time.perf_counter()
-    source_input = _normalize_input(input_value, share_text, note_id)
+    preflight = normalize_xhs_note_input(input_value, share_text, note_id)
+    source_input = {
+        "share_text": normalize_text(preflight.get("share_text")) or None,
+        "note_id": normalize_text(preflight.get("note_id")) or None,
+    }
     timings["url_parse_ms"] = _elapsed_ms(parse_started_at)
     if progress is not None:
         progress.started(
@@ -1503,13 +1470,72 @@ def run_xiaohongshu_extract(
             data={"analysis_mode": analysis_mode, "write_card": bool(write_card), "persist_output": bool(persist_output)},
         )
     metadata_fields: Dict[str, Any] = {}
+    preflight_trace = [
+        {
+            "step": "input.preflight",
+            "ok": preflight.get("error_reason") is None,
+            "input_kind": "share_text_or_note_id",
+            "normalized_share_text": source_input.get("share_text"),
+            "normalized_note_id": source_input.get("note_id"),
+            "error_reason": preflight.get("error_reason"),
+            "missing_fields": list(preflight.get("missing_fields") or []),
+        }
+    ]
+    if preflight.get("error_reason"):
+        result = _build_result(
+            source_input=source_input,
+            raw_content="",
+            confidence="low",
+            error_reason=str(preflight.get("error_reason") or "invalid_note_id"),
+            extract_trace=preflight_trace,
+            fallback_trace=[],
+            request_id=None,
+            text_source="none",
+            note_id=None,
+            subtitle_hit=False,
+            u2_task_id=None,
+            u2_task_status="UNKNOWN",
+            note_content_type="unknown",
+            analysis_mode=analysis_mode,
+            selected_video_url=None,
+            selected_video_candidates=[],
+            selected_image_urls=[],
+            downloaded_assets=[],
+            missing_fields=list(preflight.get("missing_fields") or []),
+            metadata_fields=metadata_fields,
+            timings=timings,
+        )
+        if write_card:
+            card_started_at = time.perf_counter()
+            result["card_write"] = write_work_fact_card(
+                payload=result,
+                platform="xiaohongshu",
+                card_type=card_type,
+                card_root=card_root,
+                content_kind="note",
+                storage_config=storage_config,
+                analysis_mode=analysis_mode,
+                progress=progress.child(scope="card_write") if progress is not None else None,
+            )
+            timings["card_write_ms"] = _elapsed_ms(card_started_at)
+            timings["llm_analysis_ms"] = _to_int_or_none((result.get("card_write") or {}).get("llm_analysis_ms")) or 0
+        timings["total_ms"] = _elapsed_ms(workflow_started_at)
+        result["timings"] = dict(timings)
+        _update_pipeline_status(result)
+        return _finalize_result(
+            result=result,
+            source_input=source_input,
+            note_id=None,
+            storage_config=storage_config,
+            persist_output=persist_output,
+        )
     if not source_input["share_text"] and not source_input["note_id"]:
         result = _build_result(
             source_input=source_input,
             raw_content="",
             confidence="low",
             error_reason="missing_share_text_or_note_id",
-            extract_trace=[],
+            extract_trace=preflight_trace,
             fallback_trace=[],
             request_id=None,
             text_source="none",

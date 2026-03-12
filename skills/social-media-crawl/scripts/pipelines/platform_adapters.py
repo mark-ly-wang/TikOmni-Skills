@@ -13,6 +13,14 @@ from scripts.pipelines.schema import (
     validate_work_item,
     validate_works_collection,
 )
+from scripts.pipelines.douyin_metadata import (
+    extract_douyin_author,
+    extract_douyin_caption,
+    extract_douyin_metrics,
+    extract_douyin_title,
+    normalize_douyin_author_handle,
+)
+from scripts.pipelines.media_url_rules import is_probable_video_url as is_shared_probable_video_url
 from scripts.core.tikomni_common import deep_find_all, deep_find_first
 from scripts.pipelines.select_low_quality_video_url import select_low_quality_video_url
 
@@ -117,12 +125,7 @@ def _normalize_douyin_tags(value: Any) -> List[str]:
 
 
 def _is_probable_video_url(url: str) -> bool:
-    lower = (url or "").lower()
-    if not (lower.startswith("http://") or lower.startswith("https://")):
-        return False
-    if any(token in lower for token in [".jpg", ".jpeg", ".png", ".webp", "image", "img"]):
-        return False
-    return any(token in lower for token in [".mp4", ".m3u8", ".m4a", "video", "stream", "play"])
+    return is_shared_probable_video_url(url)
 
 
 def _extract_douyin_video_down_url(item: Dict[str, Any]) -> str:
@@ -348,14 +351,21 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
 
     internal_author_id = _t(_first(profile_data, ["sec_user_id", "sec_uid"], raw.get("resolved_author_id")))
     stable_author_id = _t(_first(profile_data, ["uid", "user_id", "id"]))
-    author_handle = _t(_first(profile_data, ["short_id", "unique_id", "douyin_id", "display_id"]))
+    author_handle = normalize_douyin_author_handle(
+        _first(profile_data, ["unique_id"]),
+        _first(profile_data, ["short_id"]),
+        _first(profile_data, ["douyin_id"]),
+        _first(profile_data, ["display_id"]),
+        _first(profile_data, ["nickname", "name"]),
+    )
+    nickname = _t(_first(profile_data, ["nickname", "name"]))
 
     author_id = internal_author_id or stable_author_id
     profile = build_author_profile(
         platform="douyin",
         platform_author_id=author_id,
         author_handle=author_handle,
-        nickname=_t(_first(profile_data, ["nickname", "name"])),
+        nickname=nickname,
         ip_location=_t(_first(profile_data, ["ip_location", "ip_label", "ipLocation"])),
         fans_count=_i(_first(profile_data, ["follower_count", "fans_count", "mplatform_followers_count"])),
         liked_count=_i(_first(profile_data, ["total_favorited", "liked_count", "favoriting_count"])),
@@ -383,23 +393,27 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
         if not isinstance(item, dict):
             continue
         aweme_id = _t(_first(item, ["aweme_id", "item_id", "id"]))
-        metrics = {
-            "like": _i(_first(item, ["digg_count", "like_count"], 0)),
-            "comment": _i(_first(item, ["comment_count"], 0)),
-            "collect": _i(_first(item, ["collect_count"], 0)),
-            "share": _i(_first(item, ["share_count"], 0)),
-            "play": _optional_i(_first(item, ["play_count", "view_count"], None)),
-        }
+        author_info = extract_douyin_author(item)
+        metrics = extract_douyin_metrics(item)
         video_down_url = _extract_douyin_video_down_url(item)
         tags = _normalize_douyin_tags(_first(item, ["hashtags", "tags", "text_extra"], []))
+        work_author_handle = normalize_douyin_author_handle(
+            author_info.get("author_handle"),
+            author_handle,
+            nickname,
+        )
+        work_platform_author_id = _t(author_info.get("platform_author_id") or author_id)
+        work_author_platform_id = _t(author_info.get("author_platform_id") or stable_author_id or author_id)
+        work_nickname = _t(author_info.get("nickname") or nickname)
+        work_signature = _t(author_info.get("signature") or profile.get("signature"))
         work = build_work_item(
             platform="douyin",
             platform_work_id=aweme_id,
-            platform_author_id=author_id,
-            author_handle=author_handle,
-            author_platform_id=stable_author_id or author_id,
-            title=_t(_first(item, ["title"])),
-            caption_raw=_t(_first(item, ["desc"])),
+            platform_author_id=work_platform_author_id,
+            author_handle=work_author_handle,
+            author_platform_id=work_author_platform_id,
+            title=extract_douyin_title(item),
+            caption_raw=extract_douyin_caption(item),
             subtitle_raw="",
             subtitle_source="missing",
             publish_time=_t(_first(item, ["create_time", "publish_time"])),
@@ -407,7 +421,12 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
             content_type="video",
             duration_ms=_i(_first(item, ["duration_ms", "duration"], 0)),
             tags=tags,
-            metrics=metrics,
+            metrics={
+                "digg_count": int(metrics.get("digg_count") or 0),
+                "comment_count": int(metrics.get("comment_count") or 0),
+                "collect_count": int(metrics.get("collect_count") or 0),
+                "share_count": int(metrics.get("share_count") or 0),
+            },
             cover_image=(
                 _extract_first_url(_first(item, ["cover_url"], ""))
                 or _extract_first_url(_first(item, ["cover"], ""))
@@ -420,18 +439,31 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
             asr_error_reason="",
             asr_source="fallback_none",
             platform_native_refs={
-                "douyin_sec_uid": internal_author_id,
-                "douyin_aweme_author_id": stable_author_id or author_id,
+                "douyin_sec_uid": _t(author_info.get("douyin_sec_uid") or internal_author_id),
+                "douyin_aweme_author_id": _t(author_info.get("douyin_aweme_author_id") or stable_author_id or author_id),
+                "douyin_unique_id": _t(author_info.get("unique_id")),
             },
             raw_ref={"aweme_id": aweme_id, "raw_item": item},
         )
         work.update(
             {
-                "digg_count": metrics["like"],
-                "comment_count": metrics["comment"],
-                "collect_count": metrics["collect"],
-                "share_count": metrics["share"],
-                "play_count": metrics["play"],
+                "author": {
+                    "author_handle": work_author_handle,
+                    "platform_author_id": work_platform_author_id,
+                    "author_platform_id": work_author_platform_id,
+                    "douyin_sec_uid": _t(author_info.get("douyin_sec_uid") or internal_author_id),
+                    "douyin_aweme_author_id": _t(author_info.get("douyin_aweme_author_id") or stable_author_id or author_id),
+                    "unique_id": _t(author_info.get("unique_id")),
+                    "nickname": work_nickname,
+                    "signature": work_signature,
+                },
+                "nickname": work_nickname,
+                "signature": work_signature,
+                "digg_count": int(metrics.get("digg_count") or 0),
+                "comment_count": int(metrics.get("comment_count") or 0),
+                "collect_count": int(metrics.get("collect_count") or 0),
+                "share_count": int(metrics.get("share_count") or 0),
+                "play_count": metrics.get("play_count"),
             }
         )
 
@@ -448,16 +480,18 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
 
     author_id = _t(_first(profile_data, ["user_id", "userid", "id"], raw.get("resolved_author_id")))
     author_handle = _t(_first(profile_data, ["red_id", "redid", "display_id", "username"]))
+    nickname = _t(_first(profile_data, ["nickname", "name"]))
+    signature = _t(_first(profile_data, ["desc", "signature", "bio", "introduction"]))
     profile = build_author_profile(
         platform="xiaohongshu",
         platform_author_id=author_id,
         author_handle=author_handle,
-        nickname=_t(_first(profile_data, ["nickname", "name"])),
+        nickname=nickname,
         ip_location=_t(_first(profile_data, ["ip_location", "ip_location_desc", "ipLocation"])),
         fans_count=_i(_first(profile_data, ["fans", "fans_count", "follower_count", "followers"])),
         liked_count=_i(_first(profile_data, ["liked_count", "likes", "total_liked", "like_count"])),
         collected_count=_i(_first(profile_data, ["collected_count", "collect_count", "total_collected", "favorite_count"])),
-        signature=_t(_first(profile_data, ["desc", "signature", "bio", "introduction"])),
+        signature=signature,
         avatar_url=_extract_xhs_avatar_url(profile_data),
         works_count=_i(_first(profile_data, ["notes", "note_count", "works_count", "post_count"])),
         verified=bool(_first(profile_data, ["official_verified", "verified"], False)),
@@ -480,6 +514,8 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
             "share": _i(_first(item, ["share_count"], 0)),
             "play": _optional_i(_first(item, ["view_count", "play_count"], None)),
         }
+        if (metrics["play"] or 0) <= 0 and max(metrics["like"], metrics["comment"], metrics["collect"], metrics["share"]) > 0:
+            metrics["play"] = None
         subtitle_inline = _extract_xhs_subtitle_inline(item)
         subtitle_urls = _extract_xhs_subtitle_urls(item)
         video_down_url = _extract_xhs_video_down_url(item)
@@ -489,6 +525,8 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
         cover_image = _extract_xhs_cover_image(item)
         source_url = _extract_xhs_source_url(item, note_id)
         share_url = _extract_xhs_share_url(item, note_id)
+        work_nickname = nickname
+        work_signature = signature
 
         work = build_work_item(
             platform="xiaohongshu",
@@ -523,6 +561,15 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
         )
         work.update(
             {
+                "author": {
+                    "author_handle": author_handle,
+                    "platform_author_id": author_id,
+                    "author_platform_id": author_id,
+                    "nickname": work_nickname,
+                    "signature": work_signature,
+                },
+                "nickname": work_nickname,
+                "signature": work_signature,
                 "digg_count": metrics["like"],
                 "comment_count": metrics["comment"],
                 "collect_count": metrics["collect"],

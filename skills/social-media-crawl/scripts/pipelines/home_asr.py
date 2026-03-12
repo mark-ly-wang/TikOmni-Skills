@@ -12,6 +12,7 @@ from scripts.core.progress_report import ProgressReporter
 from scripts.core.tikomni_common import normalize_text
 from scripts.core.asr_pipeline import (
     clamp_u2_batch_submit_size,
+    derive_asr_clean_text,
     normalize_media_url,
     run_u2_asr_batch_with_timeout_retry,
     run_u2_asr_candidates_with_timeout_retry,
@@ -121,6 +122,30 @@ def _clean_text(text: Any) -> str:
     lines = [normalize_text(line) for line in str(text).splitlines()]
     lines = [line for line in lines if line]
     return "\n".join(lines).strip()
+
+
+def _build_transcript_result(
+    raw_text: Any,
+    *,
+    subtitle_source: str,
+    asr_source: str,
+) -> Dict[str, Any]:
+    transcript = _clean_text(raw_text)
+    asr_clean = derive_asr_clean_text(transcript)
+    primary_text = asr_clean or transcript
+    return {
+        "subtitle_raw": transcript,
+        "subtitle_source": subtitle_source,
+        "asr_raw": transcript,
+        "asr_clean": asr_clean,
+        "primary_text": primary_text,
+        "primary_text_source": "asr_clean",
+        "analysis_eligibility": "eligible" if transcript else "incomplete",
+        "analysis_exclusion_reason": "" if transcript else "video_asr_unavailable",
+        "asr_status": "success" if transcript else "failed",
+        "asr_error_reason": "",
+        "asr_source": asr_source,
+    }
 
 
 def _subtitle_text_from_raw(raw: str) -> str:
@@ -294,19 +319,11 @@ def _run_u2_for_work(
     }
 
     if transcript:
-        return {
-            "subtitle_raw": transcript,
-            "subtitle_source": "external_asr",
-            "asr_raw": transcript,
-            "asr_clean": transcript,
-            "primary_text": transcript,
-            "primary_text_source": "asr_clean",
-            "analysis_eligibility": "eligible",
-            "analysis_exclusion_reason": "",
-            "asr_status": "success",
-            "asr_error_reason": "",
-            "asr_source": "external_asr",
-        }, trace
+        return _build_transcript_result(
+            transcript,
+            subtitle_source="external_asr",
+            asr_source="external_asr",
+        ), trace
 
     return {
         "subtitle_raw": "",
@@ -715,17 +732,11 @@ def _run_u2_batch_for_entries(
         if (mapped_ok or mapped_status in {"SUCCEEDED", "SUCCESS", "COMPLETED", "DONE"}) and transcript:
             for entry in grouped_entries:
                 entry["work"].update(
-                    {
-                        "asr_raw": transcript,
-                        "asr_clean": transcript,
-                        "primary_text": transcript,
-                        "primary_text_source": "asr_clean",
-                        "analysis_eligibility": "eligible",
-                        "analysis_exclusion_reason": "",
-                        "asr_status": "success",
-                        "asr_error_reason": "",
-                        "asr_source": "external_asr",
-                    }
+                    _build_transcript_result(
+                        transcript,
+                        subtitle_source="external_asr",
+                        asr_source="external_asr",
+                    )
                 )
                 mapped_count += 1
         else:
@@ -927,19 +938,11 @@ def enrich_author_home_asr(
             subtitle_invalid = _invalid_subtitle_reason(subtitle_text)
             if subtitle_invalid is None:
                 work.update(
-                    {
-                        "subtitle_raw": subtitle_text,
-                        "subtitle_source": "native_subtitle",
-                        "asr_raw": subtitle_text,
-                        "asr_clean": subtitle_text,
-                        "primary_text": subtitle_text,
-                        "primary_text_source": "asr_clean",
-                        "analysis_eligibility": "eligible",
-                        "analysis_exclusion_reason": "",
-                        "asr_status": "success",
-                        "asr_error_reason": "",
-                        "asr_source": "native_subtitle",
-                    }
+                    _build_transcript_result(
+                        subtitle_text,
+                        subtitle_source="native_subtitle",
+                        asr_source="native_subtitle",
+                    )
                 )
                 trace.append(
                     {

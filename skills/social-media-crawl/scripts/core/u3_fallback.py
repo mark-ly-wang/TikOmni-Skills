@@ -5,18 +5,26 @@ from __future__ import annotations
 
 import mimetypes
 import os
+import socket
 import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
-from scripts.core.tikomni_common import DEFAULT_USER_AGENT, call_json_api, normalize_text
+from scripts.core.tikomni_common import (
+    DEFAULT_USER_AGENT,
+    call_json_api,
+    normalize_text,
+    resolve_timeout_retry_policy,
+)
 
 DEFAULT_U3_PROVIDER = "oss"
 DEFAULT_CONTENT_TYPE = "video/mp4"
 DOWNLOAD_CHUNK_SIZE = 1024 * 1024
+TIMEOUT_LIKE_HTTP_STATUS_CODES = {408, 429, 502, 503, 504}
 
 
 def _safe_name_from_url(source_url: str) -> str:
@@ -135,6 +143,16 @@ def create_u3_upload(
     )
 
 
+def _is_timeout_like_upload_error(status_code: Optional[int], error_reason: Optional[str]) -> bool:
+    if isinstance(status_code, (int, float)) and int(status_code) in TIMEOUT_LIKE_HTTP_STATUS_CODES:
+        return True
+
+    reason = str(error_reason or "").strip().lower()
+    if not reason:
+        return False
+    return any(token in reason for token in ("timeout", "timed out", "deadline exceeded"))
+
+
 def upload_file_to_presigned_url(
     *,
     upload_url: str,
@@ -147,35 +165,130 @@ def upload_file_to_presigned_url(
     try:
         with open(file_path, "rb") as handle:
             data = handle.read()
-
-        headers = {
-            "Content-Type": content_type or DEFAULT_CONTENT_TYPE,
-            "User-Agent": os.getenv("TIKOMNI_HTTP_USER_AGENT", DEFAULT_USER_AGENT),
-        }
-        if isinstance(upload_headers, dict):
-            for key, value in upload_headers.items():
-                header_key = str(key).strip()
-                if not header_key:
-                    continue
-                headers[header_key] = str(value)
-
-        request = urllib.request.Request(
-            upload_url,
-            data=data,
-            headers=headers,
-            method=(upload_method or "PUT").upper(),
-        )
-        with urllib.request.urlopen(request, timeout=max(timeout_ms / 1000.0, 1.0)) as response:
-            status_code = response.getcode()
-            return {
-                "ok": 200 <= int(status_code) < 300,
-                "status_code": status_code,
-                "error_reason": None if 200 <= int(status_code) < 300 else f"u3_upload_http_{status_code}",
-            }
-    except urllib.error.HTTPError as error:
-        return {"ok": False, "status_code": error.code, "error_reason": f"u3_upload_http_{error.code}"}
     except Exception as error:
-        return {"ok": False, "status_code": None, "error_reason": f"u3_upload_failed:{normalize_text(error)}"}
+        return {
+            "ok": False,
+            "status_code": None,
+            "error_reason": f"u3_upload_failed:{normalize_text(error)}",
+            "retry_attempt": 0,
+            "timeout_retry_max": 0,
+            "timeout_retry_exhausted": False,
+            "retry_chain": [],
+        }
+
+    headers = {
+        "Content-Type": content_type or DEFAULT_CONTENT_TYPE,
+        "User-Agent": os.getenv("TIKOMNI_HTTP_USER_AGENT", DEFAULT_USER_AGENT),
+    }
+    if isinstance(upload_headers, dict):
+        for key, value in upload_headers.items():
+            header_key = str(key).strip()
+            if not header_key:
+                continue
+            headers[header_key] = str(value)
+
+    retry_policy = resolve_timeout_retry_policy()
+    timeout_retry_max = int(retry_policy.get("max_retries", 0) or 0)
+    retry_backoff_ms = int(retry_policy.get("backoff_ms", 0) or 0)
+    max_attempts = 1 + timeout_retry_max
+    retry_chain: List[Dict[str, Any]] = []
+    last_result: Dict[str, Any] = {
+        "ok": False,
+        "status_code": None,
+        "error_reason": "u3_upload_failed:unknown",
+    }
+
+    for attempt in range(1, max_attempts + 1):
+        if attempt > 1 and retry_backoff_ms > 0:
+            sleep_ms = retry_backoff_ms * (2 ** (attempt - 2))
+            time.sleep(sleep_ms / 1000.0)
+
+        try:
+            request = urllib.request.Request(
+                upload_url,
+                data=data,
+                headers=headers,
+                method=(upload_method or "PUT").upper(),
+            )
+            with urllib.request.urlopen(request, timeout=max(timeout_ms / 1000.0, 1.0)) as response:
+                status_code = response.getcode()
+                result: Dict[str, Any] = {
+                    "ok": 200 <= int(status_code) < 300,
+                    "status_code": status_code,
+                    "error_reason": None if 200 <= int(status_code) < 300 else f"u3_upload_http_{status_code}",
+                }
+        except urllib.error.HTTPError as error:
+            result = {
+                "ok": False,
+                "status_code": error.code,
+                "error_reason": f"u3_upload_http_{error.code}",
+            }
+        except urllib.error.URLError as error:
+            reason_obj = getattr(error, "reason", error)
+            reason_text = normalize_text(reason_obj)
+            result = {
+                "ok": False,
+                "status_code": None,
+                "error_reason": f"u3_upload_failed:{reason_text or 'network_error'}",
+                "_timeout_like": isinstance(reason_obj, socket.timeout)
+                or _is_timeout_like_upload_error(status_code=None, error_reason=reason_text),
+            }
+        except (TimeoutError, socket.timeout) as error:
+            result = {
+                "ok": False,
+                "status_code": None,
+                "error_reason": f"u3_upload_failed:{normalize_text(error) or 'timeout'}",
+                "_timeout_like": True,
+            }
+        except Exception as error:
+            reason_text = normalize_text(error)
+            result = {
+                "ok": False,
+                "status_code": None,
+                "error_reason": f"u3_upload_failed:{reason_text or 'unknown'}",
+                "_timeout_like": _is_timeout_like_upload_error(status_code=None, error_reason=reason_text),
+            }
+
+        if result.get("ok"):
+            result["retry_attempt"] = max(0, attempt - 1)
+            result["timeout_retry_max"] = timeout_retry_max
+            result["timeout_retry_exhausted"] = False
+            result["retry_chain"] = retry_chain
+            return result
+
+        timeout_like = bool(
+            result.pop(
+                "_timeout_like",
+                _is_timeout_like_upload_error(
+                    status_code=result.get("status_code"),
+                    error_reason=result.get("error_reason"),
+                ),
+            )
+        )
+        retry_chain.append(
+            {
+                "attempt": attempt,
+                "status_code": result.get("status_code"),
+                "error_reason": result.get("error_reason"),
+                "timeout_like": timeout_like,
+            }
+        )
+        last_result = dict(result)
+
+        if timeout_like and attempt < max_attempts:
+            continue
+
+        last_result["retry_attempt"] = max(0, attempt - 1)
+        last_result["timeout_retry_max"] = timeout_retry_max
+        last_result["timeout_retry_exhausted"] = bool(timeout_like and attempt >= max_attempts)
+        last_result["retry_chain"] = retry_chain
+        return last_result
+
+    last_result["retry_attempt"] = timeout_retry_max
+    last_result["timeout_retry_max"] = timeout_retry_max
+    last_result["timeout_retry_exhausted"] = True
+    last_result["retry_chain"] = retry_chain
+    return last_result
 
 
 def complete_u3_upload(
@@ -284,6 +397,11 @@ def run_u3_public_url_fallback(
             "ok": bool(upload_response.get("ok")),
             "status_code": upload_response.get("status_code"),
             "error_reason": upload_response.get("error_reason"),
+            "retry_attempt": upload_response.get("retry_attempt", 0),
+            "retry_count": len(upload_response.get("retry_chain") or []),
+            "timeout_retry_max": upload_response.get("timeout_retry_max", 0),
+            "timeout_retry_exhausted": bool(upload_response.get("timeout_retry_exhausted")),
+            "retry_chain": upload_response.get("retry_chain") or [],
         }
     )
     if not upload_response.get("ok"):

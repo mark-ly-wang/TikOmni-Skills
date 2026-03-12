@@ -257,6 +257,13 @@ def _resolve_timeout_retry_backoff_ms() -> int:
     return max(0, min(backoff, 5000))
 
 
+def resolve_timeout_retry_policy() -> Dict[str, int]:
+    return {
+        "max_retries": _resolve_timeout_retry_max(),
+        "backoff_ms": _resolve_timeout_retry_backoff_ms(),
+    }
+
+
 def _wait_rate_limit_slot(qps: float) -> int:
     global _NEXT_ALLOWED_TS
     interval_sec = 1.0 / max(qps, 0.1)

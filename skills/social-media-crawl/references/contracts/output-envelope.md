@@ -14,8 +14,8 @@
 
 ## Semantics
 
-- `normalized` 只存结构化事实，不存分析推断。
-- `completeness` 允许值：`complete`、`partial`、`incomplete`。
-- `missing_fields` 是缺失字段列表。
-- `error_reason` 成功时可为空字符串或 `null`。
-- `extract_trace` 记录固定 pipeline 或 MCP 调度步骤；若最终进入 browser/CDP 兜底，必须同时记录前置 MCP 尝试与兜底原因。
+- `normalized` stores structured facts only, not analytical inference.
+- `completeness` allows `complete`, `partial`, and `incomplete`.
+- `missing_fields` is the list of missing fields.
+- `error_reason` may be an empty string or `null` on success.
+- `extract_trace` records the fixed-pipeline or MCP dispatch steps. If the flow ends in browser/CDP fallback, it must also record the earlier MCP attempts and the fallback reason.

@@ -79,7 +79,56 @@ The npm package currently exposes:
 
 ### 2. Install skills
 
-Install directly from npm.
+Before installation, prepare:
+
+- `Node.js >= 18`
+- `Python 3`
+
+Common setup commands:
+
+macOS (Homebrew):
+
+```bash
+# If Homebrew is not installed yet:
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+brew install node
+brew install python
+
+node -v
+npm -v
+python3 --version
+```
+
+Linux (Ubuntu / Debian; also works in WSL):
+
+```bash
+sudo apt update
+sudo apt install -y curl python3 python3-pip
+
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+nvm install --lts
+
+node -v
+npm -v
+python3 --version
+```
+
+Windows (PowerShell):
+
+```powershell
+winget install -e --id OpenJS.NodeJS.LTS
+winget install -e --id Python.Python.3
+
+node -v
+npm -v
+python --version
+```
+
+After that, install directly from npm.
 
 First, list the currently available skills:
 

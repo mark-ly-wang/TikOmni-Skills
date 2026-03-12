@@ -1,20 +1,31 @@
 # Generic MCP Objects Guide
 
-以下对象在首期不冻结细粒度 schema：
+The following objects do not freeze a fine-grained schema in the first release:
 
-- 评论线程
-- 搜索结果
-- 榜单
-- 直播间
-- 商品页
+- Comment threads
+- Search results
+- Ranking pages
+- Livestream rooms
+- Product pages
+
+In addition, every platform and object combination that does not match a fixed pipeline falls under this guide, for example:
+
+- A single X/Twitter post
+- An X/Twitter thread
+- An X/Twitter long-form post
+- An X/Twitter creator homepage
+- The top N comments from a comment section
 
 ## Rules
 
-- 这些对象统一走 MCP 通用工作流。
-- agent 先做对象识别，再用 `catalog.search` 和 `endpoint.describe` 选最小工具链。
-- 输出必须满足统一 envelope。
-- 不要求首期落卡。
-- 不允许为了 schema 完整性去编造字段。
+- Route these objects through the generic MCP workflow inside this skill.
+- The platform is not limited to the Douyin and Xiaohongshu cases covered by fixed pipelines. If the platform is discoverable in the MCP catalog, try this workflow first.
+- Detect the object first, then use `catalog.search` and `endpoint.describe` to choose the smallest toolchain.
+- Do not jump to browser/CDP only because the platform is not Douyin or Xiaohongshu.
+- Use browser/CDP only when the generic MCP path is unavailable, or when the task explicitly requires page-level interaction that the API cannot satisfy. Explain the reason in the output.
+- The output must satisfy the unified envelope.
+- No card write is required in the first release.
+- Do not fabricate fields only to satisfy schema completeness.
 
 ## Minimum Deliverable
 
@@ -27,4 +38,3 @@
 - `missing_fields`
 - `error_reason`
 - `extract_trace`
-

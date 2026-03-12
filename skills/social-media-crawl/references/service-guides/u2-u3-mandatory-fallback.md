@@ -2,20 +2,19 @@
 
 ## Hard Rule
 
-- 视频文本优先尝试平台原生字幕。
-- 无原生字幕时先走 U2。
-- `u2.submit` 成功后，最多轮询 60 秒。
-- 如果 60 秒后仍是 `pending`，必须进入 U3 fallback。
-- U3 成功后继续完成 ASR 链路。
-- 若最终失败，保留事实卡并标记 `completeness=incomplete`。
+- Prefer native platform subtitles for video text.
+- If native subtitles are unavailable, use U2 first.
+- After `u2.submit` succeeds, poll for at most 60 seconds.
+- If the task is still `pending` after 60 seconds, enter the U3 fallback path.
+- If U3 succeeds, continue and complete the ASR path.
+- If the flow still fails, keep the fact card and mark `completeness=incomplete`.
 
 ## Trace Requirement
 
-至少记录：
+Record at least:
 
 - U2 submit
 - U2 poll
-- 触发 U3 的原因
-- U3 调用步骤
-- 最终文本来源
-
+- The reason that triggered U3
+- The U3 invocation steps
+- The final text source

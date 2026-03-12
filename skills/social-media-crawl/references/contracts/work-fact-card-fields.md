@@ -36,15 +36,15 @@
 
 ## Field Rules
 
-- `author` 是展示名，不是对象。
-- Markdown 卡片的事实字段进入 frontmatter，不再输出 `## Facts` 章节。
-- 作品库目录只写 Markdown 卡片，不再额外写同目录 `.json` sidecar。
-- `primary_text` 为当前任务最适合阅读和索引的主文本。
-- `play_count` 允许为 `null`；缺失时卡片展示为空，只有平台明确返回 `0` 时才保留 `0`。
-- 视频优先顺序：
+- `author` is the display name, not an object.
+- Fact fields for the Markdown card go into frontmatter. Do not emit a separate `## Facts` section.
+- The work-library directory writes only the Markdown card and no extra `.json` sidecar in the same directory.
+- `primary_text` is the text that is best suited for reading and indexing in the current task.
+- `play_count` may be `null`. Leave it empty when missing, and keep `0` only when the platform explicitly returns `0`.
+- Preferred order for video works:
   - `subtitle_raw`
   - `asr_clean`
   - `caption_raw`
-- 文本作品优先顺序：
+- Preferred order for text works:
   - `caption_raw`
-- 不允许出现分析字段。
+- Do not add analytical fields.

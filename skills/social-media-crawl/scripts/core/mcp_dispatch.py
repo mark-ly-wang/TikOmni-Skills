@@ -48,6 +48,9 @@ class McpHttpClient:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
             "Accept": "application/json, text/event-stream",
+            "User-Agent": "OpenClaw-SocialMediaCrawl/0.1",
+            "X-Client-Name": "social-media-crawl",
+            "X-Client-Version": "0.1.0",
         }
         if self.session_id:
             headers["mcp-session-id"] = self.session_id

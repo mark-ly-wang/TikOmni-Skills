@@ -1,6 +1,6 @@
 {
   "name": "@tikomni/skills",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "TikOmni skill installer CLI for structured social media crawling in Codex, Claude Code, and OpenClaw",
   "license": "MIT",
   "homepage": "https://github.com/mark-ly-wang/TikOmni-Skills#readme",

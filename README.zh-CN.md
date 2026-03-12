@@ -79,7 +79,56 @@
 
 ### 2. 安装 Skills
 
-使用 npm 直接安装。
+安装前请先准备：
+
+- `Node.js >= 18`
+- `Python 3`
+
+常见安装命令：
+
+macOS（Homebrew）：
+
+```bash
+# 如未安装 Homebrew，先执行：
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+brew install node
+brew install python
+
+node -v
+npm -v
+python3 --version
+```
+
+Linux（Ubuntu / Debian；WSL 可同样使用）：
+
+```bash
+sudo apt update
+sudo apt install -y curl python3 python3-pip
+
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+nvm install --lts
+
+node -v
+npm -v
+python3 --version
+```
+
+Windows（PowerShell）：
+
+```powershell
+winget install -e --id OpenJS.NodeJS.LTS
+winget install -e --id Python.Python.3
+
+node -v
+npm -v
+python --version
+```
+
+准备完成后，使用 npm 直接安装。
 
 先查看当前可安装的 Skills：
 

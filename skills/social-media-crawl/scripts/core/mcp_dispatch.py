@@ -132,13 +132,26 @@ class McpHttpClient:
     def catalog_search(self, query: str) -> McpResponse:
         return self.tool_call("catalog.search", {"query": query})
 
-    def endpoint_describe(self, endpoint: str) -> McpResponse:
-        return self.tool_call("endpoint.describe", {"endpoint": endpoint})
+    def endpoint_describe(self, method: str, path: str) -> McpResponse:
+        return self.tool_call("endpoint.describe", {"method": method, "path": path})
 
-    def api_call(self, endpoint: str, params: Optional[Dict[str, Any]] = None, body: Optional[Dict[str, Any]] = None, method: str = "GET") -> McpResponse:
+    def api_call(
+        self,
+        method: str,
+        path: str,
+        query: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, Any]] = None,
+        body: Optional[Any] = None,
+    ) -> McpResponse:
         return self.tool_call(
             "api.call",
-            {"endpoint": endpoint, "params": params or {}, "body": body or {}, "method": method},
+            {
+                "method": method,
+                "path": path,
+                "query": query or {},
+                "headers": headers or {},
+                "body": {} if body is None else body,
+            },
         )
 
     def u2_submit(self, file_url: str) -> McpResponse:

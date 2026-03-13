@@ -12,6 +12,7 @@ SKILL_ROOT = Path(__file__).resolve().parents[1]
 if str(SKILL_ROOT) not in sys.path:
     sys.path.insert(0, str(SKILL_ROOT))
 
+from scripts.core.asr_pipeline import run_u2_asr_batch_with_timeout_retry
 from scripts.pipelines import homepage_collectors
 from scripts.pipelines import run_xiaohongshu_single_work
 
@@ -163,6 +164,71 @@ class FixedPipelineFallbackTest(unittest.TestCase):
         self.assertTrue(web_attempt.get("skipped"))
         self.assertEqual(web_attempt.get("param_reason"), "fallback_requires_cookie")
         self.assertEqual(raw.get("error_reason"), "posts_all_routes_failed")
+
+    def test_u2_batch_prefers_file_url_mapping_over_item_index_fallback(self) -> None:
+        file_url = "https://example.com/video.mp4"
+        raw_task = {
+            "data": {
+                "task_status": "SUCCEEDED",
+                "task_metrics": {"TOTAL": 1, "SUCCEEDED": 1, "FAILED": 0},
+                "items": [
+                    {
+                        "item_index": 0,
+                        "task_status": "SUCCEEDED",
+                        "transcript_text": "索引映射文本。",
+                        "transcription_url": "https://example.com/index.json",
+                    },
+                    {
+                        "file_url": file_url,
+                        "task_status": "SUCCEEDED",
+                        "transcript_text": "file_url 映射文本。",
+                        "transcription_url": "https://example.com/file.json",
+                    },
+                ],
+            }
+        }
+
+        submit_bundle = {
+            "submit_response": {"ok": True, "request_id": "req-submit"},
+            "task_id": "task-1",
+            "final_submit_status": "success",
+            "retry_chain": [],
+        }
+        poll_result = {
+            "ok": True,
+            "task_id": "task-1",
+            "task_status": "SUCCEEDED",
+            "request_id": "req-poll",
+            "error_reason": "",
+            "raw_task": raw_task,
+            "task_metrics": {"TOTAL": 1, "SUCCEEDED": 1, "FAILED": 0},
+            "batch_progress": {"expected_total": 1, "complete": True},
+            "batch_complete": True,
+            "trace": [],
+        }
+
+        with patch(
+            "scripts.core.asr_pipeline.submit_u2_asr_batch_with_retry",
+            return_value=submit_bundle,
+        ), patch(
+            "scripts.core.asr_pipeline.poll_u2_task_core",
+            return_value=poll_result,
+        ):
+            bundle = run_u2_asr_batch_with_timeout_retry(
+                base_url="https://api.tikomni.com",
+                token="test-token",
+                timeout_ms=1000,
+                file_urls=[file_url],
+                submit_max_retries=0,
+                submit_backoff_ms=0,
+                poll_interval_sec=0.01,
+                max_polls=1,
+                timeout_retry_enabled=False,
+                timeout_retry_max_retries=0,
+            )
+
+        mapped_item = bundle["mapped_results"][file_url]
+        self.assertEqual(mapped_item["transcript_text"], "file_url 映射文本。")
 
 
 if __name__ == "__main__":

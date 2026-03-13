@@ -1586,22 +1586,8 @@ def run_u2_asr_batch_with_timeout_retry(
         existing = mapped_results.get(file_url)
         if existing is None:
             mapped_results[file_url] = candidate
-            continue
-
-        old_score = (
-            1 if existing.get("ok") else 0,
-            len(str(existing.get("transcript_text") or "")),
-            1 if existing.get("transcription_url") else 0,
-            1 if not existing.get("error_reason") else 0,
-        )
-        new_score = (
-            1 if candidate.get("ok") else 0,
-            len(str(candidate.get("transcript_text") or "")),
-            1 if candidate.get("transcription_url") else 0,
-            1 if not candidate.get("error_reason") else 0,
-        )
-        if new_score > old_score:
-            mapped_results[file_url] = candidate
+        # When the provider returns file_url, treat it as the source of truth.
+        # item_index remains a fallback only for older payloads without file_url.
 
     mapped_results = hydrate_u2_batch_results_from_transcription_urls(
         mapped_results=mapped_results,

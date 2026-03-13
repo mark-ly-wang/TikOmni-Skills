@@ -32,6 +32,7 @@
     "subtitle_raw": { "type": "string" },
     "work_modality": { "type": "string" },
     "published_date": { "type": "string" },
+    "duration_ms": { "type": ["integer", "null"] },
     "digg_count": { "type": "integer" },
     "comment_count": { "type": "integer" },
     "collect_count": { "type": "integer" },

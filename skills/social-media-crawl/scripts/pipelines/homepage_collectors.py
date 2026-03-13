@@ -72,6 +72,177 @@ def _pick_list(payload: Any, keys: List[str]) -> List[Any]:
     return hit if isinstance(hit, list) else []
 
 
+def _pick_raw(payload: Any, keys: List[str]) -> Any:
+    ordered_keys = [str(key) for key in keys if str(key).strip()]
+
+    def _walk(node: Any) -> Any:
+        if isinstance(node, dict):
+            for key in ordered_keys:
+                if key in node and node.get(key) is not None:
+                    return node.get(key)
+            for value in node.values():
+                hit = _walk(value)
+                if hit is not None:
+                    return hit
+        elif isinstance(node, list):
+            for item in node:
+                hit = _walk(item)
+                if hit is not None:
+                    return hit
+        return None
+
+    return _walk(payload)
+
+
+def _payload_candidates(payload: Any) -> List[Any]:
+    candidates: List[Any] = []
+    if payload is not None:
+        candidates.append(payload)
+    if isinstance(payload, dict):
+        nested = payload.get("data")
+        if nested is not None:
+            candidates.append(nested)
+    return candidates
+
+
+def _pick_raw_from_candidates(payload: Any, keys: List[str]) -> Any:
+    for candidate in _payload_candidates(payload):
+        hit = _pick_raw(candidate, keys)
+        if hit is not None:
+            return hit
+    return None
+
+
+def _pick_list_from_candidates(payload: Any, keys: List[str]) -> List[Any]:
+    for candidate in _payload_candidates(payload):
+        hit = _pick_list(candidate, keys)
+        if hit:
+            return hit
+    return []
+
+
+def _unwrap_data_layers(payload: Any, *, max_depth: int = 3) -> Any:
+    node = payload
+    depth = 0
+    while depth < max_depth and isinstance(node, dict) and isinstance(node.get("data"), dict):
+        node = node.get("data")
+        depth += 1
+    return node
+
+
+def _extract_douyin_posts_page(payload: Any) -> Dict[str, Any]:
+    node = _unwrap_data_layers(payload)
+    if not isinstance(node, dict):
+        return {}
+    return node
+
+
+def _extract_douyin_posts_items(payload: Any) -> List[Any]:
+    node = _extract_douyin_posts_page(payload)
+    items = node.get("aweme_list")
+    return items if isinstance(items, list) else []
+
+
+def _extract_douyin_posts_next_cursor(payload: Any) -> Any:
+    node = _extract_douyin_posts_page(payload)
+    if not isinstance(node, dict):
+        return None
+    for key in ("max_cursor", "cursor", "next_cursor"):
+        if key in node and node.get(key) is not None:
+            return node.get(key)
+    return None
+
+
+def _extract_douyin_posts_has_more(payload: Any) -> Any:
+    node = _extract_douyin_posts_page(payload)
+    if not isinstance(node, dict):
+        return None
+    for key in ("has_more", "hasMore"):
+        if key in node and node.get(key) is not None:
+            return node.get(key)
+    return None
+
+
+def _extract_xhs_posts_page(payload: Any) -> Dict[str, Any]:
+    node = _unwrap_data_layers(payload)
+    if not isinstance(node, dict):
+        return {}
+    return node
+
+
+def _extract_xhs_posts_items(payload: Any) -> List[Any]:
+    node = _extract_xhs_posts_page(payload)
+    for key in ("notes", "note_list", "noteList", "items", "list"):
+        value = node.get(key)
+        if isinstance(value, list):
+            return value
+    return []
+
+
+def _extract_xhs_response_cursor(payload: Any) -> str:
+    node = _extract_xhs_posts_page(payload)
+    if not isinstance(node, dict):
+        return ""
+    for key in ("cursor", "next_cursor", "last_cursor", "last_note_id"):
+        value = _to_text(node.get(key))
+        if value:
+            return value
+    return ""
+
+
+def _extract_xhs_posts_has_more(payload: Any) -> Any:
+    node = _extract_xhs_posts_page(payload)
+    if not isinstance(node, dict):
+        return None
+    for key in ("has_more", "hasMore"):
+        if key in node and node.get(key) is not None:
+            return node.get(key)
+    return None
+
+
+def _normalize_has_more(value: Any) -> Optional[bool]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(int(value))
+    text = _to_text(value).lower()
+    if not text:
+        return None
+    if text in {"1", "true", "yes", "y"}:
+        return True
+    if text in {"0", "false", "no", "n"}:
+        return False
+    return None
+
+
+def _normalize_int_like(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+    try:
+        if isinstance(value, bool):
+            return int(value)
+        if isinstance(value, (int, float)):
+            return int(value)
+        text = _to_text(value)
+        if not text:
+            return None
+        return int(float(text.replace(",", "")))
+    except Exception:
+        return None
+
+
+def _last_xhs_note_id(items: List[Any]) -> str:
+    for item in reversed(items):
+        if not isinstance(item, dict):
+            continue
+        note_id = _pick_text(item, ["note_id", "id", "item_id"])
+        if note_id:
+            return note_id
+    return ""
+
+
 def _looks_like_douyin_sec_user_id(value: str) -> bool:
     return value.startswith("MS4wLjA")
 
@@ -206,10 +377,10 @@ def _pick_first_mapping(items: List[Any]) -> Dict[str, Any]:
 
 
 def _xhs_posts_field_completeness(payload: Any) -> Dict[str, Any]:
-    page_items = _pick_list(payload, ["notes", "note_list", "noteList", "items", "list"])
+    page_items = _extract_xhs_posts_items(payload)
     first_item = _pick_first_mapping(page_items)
-    has_more_flag = _pick_int(payload, ["has_more", "hasMore"], default=-1) >= 0
-    cursor_hit = bool(_pick_text(payload, ["cursor", "next_cursor", "last_cursor", "last_note_id"]))
+    has_more_flag = _extract_xhs_posts_has_more(payload) is not None
+    cursor_hit = bool(_extract_xhs_response_cursor(payload))
     cover_hit = bool(_extract_first_url(_first_url_candidate(first_item, ["cover", "cover_url", "cover_image", "image", "image_url"])))
     share_or_source = bool(_pick_text(first_item, ["share_url", "share_link", "url", "note_url"])) or bool(_pick_text(first_item, ["note_id", "id", "item_id"]))
     interaction_values = [
@@ -466,7 +637,10 @@ def collect_douyin_author_home_raw(
     page = 0
     pagination_trace: List[Dict[str, Any]] = []
 
-    while has_more and page < max(pages_max, 1) and len(works) < max_items:
+    max_pages = max(pages_max, 1)
+    page_limit = min(max(page_size, 1), 20)
+
+    while has_more and page < max_pages and len(works) < max_items:
         page += 1
         posts_resp = call_json_api(
             base_url=base_url,
@@ -476,7 +650,7 @@ def collect_douyin_author_home_raw(
             timeout_ms=timeout_ms,
             params={
                 "sec_user_id": sec_user_id,
-                "count": min(max(page_size, 1), 20),
+                "count": page_limit,
                 "max_cursor": cursor,
                 "sort_type": 0,
             },
@@ -497,22 +671,12 @@ def collect_douyin_author_home_raw(
             )
         request_id_candidates.append(posts_resp)
         response_payload = posts_resp.get("data")
-        page_items = _pick_list(response_payload, ["aweme_list", "items", "list"])
-        if not page_items and isinstance(response_payload, dict):
-            page_items = _pick_list(response_payload.get("data"), ["aweme_list", "items", "list"])
+        page_items = _extract_douyin_posts_items(response_payload)
 
-        data = response_payload
-        next_cursor = _pick_int(data, ["max_cursor", "cursor", "next_cursor"], default=0)
-        has_more_flag = _pick_int(data, ["has_more", "hasMore"], default=0)
-        pagination_trace.append(
-            {
-                "page": page,
-                "cursor_in": cursor,
-                "cursor_out": next_cursor,
-                "has_more": has_more_flag,
-                "items": len(page_items),
-            }
-        )
+        next_cursor_raw = _extract_douyin_posts_next_cursor(response_payload)
+        has_more_raw = _extract_douyin_posts_has_more(response_payload)
+        next_cursor = _normalize_int_like(next_cursor_raw)
+        has_more_normalized = _normalize_has_more(has_more_raw)
 
         for item in page_items:
             if not isinstance(item, dict):
@@ -526,8 +690,44 @@ def collect_douyin_author_home_raw(
             if len(works) >= max_items:
                 break
 
-        has_more = bool(has_more_flag == 1 and next_cursor != cursor)
-        cursor = next_cursor
+        next_cursor_changed = next_cursor is not None and next_cursor != cursor
+        stop_reason = ""
+        should_continue = False
+
+        if len(works) >= max_items:
+            stop_reason = "max_items_reached"
+        elif not page_items:
+            stop_reason = "page_empty"
+        elif has_more_normalized is False:
+            stop_reason = "has_more_false"
+        elif next_cursor is not None and next_cursor == cursor:
+            stop_reason = "cursor_not_advanced"
+        elif has_more_normalized is True and next_cursor is None:
+            stop_reason = "pagination_contract_incomplete"
+        elif has_more_normalized is True or next_cursor_changed:
+            should_continue = True
+        else:
+            stop_reason = "pagination_contract_incomplete"
+
+        if should_continue and page >= max_pages:
+            should_continue = False
+            stop_reason = "pages_max_reached"
+
+        pagination_trace.append(
+            {
+                "page": page,
+                "cursor_in": cursor,
+                "cursor_out": next_cursor,
+                "has_more_raw": has_more_raw,
+                "has_more_normalized": has_more_normalized,
+                "items": len(page_items),
+                "stop_reason": stop_reason,
+            }
+        )
+
+        has_more = should_continue
+        if should_continue and next_cursor is not None:
+            cursor = next_cursor
 
     request_id = _pick_request_id(request_id_candidates, trace)
     if progress is not None:
@@ -661,7 +861,10 @@ def collect_xhs_author_home_raw(
     page = 0
     pagination_trace: List[Dict[str, Any]] = []
 
-    while has_more and page < max(pages_max, 1) and len(works) < max_items:
+    max_pages = max(pages_max, 1)
+    page_limit = min(max(page_size, 1), 20)
+
+    while has_more and page < max_pages and len(works) < max_items:
         page += 1
         if progress is not None:
             progress.progress(
@@ -684,7 +887,7 @@ def collect_xhs_author_home_raw(
                     "user_id": user_id,
                     "share_text": input_value,
                     "cursor": cursor or None,
-                    "num": min(max(page_size, 1), 20),
+                    "num": page_limit,
                     "xsec_token": xsec_token or None,
                 },
                 fallback_reason=posts_reason,
@@ -739,20 +942,14 @@ def collect_xhs_author_home_raw(
         )
 
         data = posts_resp.get("data")
-        page_items = _pick_list(data, ["notes", "note_list", "noteList", "items", "list"])
-        next_cursor = _pick_text(data, ["cursor", "next_cursor", "last_cursor", "last_note_id"])
-        has_more_flag = _pick_int(data, ["has_more", "hasMore"], default=0)
-        pagination_trace.append(
-            {
-                "page": page,
-                "cursor_in": cursor,
-                "cursor_out": next_cursor,
-                "has_more": has_more_flag,
-                "items": len(page_items),
-                "route_label": posts_resp.get("_route_label"),
-                "request_id": posts_resp.get("request_id"),
-            }
-        )
+        page_items = _extract_xhs_posts_items(data)
+        next_cursor_raw = _extract_xhs_response_cursor(data)
+        has_more_raw = _extract_xhs_posts_has_more(data)
+        has_more_normalized = _normalize_has_more(has_more_raw)
+        fallback_cursor = _last_xhs_note_id(page_items)
+        explicit_cursor = _to_text(next_cursor_raw)
+        cursor_source = "response_cursor" if explicit_cursor else ("last_note_id_fallback" if fallback_cursor else "missing")
+        next_cursor = explicit_cursor or fallback_cursor
 
         for item in page_items:
             if not isinstance(item, dict):
@@ -766,8 +963,47 @@ def collect_xhs_author_home_raw(
             if len(works) >= max_items:
                 break
 
-        has_more = bool(has_more_flag == 1 and next_cursor and str(next_cursor) != str(cursor))
-        cursor = next_cursor
+        next_cursor_changed = bool(next_cursor and str(next_cursor) != str(cursor))
+        stop_reason = ""
+        should_continue = False
+
+        if len(works) >= max_items:
+            stop_reason = "max_items_reached"
+        elif not page_items:
+            stop_reason = "page_empty"
+        elif has_more_normalized is False:
+            stop_reason = "has_more_false"
+        elif next_cursor and str(next_cursor) == str(cursor):
+            stop_reason = "cursor_not_advanced"
+        elif has_more_normalized is True and not next_cursor:
+            stop_reason = "pagination_contract_incomplete"
+        elif has_more_normalized is True or next_cursor_changed:
+            should_continue = True
+        else:
+            stop_reason = "pagination_contract_incomplete"
+
+        if should_continue and page >= max_pages:
+            should_continue = False
+            stop_reason = "pages_max_reached"
+
+        pagination_trace.append(
+            {
+                "page": page,
+                "cursor_in": cursor,
+                "cursor_out": next_cursor,
+                "cursor_source": cursor_source,
+                "has_more_raw": has_more_raw,
+                "has_more_normalized": has_more_normalized,
+                "items": len(page_items),
+                "route_label": posts_resp.get("_route_label"),
+                "request_id": posts_resp.get("request_id"),
+                "stop_reason": stop_reason,
+            }
+        )
+
+        has_more = should_continue
+        if should_continue and next_cursor:
+            cursor = next_cursor
 
     request_id = _pick_request_id(request_id_candidates, trace)
     if progress is not None:

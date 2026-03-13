@@ -24,6 +24,7 @@
 
 ## Optional Fields
 
+- `duration_ms`
 - `digg_count`
 - `comment_count`
 - `collect_count`
@@ -37,6 +38,7 @@
 ## Field Rules
 
 - `author` is the display name, not an object.
+- `duration_ms` uses milliseconds. Write `null` when the duration is unavailable or not applicable.
 - Fact fields for the Markdown card go into frontmatter. Do not emit a separate `## Facts` section.
 - The work-library directory writes only the Markdown card and no extra `.json` sidecar in the same directory.
 - `primary_text` is the text that is best suited for reading and indexing in the current task.

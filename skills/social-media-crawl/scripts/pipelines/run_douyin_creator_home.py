@@ -14,9 +14,7 @@ if __package__ in {None, ""}:
             break
 
 import argparse
-import json
-from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 
 from scripts.core.bootstrap_env import bootstrap_for_direct_run
 
@@ -25,61 +23,21 @@ bootstrap_for_direct_run(__file__, __package__)
 from scripts.core.completeness import ensure_request_id, evaluate_collection, normalize_missing_fields
 from scripts.core.config_loader import config_get, load_tikomni_config, resolve_storage_paths
 from scripts.core.progress_report import build_progress_reporter
-from scripts.core.storage_router import resolve_author_directory_name
 from scripts.core.tikomni_common import resolve_runtime, write_json_stdout
 from scripts.pipelines.input_contracts import normalize_douyin_creator_input
 from scripts.pipelines.schema import build_author_profile
 from scripts.pipelines.douyin_creator_home_helpers import collect_and_adapt
 from scripts.pipelines.home_asr import enrich_author_home_asr
+from scripts.pipelines.homepage_runtime_state import (
+    clear_homepage_checkpoint,
+    load_homepage_checkpoint,
+    persist_homepage_runtime_artifacts,
+    resolve_homepage_run_status,
+)
 from scripts.writers.write_work_fact_card import build_work_fact_card, persist_output_envelope, write_work_fact_card
 
 DEFAULT_MAX_ITEMS = 200
 MAX_ITEMS_HARD_LIMIT = 200
-
-
-def _write_collection_artifacts(
-    *,
-    profile: Dict[str, Any],
-    works: List[Dict[str, Any]],
-    card_root: str,
-    extract_trace: List[Dict[str, Any]],
-    request_id: str,
-) -> Dict[str, str]:
-    author_dir_name = resolve_author_directory_name(
-        "douyin",
-        str(profile.get("author_handle") or ""),
-        str(profile.get("platform_author_id") or ""),
-        str(profile.get("nickname") or ""),
-    )
-    author_dir = Path(card_root) / "内容系统" / "作品库" / author_dir_name
-    author_dir.mkdir(parents=True, exist_ok=True)
-
-    creator_profile = dict(profile)
-    creator_profile["request_id"] = request_id
-    creator_profile["extract_trace"] = extract_trace
-
-    work_collection = {
-        "platform": "douyin",
-        "platform_author_id": profile.get("platform_author_id"),
-        "count": len(works),
-        "items": [
-            {
-                "platform_work_id": item.get("platform_work_id"),
-                "title": item.get("title"),
-                "published_date": item.get("published_date"),
-            }
-            for item in works
-            if isinstance(item, dict)
-        ],
-        "request_id": request_id,
-        "extract_trace": extract_trace,
-    }
-
-    profile_path = author_dir / "_creator_profile.json"
-    collection_path = author_dir / "_work_collection.json"
-    profile_path.write_text(json.dumps(creator_profile, ensure_ascii=False, indent=2), encoding="utf-8")
-    collection_path.write_text(json.dumps(work_collection, ensure_ascii=False, indent=2), encoding="utf-8")
-    return {"creator_profile_path": str(profile_path), "work_collection_path": str(collection_path)}
 
 
 def run_douyin_creator_home(
@@ -166,7 +124,76 @@ def run_douyin_creator_home(
         progress=progress.child(scope="author_home.collect"),
     )
 
+    card_root = resolve_storage_paths(config)["card_root"]
+    request_id = ensure_request_id(
+        raw.get("request_id") or profile.get("request_id"),
+        fallback_seed=normalized_input_value or input_value,
+    )
+    raw_extract_trace = list(raw.get("extract_trace") or [])
+    checkpoint = load_homepage_checkpoint(
+        platform="douyin",
+        profile=profile,
+        card_root=card_root,
+    )
+    if checkpoint:
+        progress.progress(
+            stage="author_home.workflow.resume",
+            message="douyin author_home checkpoint loaded",
+            data={
+                "completed_work_ids": len(checkpoint.get("completed_work_ids") or []),
+                "last_completed_batch_id": checkpoint.get("last_completed_batch_id"),
+            },
+        )
+
     asr_strategy = config_get(config, "asr_strategy", {})
+    card_results: List[Dict[str, Any]] = []
+    written_work_ids: Set[str] = set()
+
+    def _persist_batch(event: Dict[str, Any]) -> None:
+        batch_id = str(event.get("batch_id") or "")
+        batch_works = event.get("batch_works") if isinstance(event.get("batch_works"), list) else []
+        all_works = event.get("works") if isinstance(event.get("works"), list) else []
+        batch_trace = raw_extract_trace + list(event.get("trace") or [])
+
+        batch_card_count = 0
+        if write_card:
+            for work in batch_works:
+                if not isinstance(work, dict):
+                    continue
+                result = write_work_fact_card(
+                    payload=work,
+                    platform="douyin",
+                    card_root=card_root,
+                    storage_config=config,
+                )
+                card_results.append(result)
+                work_id = str(work.get("platform_work_id") or "").strip()
+                if work_id:
+                    written_work_ids.add(work_id)
+                batch_card_count += 1
+
+        persist_homepage_runtime_artifacts(
+            platform="douyin",
+            profile=profile,
+            works=all_works,
+            card_root=card_root,
+            extract_trace=batch_trace,
+            request_id=request_id,
+            checkpoint=event.get("checkpoint") if isinstance(event.get("checkpoint"), dict) else {},
+            run_status="in_progress",
+            last_completed_batch_id=batch_id,
+        )
+        progress.progress(
+            stage="author_home.persist.batch",
+            message="douyin author_home batch persisted",
+            data={
+                "batch_id": batch_id,
+                "batch_cards": batch_card_count,
+                "completed_count": (event.get("checkpoint") if isinstance(event.get("checkpoint"), dict) else {}).get("processed_works"),
+                "pending_count": (event.get("checkpoint") if isinstance(event.get("checkpoint"), dict) else {}).get("pending_works"),
+            },
+        )
+
     asr_bundle = enrich_author_home_asr(
         platform="douyin",
         works=works,
@@ -179,14 +206,18 @@ def run_douyin_creator_home(
         douyin_submit_backoff_ms=int(config_get(config, "asr_strategy.submit_retry.douyin_video.backoff_ms", 1500)),
         timeout_retry_enabled=bool(config_get(config, "asr_strategy.u2_timeout_retry.enabled", True)),
         timeout_retry_max_retries=int(config_get(config, "asr_strategy.u2_timeout_retry.max_retries", 0)),
+        checkpoint=checkpoint,
+        request_id=request_id,
+        on_batch_complete=_persist_batch,
         progress=progress.child(scope="author_home.asr"),
     )
     works = list(asr_bundle.get("works") or [])
 
-    card_root = resolve_storage_paths(config)["card_root"]
-    card_results: List[Dict[str, Any]] = []
     if write_card:
         for work in works:
+            work_id = str(work.get("platform_work_id") or "").strip()
+            if work_id and work_id in written_work_ids:
+                continue
             card_results.append(
                 write_work_fact_card(
                     payload=work,
@@ -196,19 +227,23 @@ def run_douyin_creator_home(
                 )
             )
 
-    request_id = ensure_request_id(
-        raw.get("request_id") or profile.get("request_id"),
-        fallback_seed=normalized_input_value or input_value,
-    )
-    extract_trace = list(raw.get("extract_trace") or []) + list(asr_bundle.get("trace") or [])
-
-    collection_artifacts = _write_collection_artifacts(
+    extract_trace = raw_extract_trace + list(asr_bundle.get("trace") or [])
+    checkpoint_out = asr_bundle.get("checkpoint") if isinstance(asr_bundle.get("checkpoint"), dict) else {}
+    collection_artifacts = persist_homepage_runtime_artifacts(
+        platform="douyin",
         profile=profile,
         works=works,
         card_root=card_root,
         extract_trace=extract_trace,
         request_id=request_id,
+        checkpoint=checkpoint_out,
+        run_status=resolve_homepage_run_status(asr_bundle.get("stats")),
+        last_completed_batch_id=str(checkpoint_out.get("last_completed_batch_id") or ""),
     )
+    if int(checkpoint_out.get("pending_works") or 0) <= 0:
+        cleared_checkpoint_path = clear_homepage_checkpoint(platform="douyin", profile=profile, card_root=card_root)
+        if cleared_checkpoint_path:
+            collection_artifacts["checkpoint_cleared_path"] = cleared_checkpoint_path
 
     normalized_profile = dict(profile)
     normalized_profile["request_id"] = request_id

@@ -8,7 +8,7 @@ import time
 import urllib.error
 import urllib.request
 from urllib.parse import urlparse, urlunparse
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from scripts.core.tikomni_common import (
     call_json_api,
@@ -23,6 +23,21 @@ from scripts.core.u3_fallback import run_u3_public_url_fallback
 
 U2_BATCH_SUBMIT_HARD_LIMIT = 100
 DEFAULT_U2_PENDING_TIMEOUT_SEC = 60
+SUMMARY_TEXT_FIELDS = (
+    "full_text",
+    "transcript_text",
+    "transcription_text",
+    "result_text",
+    "summary_text",
+    "transcript",
+    "transcription",
+    "result",
+    "content",
+    "text",
+)
+SEGMENT_CONTAINER_FIELDS = ("sentences", "segments", "paragraphs")
+SEGMENT_TEXT_FIELDS = ("text", "sentence", "content", "paragraph", "transcript_text")
+CHAR_SPACED_RUN_RE = re.compile(r"(?:[A-Za-z0-9\u4e00-\u9fff]{1,4}\s+){5,}[A-Za-z0-9\u4e00-\u9fff]{1,4}")
 
 
 def clamp_u2_batch_submit_size(size: int, *, default: int = 50, hard_limit: int = U2_BATCH_SUBMIT_HARD_LIMIT) -> int:
@@ -251,6 +266,33 @@ def clean_transcript_text(raw_text: Any) -> str:
     return normalize_text(raw_text)
 
 
+def _text_signature(text: str) -> str:
+    return re.sub(r"[\W_]+", "", clean_transcript_text(text)).lower()
+
+
+def _is_char_spaced_noise_sequence(text: str) -> bool:
+    tokens = [token for token in clean_transcript_text(text).split(" ") if token]
+    if len(tokens) < 6:
+        return False
+    single_char_tokens = sum(1 for token in tokens if len(token) == 1)
+    short_tokens = sum(1 for token in tokens if len(token) <= 2)
+    cjk_tokens = sum(1 for token in tokens if any("\u4e00" <= char <= "\u9fff" for char in token))
+    return (
+        single_char_tokens >= 4
+        and short_tokens / max(len(tokens), 1) >= 0.75
+        and cjk_tokens / max(len(tokens), 1) >= 0.5
+    )
+
+
+def _strip_char_spaced_noise_runs(text: str) -> str:
+    def _replace(match: re.Match[str]) -> str:
+        chunk = match.group(0)
+        return " " if _is_char_spaced_noise_sequence(chunk) else chunk
+
+    cleaned = CHAR_SPACED_RUN_RE.sub(_replace, text)
+    return re.sub(r"\s+", " ", cleaned).strip()
+
+
 def _ensure_sentence_end(text: str) -> str:
     if not text:
         return text
@@ -264,13 +306,36 @@ def derive_asr_clean_text(asr_raw: Any, legacy_clean: Any = None) -> str:
     if not base:
         return ""
 
-    denoised = re.sub(r"\b(嗯|啊|呃|额|那个|这个|然后|就是)\b", " ", base)
+    denoised = _strip_char_spaced_noise_runs(base)
+    denoised = re.sub(r"\b(嗯|啊|呃|额|那个|这个|然后|就是)\b", " ", denoised)
     denoised = re.sub(r"(嗯+|啊+|呃+)", " ", denoised)
     denoised = re.sub(r"(就是就是|然后然后|这个这个|那个那个)", " ", denoised)
     denoised = re.sub(r"\s+", " ", denoised).strip()
 
     units = [clean_transcript_text(part) for part in re.split(r"[。！？!?；;\n]+", denoised)]
-    sentences = [_ensure_sentence_end(unit) for unit in units if unit]
+    sentences: List[str] = []
+    signatures: List[str] = []
+    for unit in units:
+        if not unit or _is_char_spaced_noise_sequence(unit):
+            continue
+        sentence = _ensure_sentence_end(unit)
+        signature = _text_signature(sentence)
+        if not signature:
+            continue
+        duplicate = False
+        for existing in signatures:
+            if signature == existing:
+                duplicate = True
+                break
+            smaller = signature if len(signature) <= len(existing) else existing
+            larger = existing if len(signature) <= len(existing) else signature
+            if len(smaller) >= 12 and smaller in larger:
+                duplicate = True
+                break
+        if duplicate:
+            continue
+        signatures.append(signature)
+        sentences.append(sentence)
     if not sentences:
         fallback = _ensure_sentence_end(denoised)
         return fallback if fallback else ""
@@ -290,6 +355,94 @@ def derive_asr_clean_text(asr_raw: Any, legacy_clean: Any = None) -> str:
             paragraphs.append("\n".join(bucket))
 
     return "\n\n".join(paragraphs)
+
+
+def _extract_summary_text_from_node(node: Dict[str, Any]) -> Tuple[str, str]:
+    for key in SUMMARY_TEXT_FIELDS:
+        value = node.get(key)
+        if isinstance(value, str):
+            cleaned = clean_transcript_text(value)
+            if cleaned:
+                return cleaned, key
+    return "", ""
+
+
+def _append_segment_lines(node: Any, lines: List[str]) -> None:
+    if isinstance(node, str):
+        cleaned = clean_transcript_text(node)
+        if cleaned:
+            lines.append(cleaned)
+        return
+    if isinstance(node, dict):
+        for key in SEGMENT_TEXT_FIELDS:
+            value = node.get(key)
+            if isinstance(value, str):
+                cleaned = clean_transcript_text(value)
+                if cleaned:
+                    lines.append(cleaned)
+                    break
+        return
+    if isinstance(node, list):
+        for item in node:
+            _append_segment_lines(item, lines)
+
+
+def _extract_segment_text_from_node(node: Dict[str, Any]) -> str:
+    lines: List[str] = []
+    for key in SEGMENT_CONTAINER_FIELDS:
+        if key not in node:
+            continue
+        _append_segment_lines(node.get(key), lines)
+        if lines:
+            break
+    if not lines:
+        return ""
+
+    deduped: List[str] = []
+    seen = set()
+    for line in lines:
+        signature = _text_signature(line)
+        if not signature or signature in seen or _is_char_spaced_noise_sequence(line):
+            continue
+        seen.add(signature)
+        deduped.append(line)
+    return "\n".join(deduped).strip()
+
+
+def _extract_canonical_transcript_from_node(node: Dict[str, Any]) -> Dict[str, Any]:
+    summary_text, summary_field = _extract_summary_text_from_node(node)
+    if summary_text:
+        return {
+            "transcript_text": summary_text,
+            "summary_field_used": summary_field,
+            "segment_fallback_used": False,
+            "canonical_text_source": f"summary:{summary_field}",
+        }
+
+    segment_text = _extract_segment_text_from_node(node)
+    if segment_text:
+        return {
+            "transcript_text": segment_text,
+            "summary_field_used": "",
+            "segment_fallback_used": True,
+            "canonical_text_source": "segments",
+        }
+
+    fallback_text = clean_transcript_text(extract_transcript_text(node))
+    if fallback_text:
+        return {
+            "transcript_text": fallback_text,
+            "summary_field_used": "",
+            "segment_fallback_used": True,
+            "canonical_text_source": "deep_search_fallback",
+        }
+
+    return {
+        "transcript_text": "",
+        "summary_field_used": "",
+        "segment_fallback_used": False,
+        "canonical_text_source": "missing",
+    }
 
 
 def extract_u2_task_metrics(payload: Any) -> Dict[str, Any]:
@@ -349,16 +502,8 @@ def extract_u2_batch_result_items(payload: Any) -> List[Dict[str, Any]]:
             )
             file_url = normalize_media_url(str(raw_file_url or ""))
             if file_url:
-                transcript = clean_transcript_text(
-                    node.get("transcript_text")
-                    or node.get("text")
-                    or node.get("transcript")
-                    or node.get("transcription")
-                    or node.get("content")
-                    or ""
-                )
-                if not transcript:
-                    transcript = clean_transcript_text(extract_transcript_text(node))
+                canonical = _extract_canonical_transcript_from_node(node)
+                transcript = clean_transcript_text(canonical.get("transcript_text"))
 
                 status = _status_upper(node.get("status") or node.get("task_status") or node.get("state"))
                 error_reason = str(node.get("error_reason") or node.get("error") or "").strip()
@@ -372,6 +517,9 @@ def extract_u2_batch_result_items(payload: Any) -> List[Dict[str, Any]]:
                     "transcription_url": transcription_url,
                     "error_reason": error_reason,
                     "ok": ok,
+                    "summary_field_used": canonical.get("summary_field_used", ""),
+                    "segment_fallback_used": bool(canonical.get("segment_fallback_used")),
+                    "canonical_text_source": canonical.get("canonical_text_source", "missing"),
                 }
 
                 existing = found.get(file_url)
@@ -380,12 +528,16 @@ def extract_u2_batch_result_items(payload: Any) -> List[Dict[str, Any]]:
                 else:
                     old_score = (
                         1 if existing.get("ok") else 0,
+                        1 if not existing.get("segment_fallback_used") else 0,
+                        1 if existing.get("summary_field_used") else 0,
                         len(str(existing.get("transcript_text") or "")),
                         1 if existing.get("transcription_url") else 0,
                         1 if not existing.get("error_reason") else 0,
                     )
                     new_score = (
                         1 if candidate.get("ok") else 0,
+                        1 if not candidate.get("segment_fallback_used") else 0,
+                        1 if candidate.get("summary_field_used") else 0,
                         len(str(candidate.get("transcript_text") or "")),
                         1 if candidate.get("transcription_url") else 0,
                         1 if not candidate.get("error_reason") else 0,
@@ -441,16 +593,8 @@ def map_u2_batch_results_by_item_index(payload: Any) -> Dict[int, Dict[str, Any]
             item_index_raw = node.get("item_index")
             item_index = _parse_non_negative_item_index(item_index_raw)
             if item_index is not None:
-                transcript = clean_transcript_text(
-                    node.get("transcript_text")
-                    or node.get("text")
-                    or node.get("transcript")
-                    or node.get("transcription")
-                    or node.get("content")
-                    or ""
-                )
-                if not transcript:
-                    transcript = clean_transcript_text(extract_transcript_text(node))
+                canonical = _extract_canonical_transcript_from_node(node)
+                transcript = clean_transcript_text(canonical.get("transcript_text"))
 
                 status = _status_upper(node.get("task_status") or node.get("status") or node.get("state"))
                 error_reason = str(node.get("error_reason") or node.get("error") or "").strip()
@@ -464,6 +608,9 @@ def map_u2_batch_results_by_item_index(payload: Any) -> Dict[int, Dict[str, Any]
                     "error_reason": error_reason,
                     "transcription_url": transcription_url,
                     "ok": ok,
+                    "summary_field_used": canonical.get("summary_field_used", ""),
+                    "segment_fallback_used": bool(canonical.get("segment_fallback_used")),
+                    "canonical_text_source": canonical.get("canonical_text_source", "missing"),
                 }
 
                 existing = mapped.get(item_index)
@@ -472,12 +619,16 @@ def map_u2_batch_results_by_item_index(payload: Any) -> Dict[int, Dict[str, Any]
                 else:
                     old_score = (
                         1 if existing.get("ok") else 0,
+                        1 if not existing.get("segment_fallback_used") else 0,
+                        1 if existing.get("summary_field_used") else 0,
                         len(str(existing.get("transcript_text") or "")),
                         1 if existing.get("transcription_url") else 0,
                         1 if not existing.get("error_reason") else 0,
                     )
                     new_score = (
                         1 if candidate.get("ok") else 0,
+                        1 if not candidate.get("segment_fallback_used") else 0,
+                        1 if candidate.get("summary_field_used") else 0,
                         len(str(candidate.get("transcript_text") or "")),
                         1 if candidate.get("transcription_url") else 0,
                         1 if not candidate.get("error_reason") else 0,
@@ -506,29 +657,102 @@ def _extract_transcript_from_transcription_payload(payload: Any) -> str:
         except Exception:
             return ""
 
-    transcript = clean_transcript_text(deep_find_first(payload, ["full_text"]))
-    if transcript:
-        return transcript
+    for key in SUMMARY_TEXT_FIELDS:
+        transcript = clean_transcript_text(deep_find_first(payload, [key]))
+        if transcript:
+            return transcript
+
+    for key in SEGMENT_CONTAINER_FIELDS:
+        segments = deep_find_first(payload, [key])
+        if segments is None:
+            continue
+        lines: List[str] = []
+        _append_segment_lines(segments, lines)
+        deduped: List[str] = []
+        seen = set()
+        for line in lines:
+            signature = _text_signature(line)
+            if not signature or signature in seen or _is_char_spaced_noise_sequence(line):
+                continue
+            seen.add(signature)
+            deduped.append(line)
+        if deduped:
+            return "\n".join(deduped)
 
     transcript = clean_transcript_text(extract_transcript_text(payload))
     if transcript:
         return transcript
 
-    sentences = deep_find_first(payload, ["sentences"])
-    if isinstance(sentences, list):
-        lines: List[str] = []
-        for sentence in sentences:
-            if not isinstance(sentence, dict):
-                continue
-            line = clean_transcript_text(
-                sentence.get("text") or sentence.get("sentence") or sentence.get("content")
-            )
-            if line:
-                lines.append(line)
-        if lines:
-            return "\n".join(lines)
-
     return ""
+
+
+def _extract_transcript_bundle_from_transcription_payload(payload: Any) -> Dict[str, Any]:
+    if isinstance(payload, str):
+        text = clean_transcript_text(payload)
+        if text:
+            return {
+                "transcript_text": text,
+                "summary_field_used": "raw_string",
+                "segment_fallback_used": False,
+                "canonical_text_source": "summary:raw_string",
+            }
+        try:
+            payload = json.loads(payload)
+        except Exception:
+            return {
+                "transcript_text": "",
+                "summary_field_used": "",
+                "segment_fallback_used": False,
+                "canonical_text_source": "missing",
+            }
+
+    for key in SUMMARY_TEXT_FIELDS:
+        transcript = clean_transcript_text(deep_find_first(payload, [key]))
+        if transcript:
+            return {
+                "transcript_text": transcript,
+                "summary_field_used": key,
+                "segment_fallback_used": False,
+                "canonical_text_source": f"summary:{key}",
+            }
+
+    for key in SEGMENT_CONTAINER_FIELDS:
+        segments = deep_find_first(payload, [key])
+        if segments is None:
+            continue
+        lines: List[str] = []
+        _append_segment_lines(segments, lines)
+        deduped: List[str] = []
+        seen = set()
+        for line in lines:
+            signature = _text_signature(line)
+            if not signature or signature in seen or _is_char_spaced_noise_sequence(line):
+                continue
+            seen.add(signature)
+            deduped.append(line)
+        if deduped:
+            return {
+                "transcript_text": "\n".join(deduped),
+                "summary_field_used": "",
+                "segment_fallback_used": True,
+                "canonical_text_source": f"segments:{key}",
+            }
+
+    transcript = clean_transcript_text(extract_transcript_text(payload))
+    if transcript:
+        return {
+            "transcript_text": transcript,
+            "summary_field_used": "",
+            "segment_fallback_used": True,
+            "canonical_text_source": "deep_search_fallback",
+        }
+
+    return {
+        "transcript_text": "",
+        "summary_field_used": "",
+        "segment_fallback_used": False,
+        "canonical_text_source": "missing",
+    }
 
 
 def fetch_transcription_text_by_url(*, transcription_url: str, timeout_ms: int) -> Dict[str, Any]:
@@ -573,13 +797,17 @@ def fetch_transcription_text_by_url(*, transcription_url: str, timeout_ms: int) 
     except Exception:
         payload = raw_text
 
-    transcript = _extract_transcript_from_transcription_payload(payload)
+    transcript_bundle = _extract_transcript_bundle_from_transcription_payload(payload)
+    transcript = transcript_bundle.get("transcript_text", "")
     if transcript:
         return {
             "ok": True,
             "transcription_url": url,
             "error_reason": "",
             "transcript_text": transcript,
+            "summary_field_used": transcript_bundle.get("summary_field_used", ""),
+            "segment_fallback_used": bool(transcript_bundle.get("segment_fallback_used")),
+            "canonical_text_source": transcript_bundle.get("canonical_text_source", "missing"),
         }
 
     return {
@@ -587,6 +815,9 @@ def fetch_transcription_text_by_url(*, transcription_url: str, timeout_ms: int) 
         "transcription_url": url,
         "error_reason": "transcription_payload_empty",
         "transcript_text": "",
+        "summary_field_used": "",
+        "segment_fallback_used": False,
+        "canonical_text_source": "missing",
     }
 
 
@@ -620,6 +851,9 @@ def hydrate_u2_batch_results_from_transcription_urls(
             if fetched_text:
                 transcript = fetched_text
                 candidate["transcript_text"] = fetched_text
+                candidate["summary_field_used"] = fetch_result.get("summary_field_used", "")
+                candidate["segment_fallback_used"] = bool(fetch_result.get("segment_fallback_used"))
+                candidate["canonical_text_source"] = fetch_result.get("canonical_text_source", "missing")
             elif not candidate.get("error_reason"):
                 candidate["error_reason"] = fetch_result.get("error_reason") or "transcription_payload_empty"
 

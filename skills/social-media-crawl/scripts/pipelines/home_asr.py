@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 import json
 import re
 import urllib.request
-from typing import Any, Dict, List, Optional, Tuple
+from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from scripts.core.progress_report import ProgressReporter
 from scripts.core.tikomni_common import normalize_text
@@ -26,6 +28,20 @@ XHS_U3_U2_BATCH_SIZE = 20
 U2_GATE_MIN_DURATION_MS = 13000
 U2_GATE_MAX_DURATION_MS = 1800000
 U2_GATE_RULE = "is_video && 13000<duration_ms<=1800000 && video_download_url_present"
+CHECKPOINT_WORK_FIELDS = (
+    "platform_work_id",
+    "subtitle_raw",
+    "subtitle_source",
+    "asr_raw",
+    "asr_clean",
+    "primary_text",
+    "primary_text_source",
+    "analysis_eligibility",
+    "analysis_exclusion_reason",
+    "asr_status",
+    "asr_error_reason",
+    "asr_source",
+)
 
 
 def _to_int_or_none(value: Any) -> Optional[int]:
@@ -467,6 +483,108 @@ def _dedupe_works_by_platform_id(works: List[Dict[str, Any]]) -> Tuple[List[Dict
     return deduped, duplicates
 
 
+def _snapshot_work_for_checkpoint(work: Dict[str, Any]) -> Dict[str, Any]:
+    snapshot: Dict[str, Any] = {}
+    for key in CHECKPOINT_WORK_FIELDS:
+        if key in work:
+            snapshot[key] = deepcopy(work.get(key))
+    platform_work_id = normalize_text(work.get("platform_work_id"))
+    if platform_work_id:
+        snapshot["platform_work_id"] = platform_work_id
+    return snapshot
+
+
+def _restore_completed_work_payloads(*, works: List[Dict[str, Any]], checkpoint: Dict[str, Any]) -> int:
+    completed_payloads = checkpoint.get("completed_work_payloads")
+    if not isinstance(completed_payloads, dict):
+        return 0
+
+    restored = 0
+    for work in works:
+        if not isinstance(work, dict):
+            continue
+        work_id = normalize_text(work.get("platform_work_id"))
+        if not work_id:
+            continue
+        payload = completed_payloads.get(work_id)
+        if not isinstance(payload, dict):
+            continue
+        work.update(deepcopy(payload))
+        restored += 1
+    return restored
+
+
+def _count_processed_results(*, works: List[Dict[str, Any]], completed_ids: Set[str]) -> Tuple[int, int, List[str]]:
+    success_count = 0
+    failed_ids: List[str] = []
+    completed_id_set = {normalize_text(item) for item in completed_ids if normalize_text(item)}
+
+    for work in works:
+        if not isinstance(work, dict):
+            continue
+        work_id = normalize_text(work.get("platform_work_id"))
+        if not work_id or work_id not in completed_id_set:
+            continue
+        if str(work.get("analysis_eligibility") or "") == "eligible":
+            success_count += 1
+        else:
+            failed_ids.append(work_id)
+
+    failed_ids = sorted(set(failed_ids))
+    return success_count, len(failed_ids), failed_ids
+
+
+def _build_checkpoint_snapshot(
+    *,
+    platform: str,
+    works: List[Dict[str, Any]],
+    completed_ids: Set[str],
+    batch_size: int,
+    batches_total: int,
+    batches_submitted: int,
+    batches_completed: int,
+    batch_mapped: int,
+    batch_unmapped: int,
+    fallback_singles: int,
+    request_id: str,
+    last_completed_batch_id: str,
+) -> Dict[str, Any]:
+    completed_id_set = {normalize_text(item) for item in completed_ids if normalize_text(item)}
+    success_count, failed_count, failed_work_ids = _count_processed_results(works=works, completed_ids=completed_id_set)
+    completed_work_payloads: Dict[str, Any] = {}
+    for work in works:
+        if not isinstance(work, dict):
+            continue
+        work_id = normalize_text(work.get("platform_work_id"))
+        if not work_id or work_id not in completed_id_set:
+            continue
+        completed_work_payloads[work_id] = _snapshot_work_for_checkpoint(work)
+
+    return {
+        "platform": platform,
+        "request_id": request_id or None,
+        "completed_work_ids": sorted(completed_id_set),
+        "failed_work_ids": failed_work_ids,
+        "completed_work_payloads": completed_work_payloads,
+        "batch_size": batch_size,
+        "batches_total": batches_total,
+        "batches_submitted": batches_submitted,
+        "batches_completed": batches_completed,
+        "batch_mapped": batch_mapped,
+        "batch_unmapped": batch_unmapped,
+        "fallback_singles": fallback_singles,
+        "total_works": len(works),
+        "processed_works": len(completed_id_set),
+        "success_works": success_count,
+        "failed_works": failed_count,
+        "pending_works": max(0, len(works) - len(completed_id_set)),
+        "last_completed_batch_id": last_completed_batch_id,
+        "updated_at": datetime.now().isoformat(timespec="seconds"),
+        # backward-compatible checkpoint fields
+        "refill_attempted": fallback_singles,
+    }
+
+
 def _fallback_none_result(reason: str) -> Dict[str, Any]:
     return {
         "subtitle_raw": "",
@@ -804,12 +922,15 @@ def enrich_author_home_asr(
     timeout_retry_max_retries: int = 3,
     batch_size: int = DEFAULT_BATCH_SUBMIT_SIZE,
     checkpoint: Optional[Dict[str, Any]] = None,
+    request_id: str = "",
+    on_batch_complete: Optional[Callable[[Dict[str, Any]], None]] = None,
     progress: Optional[ProgressReporter] = None,
 ) -> Dict[str, Any]:
     trace: List[Dict[str, Any]] = []
     deduped_works, duplicate_count = _dedupe_works_by_platform_id(works)
 
     checkpoint_in = checkpoint if isinstance(checkpoint, dict) else {}
+    restored_payloads = _restore_completed_work_payloads(works=deduped_works, checkpoint=checkpoint_in)
     completed_ids = {
         normalize_text(item)
         for item in (checkpoint_in.get("completed_work_ids") or [])
@@ -833,6 +954,7 @@ def enrich_author_home_asr(
             "deduped_count": len(deduped_works),
             "duplicate_count": duplicate_count,
             "resume_completed": len(completed_ids),
+            "resume_payloads_restored": restored_payloads,
             "requested_batch_size": requested_batch,
             "batch_size": effective_batch,
             "batch_size_clamped": requested_batch != effective_batch,
@@ -847,6 +969,7 @@ def enrich_author_home_asr(
                 "input_count": len(works),
                 "deduped_count": len(deduped_works),
                 "resume_completed": len(completed_ids),
+                "resume_payloads_restored": restored_payloads,
                 "batch_size": effective_batch,
             },
         )
@@ -874,8 +997,9 @@ def enrich_author_home_asr(
             data={"queued_count": len(queue), "batch_total": batch_total},
         )
 
-    success_count = 0
-    fallback_none_count = 0
+    restored_success_count, restored_failed_count, _ = _count_processed_results(works=deduped_works, completed_ids=completed_ids)
+    success_count = restored_success_count
+    fallback_none_count = restored_failed_count
     submitted_batches = 0
     completed_batches = 0
     batch_mapped_count = 0
@@ -1124,34 +1248,66 @@ def enrich_author_home_asr(
                 },
             )
 
-    failed_work_ids = sorted(
-        list(
-            {
-                normalize_text(work.get("platform_work_id"))
-                for work in deduped_works
-                if isinstance(work, dict)
-                and normalize_text(work.get("platform_work_id"))
-                and str(work.get("analysis_eligibility") or "") != "eligible"
-            }
+        checkpoint_snapshot = _build_checkpoint_snapshot(
+            platform=platform,
+            works=deduped_works,
+            completed_ids=completed_ids,
+            batch_size=effective_batch,
+            batches_total=batch_total,
+            batches_submitted=submitted_batches,
+            batches_completed=completed_batches,
+            batch_mapped=batch_mapped_count,
+            batch_unmapped=batch_unmapped_count,
+            fallback_singles=fallback_single_count,
+            request_id=request_id,
+            last_completed_batch_id=batch_id,
         )
+        if on_batch_complete is not None:
+            on_batch_complete(
+                {
+                    "platform": platform,
+                    "batch_id": batch_id,
+                    "batch_index": batch_index + 1,
+                    "batch_total": batch_total,
+                    "batch_works": batch,
+                    "works": deduped_works,
+                    "trace": list(trace),
+                    "checkpoint": checkpoint_snapshot,
+                    "stats": {
+                        "total": len(deduped_works),
+                        "success": success_count,
+                        "fallback_none": fallback_none_count,
+                        "duplicates_dropped": duplicate_count,
+                        "submitted_batches": submitted_batches,
+                        "completed_batches": completed_batches,
+                        "batch_mapped": batch_mapped_count,
+                        "batch_unmapped": batch_unmapped_count,
+                        "fallback_singles": fallback_single_count,
+                        "refill_attempted": fallback_single_count,
+                        "refill_failed": checkpoint_snapshot.get("failed_works", 0),
+                    },
+                }
+            )
+
+    success_count, fallback_none_count, failed_work_ids = _count_processed_results(
+        works=deduped_works,
+        completed_ids=completed_ids,
     )
 
-    checkpoint_out = {
-        "platform": platform,
-        "completed_work_ids": sorted(completed_ids),
-        "failed_work_ids": failed_work_ids,
-        "batch_size": effective_batch,
-        "batches_total": batch_total,
-        "batches_submitted": submitted_batches,
-        "batches_completed": completed_batches,
-        "batch_mapped": batch_mapped_count,
-        "batch_unmapped": batch_unmapped_count,
-        "fallback_singles": fallback_single_count,
-        "total_works": len(deduped_works),
-        "processed_works": len(completed_ids),
-        # backward-compatible checkpoint fields
-        "refill_attempted": fallback_single_count,
-    }
+    checkpoint_out = _build_checkpoint_snapshot(
+        platform=platform,
+        works=deduped_works,
+        completed_ids=completed_ids,
+        batch_size=effective_batch,
+        batches_total=batch_total,
+        batches_submitted=submitted_batches,
+        batches_completed=completed_batches,
+        batch_mapped=batch_mapped_count,
+        batch_unmapped=batch_unmapped_count,
+        fallback_singles=fallback_single_count,
+        request_id=request_id,
+        last_completed_batch_id=f"batch-{batch_total:03d}" if batch_total > 0 else normalize_text(checkpoint_in.get("last_completed_batch_id")),
+    )
 
     stats = {
         "total": len(deduped_works),

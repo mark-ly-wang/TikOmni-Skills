@@ -381,7 +381,7 @@ def write_work_fact_card(
     card = build_work_fact_card(payload, platform=platform)
     published_date = card["published_date"] or _resolve_published_date(payload)
     resolved_card_root = resolve_card_root(storage_config, explicit_card_root=card_root)
-    fallback_identifier = card["share_url"] or card["source_url"] or card["title"] or card["request_id"]
+    fallback_identifier = ""
     paths = build_work_fact_card_paths(
         card_root=resolved_card_root,
         platform=card["platform"],

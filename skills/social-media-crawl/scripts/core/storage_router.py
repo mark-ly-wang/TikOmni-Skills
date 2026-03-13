@@ -26,14 +26,15 @@ def slugify_token(value: Any, fallback: str = "unknown") -> str:
     return text or fallback
 
 
-def cardify_token(value: Any, fallback: str = "unknown") -> str:
+def cardify_token(value: Any, fallback: str = "unknown", keep_trailing_dash: bool = False) -> str:
     text = str(value or "").strip()
     if not text:
         text = fallback
     text = _INVALID_FILENAME_CHARS.sub("-", text)
     text = _SPACE_RUN.sub("", text)
     text = _CARD_TOKEN_INVALID_CHARS.sub("", text)
-    text = re.sub(r"-{2,}", "-", text).strip("-_.")
+    text = re.sub(r"-{2,}", "-", text)
+    text = text.strip("_.") if keep_trailing_dash else text.strip("-_.")
     return text or fallback
 
 
@@ -85,7 +86,10 @@ def render_card_filename(
     default_filename: str,
     default_ext: str,
 ) -> str:
-    safe_context = {key: cardify_token(value, fallback="") for key, value in context.items()}
+    safe_context = {
+        key: cardify_token(value, fallback="", keep_trailing_dash=(key == "identifier"))
+        for key, value in context.items()
+    }
     safe_context["ext"] = default_ext
     try:
         rendered = str(pattern).format(**safe_context).strip()
@@ -159,10 +163,15 @@ def build_card_identifier(
         return f"{published_token}-{title_token}"
     if title_token:
         return title_token
+    work_id_token = cardify_token(platform_work_id, fallback="")
+    if published_token and work_id_token:
+        return f"{published_token}-{work_id_token}"
+    if work_id_token:
+        return work_id_token
+    if published_token:
+        return f"{published_token}-"
     fallback_token = cardify_token(fallback_identifier, fallback="")
-    if published_token and fallback_token:
-        return f"{published_token}-{fallback_token}"
-    return fallback_token or slugify_token(platform_work_id, fallback="unknown")
+    return fallback_token or "unknown"
 
 
 def resolve_card_route_parts(

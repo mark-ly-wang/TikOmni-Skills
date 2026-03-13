@@ -250,6 +250,8 @@ def run_douyin_creator_home(
     normalized_profile["extract_trace"] = extract_trace
 
     normalized_works = [build_work_fact_card(work, platform="douyin") for work in works]
+    stage_status = raw.get("stage_status") if isinstance(raw.get("stage_status"), dict) else {}
+    error_reason = raw.get("error_reason")
     envelope = {
         "object_type": "creator",
         "platform": "douyin",
@@ -267,7 +269,7 @@ def run_douyin_creator_home(
         },
         "completeness": evaluate_collection(profile, normalized_works),
         "missing_fields": normalize_missing_fields(missing),
-        "error_reason": None,
+        "error_reason": error_reason,
         "extract_trace": extract_trace,
         "request_id": request_id,
         "card_write": {
@@ -278,6 +280,8 @@ def run_douyin_creator_home(
         },
         "collection_artifacts": collection_artifacts,
     }
+    if stage_status:
+        envelope["stage_status"] = stage_status
     envelope["output_persist"] = persist_output_envelope(
         envelope=envelope,
         storage_config=config,
@@ -285,10 +289,11 @@ def run_douyin_creator_home(
         fallback_identifier=str(profile.get("platform_author_id") or "author-home"),
     ) if persist_output else {"enabled": False, "skipped": True, "reason": "disabled_by_flag"}
 
-    progress.done(
+    final_event = progress.failed if envelope.get("error_reason") else progress.done
+    final_event(
         stage="author_home.workflow",
-        message="douyin author_home workflow finished",
-        data={"request_id": request_id, "works_count": len(normalized_works)},
+        message="douyin author_home workflow failed" if envelope.get("error_reason") else "douyin author_home workflow finished",
+        data={"request_id": request_id, "works_count": len(normalized_works), "error_reason": envelope.get("error_reason")},
     )
     return envelope
 

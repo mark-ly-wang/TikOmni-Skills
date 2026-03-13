@@ -295,7 +295,7 @@ def build_work_output_envelope(payload: Dict[str, Any], platform: Optional[str] 
     card = build_work_fact_card(payload, platform=platform)
     source = _source_dict(payload)
     input_value = source.get("share_url") or source.get("share_text") or source.get("source_url") or source
-    return {
+    envelope = {
         "object_type": "work",
         "platform": card["platform"],
         "input": input_value,
@@ -306,6 +306,13 @@ def build_work_output_envelope(payload: Dict[str, Any], platform: Optional[str] 
         "extract_trace": card.get("extract_trace", []),
         "request_id": card["request_id"],
     }
+    stage_status = payload.get("stage_status")
+    if isinstance(stage_status, dict):
+        envelope["stage_status"] = stage_status
+    pipeline_status = payload.get("pipeline_status")
+    if isinstance(pipeline_status, dict):
+        envelope["pipeline_status"] = pipeline_status
+    return envelope
 
 
 def _yaml_scalar(value: Any) -> str:

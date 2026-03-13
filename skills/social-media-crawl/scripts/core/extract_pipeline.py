@@ -30,13 +30,105 @@ def build_api_trace(
     return payload
 
 
+def build_route_plan_entry(
+    *,
+    route_label: str,
+    endpoint: Optional[str],
+    method: str = "GET",
+    param_readiness: str = "ready",
+    param_reason: str = "",
+) -> Dict[str, Any]:
+    return {
+        "route_label": route_label,
+        "endpoint": endpoint,
+        "method": method.upper(),
+        "param_readiness": param_readiness,
+        "param_reason": param_reason,
+    }
+
+
+def build_attempted_route(
+    *,
+    route_label: str,
+    endpoint: Optional[str],
+    response: Optional[Dict[str, Any]] = None,
+    accepted: bool = False,
+    accept_reason: str = "",
+    fallback_reason: str = "",
+    param_readiness: str = "ready",
+    param_reason: str = "",
+    skipped: bool = False,
+    extra: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    attempt: Dict[str, Any] = {
+        "route_label": route_label,
+        "endpoint": endpoint,
+        "accepted": bool(accepted),
+        "accept_reason": accept_reason,
+        "fallback_reason": fallback_reason,
+        "param_readiness": param_readiness,
+        "param_reason": param_reason,
+        "skipped": bool(skipped),
+    }
+    if isinstance(response, dict):
+        attempt.update(
+            {
+                "ok": response.get("ok"),
+                "status_code": response.get("status_code"),
+                "request_id": response.get("request_id"),
+                "error_reason": response.get("error_reason"),
+                "retry_attempt": response.get("retry_attempt", 0),
+                "rate_limit_wait_ms": response.get("rate_limit_wait_ms", 0),
+            }
+        )
+    else:
+        attempt.update(
+            {
+                "ok": None,
+                "status_code": None,
+                "request_id": None,
+                "error_reason": None,
+                "retry_attempt": 0,
+                "rate_limit_wait_ms": 0,
+            }
+        )
+    if extra:
+        attempt.update(extra)
+    return attempt
+
+
+def build_stage_status(
+    *,
+    stage: str,
+    status: str,
+    route_plan: Optional[List[Dict[str, Any]]] = None,
+    attempted_routes: Optional[List[Dict[str, Any]]] = None,
+    chosen_route: Optional[str] = None,
+    accept_reason: str = "",
+    fallback_reason: str = "",
+    error_reason: Optional[str] = None,
+    all_routes_failed: bool = False,
+) -> Dict[str, Any]:
+    return {
+        "stage": stage,
+        "status": status,
+        "route_plan": list(route_plan or []),
+        "attempted_routes": list(attempted_routes or []),
+        "chosen_route": chosen_route or "",
+        "accept_reason": accept_reason,
+        "fallback_reason": fallback_reason,
+        "error_reason": error_reason,
+        "all_routes_failed": bool(all_routes_failed),
+    }
+
+
 def build_fallback_trace_from_extract_trace(extract_trace: Optional[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
     """Build a compact fallback trace from runner extract trace."""
     if not extract_trace:
         return []
 
     trace: List[Dict[str, Any]] = []
-    include_tokens = ("primary", "effective", "fallback", "gate", "retry")
+    include_tokens = ("primary", "effective", "fallback", "gate", "retry", "attempt", "route_decision")
 
     for step in extract_trace:
         if not isinstance(step, dict):

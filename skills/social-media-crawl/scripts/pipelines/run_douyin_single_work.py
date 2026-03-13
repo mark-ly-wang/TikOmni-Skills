@@ -28,7 +28,12 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from scripts.core.config_loader import config_get, load_tikomni_config
-from scripts.core.extract_pipeline import resolve_trace_error_context
+from scripts.core.extract_pipeline import (
+    build_attempted_route,
+    build_route_plan_entry,
+    build_stage_status,
+    resolve_trace_error_context,
+)
 from scripts.core.progress_report import ProgressReporter, build_progress_reporter
 from scripts.pipelines.douyin_video_type_matrix import normalize_douyin_video_type
 from scripts.pipelines.douyin_metadata import (
@@ -394,6 +399,11 @@ def _u1_fetch_one_video(
     app_timeout_ms: int,
     web_timeout_ms: int,
 ) -> Dict[str, Any]:
+    route_plan = [
+        build_route_plan_entry(route_label="app_v3", endpoint=APP_ENDPOINT, method="GET"),
+        build_route_plan_entry(route_label="web", endpoint=WEB_ENDPOINT, method="GET"),
+    ]
+    attempts: List[Dict[str, Any]] = []
     app_response = call_json_api(
         base_url=base_url,
         path=APP_ENDPOINT,
@@ -403,7 +413,24 @@ def _u1_fetch_one_video(
         params={"share_url": share_url},
     )
     app_response["_endpoint"] = APP_ENDPOINT
+    app_response["_route_label"] = "app_v3"
+    attempts.append(
+        build_attempted_route(
+            route_label="app_v3",
+            endpoint=APP_ENDPOINT,
+            response=app_response,
+            accepted=bool(app_response.get("ok")),
+            accept_reason="fetch_response_ok" if app_response.get("ok") else "response_not_ok",
+            fallback_reason="" if app_response.get("ok") else (
+                "primary_timeout_retry_exhausted" if app_response.get("timeout_retry_exhausted") else "primary_non_timeout_failure"
+            ),
+            extra={"response": app_response},
+        )
+    )
     if app_response.get("ok"):
+        app_response["_attempts"] = attempts
+        app_response["_route_plan"] = route_plan
+        app_response["_accept_reason"] = "fetch_response_ok"
         return app_response
 
     app_response["fallback_trigger_reason"] = (
@@ -418,8 +445,26 @@ def _u1_fetch_one_video(
         params={"share_url": share_url},
     )
     web_response["_endpoint"] = WEB_ENDPOINT
+    web_response["_route_label"] = "web"
     web_response["_app_failed"] = app_response
     web_response["fallback_trigger_reason"] = app_response.get("fallback_trigger_reason")
+    attempts.append(
+        build_attempted_route(
+            route_label="web",
+            endpoint=WEB_ENDPOINT,
+            response=web_response,
+            accepted=bool(web_response.get("ok")),
+            accept_reason="fetch_response_ok" if web_response.get("ok") else "response_not_ok",
+            fallback_reason="" if web_response.get("ok") else (
+                "fallback_timeout_retry_exhausted" if web_response.get("timeout_retry_exhausted") else "fallback_non_timeout_failure"
+            ),
+            extra={"response": web_response},
+        )
+    )
+    web_response["_attempts"] = attempts
+    web_response["_route_plan"] = route_plan
+    if web_response.get("ok"):
+        web_response["_accept_reason"] = "fetch_response_ok"
     return web_response
 
 
@@ -578,6 +623,7 @@ def _build_result(
     asr_source: str = "fallback_none",
     timings: Optional[Dict[str, int]] = None,
     missing_fields: Optional[List[Dict[str, str]]] = None,
+    stage_status: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     summary_block = summarize_content(raw_content, source="douyin:single-video-low-quality")
     insights = list(summary_block.get("insights", []))
@@ -656,6 +702,8 @@ def _build_result(
         "endpoint_list": endpoint_list,
         "timings": dict(timings or {}),
     }
+    if isinstance(stage_status, dict):
+        payload["stage_status"] = dict(stage_status)
     return payload
 
 
@@ -830,41 +878,67 @@ def run_douyin_single_video(
     )
     timings["u1_total_ms"] = _elapsed_ms(u1_started_at)
 
-    app_failed = one_video_response.get("_app_failed")
-    if app_failed:
-        _emit_http_progress(progress, stage="single_video.fetch", response=app_failed, route_label="app_primary")
+    attempts = one_video_response.get("_attempts") or []
+    stage_status = build_stage_status(
+        stage="fetch",
+        status="succeeded" if one_video_response.get("ok") else "failed",
+        route_plan=list(one_video_response.get("_route_plan") or []),
+        attempted_routes=list(attempts),
+        chosen_route=str(one_video_response.get("_route_label") or ""),
+        accept_reason=str(one_video_response.get("_accept_reason") or ""),
+        fallback_reason=str(one_video_response.get("fallback_trigger_reason") or ""),
+        error_reason=None if one_video_response.get("ok") else "single_fetch_all_routes_failed",
+        all_routes_failed=not bool(one_video_response.get("ok")),
+    )
+    for index, attempt in enumerate(attempts, start=1):
+        response = attempt.get("response") if isinstance(attempt, dict) else None
+        endpoint = attempt.get("endpoint") if isinstance(attempt, dict) else None
+        label = attempt.get("route_label") if isinstance(attempt, dict) else None
+        if not isinstance(response, dict):
+            if attempt.get("skipped"):
+                trace.append(
+                    {
+                        "step": f"u1_fetch_one_video_attempt_{index}",
+                        "route_label": label,
+                        "endpoint": endpoint,
+                        "accept_reason": attempt.get("accept_reason"),
+                        "fallback_reason": attempt.get("fallback_reason"),
+                        "param_readiness": attempt.get("param_readiness"),
+                        "param_reason": attempt.get("param_reason"),
+                        "skipped": True,
+                    }
+                )
+            continue
+        _emit_http_progress(progress, stage="single_video.fetch", response=response, route_label=str(label or "route"))
+        step = "u1_fetch_one_video_effective" if index == len(attempts) else f"u1_fetch_one_video_attempt_{index}"
         trace.append(
             _trace_step(
-                step="u1_fetch_one_video_primary",
-                endpoint=APP_ENDPOINT,
-                response=app_failed,
-                extra={"timeout_ms": app_timeout},
+                step=step,
+                endpoint=endpoint,
+                response=response,
+                extra={
+                    "route_label": label,
+                    "attempt": index,
+                    "chosen_route": one_video_response.get("_route_label"),
+                    "accept_reason": attempt.get("accept_reason"),
+                    "fallback_reason": attempt.get("fallback_reason"),
+                    "app_timeout_ms": app_timeout,
+                    "web_timeout_ms": web_timeout,
+                },
             )
         )
-
-    _emit_http_progress(
-        progress,
-        stage="single_video.fetch",
-        response=one_video_response,
-        route_label="effective_route",
-    )
     trace.append(
-        _trace_step(
-            step="u1_fetch_one_video_effective",
-            endpoint=one_video_response.get("_endpoint"),
-            response=one_video_response,
-            extra={
-                "app_timeout_ms": app_timeout,
-                "web_timeout_ms": web_timeout,
-            },
-        )
+        {
+            "step": "u1_fetch_one_video_route_decision",
+            **stage_status,
+        }
     )
 
     if not one_video_response.get("ok"):
         error_ctx = resolve_trace_error_context(
             responses=[one_video_response],
             extract_trace=trace,
-            default_error_reason="u1_fetch_one_video_failed",
+            default_error_reason="single_fetch_all_routes_failed",
         )
         result = _build_result(
             source_input=source_input,
@@ -889,6 +963,7 @@ def run_douyin_single_video(
             u2_gate_reason="u1_failed",
             analysis_mode=analysis_mode,
             timings=timings,
+            stage_status={"fetch": stage_status},
         )
         if write_card:
             card_started_at = time.perf_counter()
@@ -945,6 +1020,7 @@ def run_douyin_single_video(
             u2_gate_reason="aweme_detail_missing",
             analysis_mode=analysis_mode,
             timings=timings,
+            stage_status={"fetch": stage_status},
         )
         if write_card:
             card_started_at = time.perf_counter()
@@ -1200,6 +1276,7 @@ def run_douyin_single_video(
         analysis_mode=analysis_mode,
         asr_source="u2" if raw_content else "fallback_none",
         timings=timings,
+        stage_status={"fetch": stage_status},
     )
 
     if write_card:

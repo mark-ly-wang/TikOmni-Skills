@@ -19,6 +19,7 @@ bootstrap_for_direct_run(__file__, __package__)
 import argparse
 import hashlib
 import json
+import os
 import re
 import time
 import urllib.parse
@@ -30,7 +31,13 @@ from typing import Any, Dict, List, Optional, Tuple
 from scripts.core.asr_pipeline import derive_asr_clean_text, run_u3_then_u2_asr_candidates_with_timeout_retry
 from scripts.core.config_loader import config_get, load_tikomni_config
 from scripts.core.progress_report import ProgressReporter, build_progress_reporter
-from scripts.core.extract_pipeline import build_api_trace, resolve_trace_error_context
+from scripts.core.extract_pipeline import (
+    build_api_trace,
+    build_attempted_route,
+    build_route_plan_entry,
+    build_stage_status,
+    resolve_trace_error_context,
+)
 from scripts.core.tikomni_common import (
     call_json_api,
     deep_find_all,
@@ -55,10 +62,14 @@ from scripts.writers.write_work_fact_card import (
 APP_V2_VIDEO_ENDPOINT = "/api/u1/v1/xiaohongshu/app_v2/get_video_note_detail"
 APP_V2_IMAGE_ENDPOINT = "/api/u1/v1/xiaohongshu/app_v2/get_image_note_detail"
 APP_V2_MIXED_ENDPOINT = "/api/u1/v1/xiaohongshu/app_v2/get_mixed_note_detail"
+APP_V1_V2_ENDPOINT = "/api/u1/v1/xiaohongshu/app/get_note_info_v2"
 APP_V1_ENDPOINT = "/api/u1/v1/xiaohongshu/app/get_note_info"
 WEB_V2_V2_ENDPOINT = "/api/u1/v1/xiaohongshu/web_v2/fetch_feed_notes_v2"
 WEB_V2_V3_ENDPOINT = "/api/u1/v1/xiaohongshu/web_v2/fetch_feed_notes_v3"
-WEB_ENDPOINT = "/api/u1/v1/xiaohongshu/web/get_note_info_v7"
+WEB_V1_V7_ENDPOINT = "/api/u1/v1/xiaohongshu/web/get_note_info_v7"
+WEB_V1_V5_ENDPOINT = "/api/u1/v1/xiaohongshu/web/get_note_info_v5"
+WEB_V1_V4_ENDPOINT = "/api/u1/v1/xiaohongshu/web/get_note_info_v4"
+WEB_V1_V2_ENDPOINT = "/api/u1/v1/xiaohongshu/web/get_note_info_v2"
 U2_REQUEST_TIMEOUT_CAP_MS = 15000
 U2_GATE_MIN_DURATION_MS = 13000
 U2_GATE_MAX_DURATION_MS = 1800000
@@ -318,6 +329,218 @@ def _route_success_for_note(response: Dict[str, Any], source_input: Dict[str, Op
         completeness = _route_field_completeness(response.get("data"), source_input)
         response["_field_completeness"] = completeness
     return bool(completeness.get("core_ready"))
+
+
+def _response_failure_reason(response: Dict[str, Any]) -> str:
+    if response.get("timeout_retry_exhausted"):
+        return "primary_timeout_retry_exhausted"
+    if response.get("error_reason"):
+        return "primary_non_timeout_failure"
+    return "primary_unknown_failure"
+
+
+def _route_accept_decision(response: Dict[str, Any], source_input: Dict[str, Optional[str]]) -> Dict[str, Any]:
+    if not response.get("ok"):
+        return {
+            "accepted": False,
+            "accept_reason": "response_not_ok",
+            "fallback_reason": _response_failure_reason(response),
+        }
+
+    completeness = response.get("_field_completeness")
+    if not isinstance(completeness, dict):
+        completeness = _route_field_completeness(response.get("data"), source_input)
+        response["_field_completeness"] = completeness
+
+    missing_core = list(completeness.get("missing_core") or [])
+    if missing_core:
+        return {
+            "accepted": False,
+            "accept_reason": "note_missing_core_fields",
+            "fallback_reason": f"note_missing_core:{','.join(missing_core)}",
+        }
+
+    fields = completeness.get("fields") if isinstance(completeness.get("fields"), dict) else {}
+    optional_missing = [field_name for field_name in ("author", "subtitle", "metrics") if not fields.get(field_name)]
+    accept_reason = "note_core_fields_ready"
+    if optional_missing:
+        accept_reason = f"note_core_fields_ready_optional_missing:{','.join(optional_missing)}"
+    return {
+        "accepted": True,
+        "accept_reason": accept_reason,
+        "fallback_reason": "",
+    }
+
+
+def _extract_xsec_token_from_input(share_text: Optional[str]) -> str:
+    text = normalize_text(share_text)
+    if not text:
+        return ""
+
+    candidates = [text]
+    candidates.extend(re.findall(r"https?://\\S+", text))
+    for candidate in candidates:
+        try:
+            query = urllib.parse.parse_qs(urllib.parse.urlparse(candidate).query)
+        except Exception:
+            continue
+        token = normalize_text((query.get("xsec_token") or [""])[0])
+        if token:
+            return urllib.parse.unquote(token)
+    return ""
+
+
+def _build_unavailable_attempt(
+    *,
+    route_label: str,
+    endpoint: str,
+    method: str,
+    reason: str,
+) -> Dict[str, Any]:
+    return build_attempted_route(
+        route_label=route_label,
+        endpoint=endpoint,
+        accepted=False,
+        accept_reason="skipped_param_unavailable",
+        fallback_reason=reason,
+        param_readiness="unavailable",
+        param_reason=reason,
+        skipped=True,
+        extra={"method": method.upper()},
+    )
+
+
+def _build_note_fetch_routes(source_input: Dict[str, Optional[str]]) -> List[Dict[str, Any]]:
+    share_text = source_input.get("share_text")
+    note_id = source_input.get("note_id") or _extract_note_id_from_share(share_text)
+    app_params: Dict[str, Any] = {}
+    web_params: Dict[str, Any] = {}
+
+    if share_text:
+        app_params["share_text"] = share_text
+        web_params["share_text"] = share_text
+    if note_id:
+        app_params["note_id"] = note_id
+        web_params["note_id"] = note_id
+
+    short_url_ready = bool(_is_short_share_url(share_text) and share_text)
+    xsec_token = _extract_xsec_token_from_input(share_text)
+    web_cookie = os.getenv("TIKOMNI_XHS_WEB_COOKIE", "").strip()
+    web_v5_ready = bool(note_id and xsec_token and web_cookie)
+
+    return [
+        {
+            "route_label": "app_v2_video",
+            "endpoint": APP_V2_VIDEO_ENDPOINT,
+            "method": "GET",
+            "params": dict(app_params),
+            "body": None,
+            "param_readiness": "ready" if app_params else "unavailable",
+            "param_reason": "" if app_params else "missing_note_id_or_share_text",
+        },
+        {
+            "route_label": "app_v2_image",
+            "endpoint": APP_V2_IMAGE_ENDPOINT,
+            "method": "GET",
+            "params": dict(app_params),
+            "body": None,
+            "param_readiness": "ready" if app_params else "unavailable",
+            "param_reason": "" if app_params else "missing_note_id_or_share_text",
+        },
+        {
+            "route_label": "app_v2_mixed",
+            "endpoint": APP_V2_MIXED_ENDPOINT,
+            "method": "GET",
+            "params": dict(app_params),
+            "body": None,
+            "param_readiness": "ready" if app_params else "unavailable",
+            "param_reason": "" if app_params else "missing_note_id_or_share_text",
+        },
+        {
+            "route_label": "app_v1_v2",
+            "endpoint": APP_V1_V2_ENDPOINT,
+            "method": "GET",
+            "params": dict(app_params),
+            "body": None,
+            "param_readiness": "ready" if app_params else "unavailable",
+            "param_reason": "" if app_params else "missing_note_id_or_share_text",
+        },
+        {
+            "route_label": "app_v1",
+            "endpoint": APP_V1_ENDPOINT,
+            "method": "GET",
+            "params": dict(app_params),
+            "body": None,
+            "param_readiness": "ready" if app_params else "unavailable",
+            "param_reason": "" if app_params else "missing_note_id_or_share_text",
+        },
+        {
+            "route_label": "web_v2_v3",
+            "endpoint": WEB_V2_V3_ENDPOINT,
+            "method": "GET",
+            "params": {"short_url": share_text} if short_url_ready else {},
+            "body": None,
+            "param_readiness": "ready" if short_url_ready else "unavailable",
+            "param_reason": "" if short_url_ready else "missing_short_share_url",
+        },
+        {
+            "route_label": "web_v2_v2",
+            "endpoint": WEB_V2_V2_ENDPOINT,
+            "method": "GET",
+            "params": {"note_id": note_id} if note_id else {},
+            "body": None,
+            "param_readiness": "ready" if note_id else "unavailable",
+            "param_reason": "" if note_id else "missing_note_id",
+        },
+        {
+            "route_label": "web_v1_v7",
+            "endpoint": WEB_V1_V7_ENDPOINT,
+            "method": "GET",
+            "params": dict(web_params),
+            "body": None,
+            "param_readiness": "ready" if web_params else "unavailable",
+            "param_reason": "" if web_params else "missing_note_id_or_share_text",
+        },
+        {
+            "route_label": "web_v1_v5",
+            "endpoint": WEB_V1_V5_ENDPOINT,
+            "method": "POST",
+            "params": {},
+            "body": {
+                "note_id": note_id,
+                "xsec_token": xsec_token,
+                "cookie": web_cookie,
+            } if web_v5_ready else None,
+            "param_readiness": "ready" if web_v5_ready else "unavailable",
+            "param_reason": (
+                ""
+                if web_v5_ready
+                else "missing_note_id"
+                if not note_id
+                else "missing_xsec_token"
+                if not xsec_token
+                else "fallback_requires_cookie"
+            ),
+        },
+        {
+            "route_label": "web_v1_v4",
+            "endpoint": WEB_V1_V4_ENDPOINT,
+            "method": "GET",
+            "params": dict(web_params),
+            "body": None,
+            "param_readiness": "ready" if web_params else "unavailable",
+            "param_reason": "" if web_params else "missing_note_id_or_share_text",
+        },
+        {
+            "route_label": "web_v1_v2",
+            "endpoint": WEB_V1_V2_ENDPOINT,
+            "method": "GET",
+            "params": dict(web_params),
+            "body": None,
+            "param_readiness": "ready" if web_params else "unavailable",
+            "param_reason": "" if web_params else "missing_note_id_or_share_text",
+        },
+    ]
 
 
 def _pick_text_from_paths(payload: Any, paths: List[List[str]]) -> str:
@@ -817,18 +1040,35 @@ def _fetch_note_info(
     progress: Optional[ProgressReporter] = None,
 ) -> Dict[str, Any]:
     attempts: List[Dict[str, Any]] = []
+    routes = _build_note_fetch_routes(source_input)
+    route_plan = [
+        build_route_plan_entry(
+            route_label=str(route["route_label"]),
+            endpoint=str(route["endpoint"]),
+            method=str(route["method"]),
+            param_readiness=str(route.get("param_readiness") or "ready"),
+            param_reason=str(route.get("param_reason") or ""),
+        )
+        for route in routes
+    ]
 
-    share_text = source_input.get("share_text")
-    note_id = source_input.get("note_id") or _extract_note_id_from_share(share_text)
-
-    def _call(path: str, params: Dict[str, Any], label: str, fallback_reason: Optional[str] = None) -> Dict[str, Any]:
+    def _call(
+        *,
+        path: str,
+        method: str,
+        params: Optional[Dict[str, Any]],
+        body: Optional[Dict[str, Any]],
+        label: str,
+        fallback_reason: Optional[str] = None,
+    ) -> Dict[str, Any]:
         response = call_json_api(
             base_url=base_url,
             path=path,
             token=token,
-            method="GET",
+            method=method,
             timeout_ms=timeout_ms,
             params=params,
+            body=body,
         )
         response["_endpoint"] = path
         response["_route_label"] = label
@@ -843,78 +1083,64 @@ def _fetch_note_info(
             "core_ready": False,
         }
         _emit_http_progress(progress, stage="note.fetch", response=response, route_label=label, source_input=source_input)
-        attempts.append({"label": label, "endpoint": path, "response": response})
         return response
 
-    app_params: Dict[str, Any] = {}
-    if share_text:
-        app_params["share_text"] = share_text
-    if note_id:
-        app_params["note_id"] = note_id
-
-    app_v2_attempts = [
-        (APP_V2_VIDEO_ENDPOINT, "app_v2_video"),
-        (APP_V2_IMAGE_ENDPOINT, "app_v2_image"),
-        (APP_V2_MIXED_ENDPOINT, "app_v2_mixed"),
-    ]
     next_reason: Optional[str] = None
+    final_response: Dict[str, Any] = {
+        "ok": False,
+        "error_reason": "single_fetch_all_routes_failed",
+        "_endpoint": None,
+        "_route_label": "",
+    }
 
-    for path, label in app_v2_attempts:
-        app_v2_response = _call(path, app_params, label, fallback_reason=next_reason)
-        if _route_success_for_note(app_v2_response, source_input):
-            app_v2_response["_attempts"] = attempts
-            return app_v2_response
-        if app_v2_response.get("ok"):
-            app_v2_response["fallback_trigger_reason"] = "field_completeness_below_threshold"
-        next_reason = "field_completeness_below_threshold" if app_v2_response.get("ok") else (
-            "primary_timeout_retry_exhausted" if app_v2_response.get("timeout_retry_exhausted") else "primary_non_timeout_failure"
+    for route in routes:
+        if route.get("param_readiness") != "ready":
+            attempts.append(
+                _build_unavailable_attempt(
+                    route_label=str(route["route_label"]),
+                    endpoint=str(route["endpoint"]),
+                    method=str(route["method"]),
+                    reason=str(route.get("param_reason") or "fallback_param_unavailable"),
+                )
+            )
+            continue
+
+        response = _call(
+            path=str(route["endpoint"]),
+            method=str(route["method"]),
+            params=dict(route.get("params") or {}),
+            body=dict(route.get("body") or {}) if isinstance(route.get("body"), dict) else None,
+            label=str(route["route_label"]),
+            fallback_reason=next_reason,
         )
-
-    app_response = _call(APP_V1_ENDPOINT, app_params, "app_v1", fallback_reason=next_reason)
-    if _route_success_for_note(app_response, source_input):
-        app_response["_attempts"] = attempts
-        return app_response
-    if app_response.get("ok"):
-        app_response["fallback_trigger_reason"] = "field_completeness_below_threshold"
-
-    app_fallback_reason = (
-        "field_completeness_below_threshold"
-        if app_response.get("ok")
-        else ("primary_timeout_retry_exhausted" if app_response.get("timeout_retry_exhausted") else "primary_non_timeout_failure")
-    )
-    is_short = _is_short_share_url(share_text)
-
-    if is_short and share_text:
-        v3_response = _call(
-            WEB_V2_V3_ENDPOINT,
-            {"short_url": share_text},
-            "web_v2_v3_short",
-            fallback_reason=app_fallback_reason,
+        decision = _route_accept_decision(response, source_input)
+        attempts.append(
+            build_attempted_route(
+                route_label=str(route["route_label"]),
+                endpoint=str(route["endpoint"]),
+                response=response,
+                accepted=bool(decision.get("accepted")),
+                accept_reason=str(decision.get("accept_reason") or ""),
+                fallback_reason=str(decision.get("fallback_reason") or ""),
+                extra={
+                    "method": str(route["method"]).upper(),
+                    "field_completeness": response.get("_field_completeness"),
+                    "response": response,
+                },
+            )
         )
-        if v3_response.get("ok"):
-            v3_response["_attempts"] = attempts
-            return v3_response
+        final_response = response
+        if decision.get("accepted"):
+            response["_attempts"] = attempts
+            response["_route_plan"] = route_plan
+            response["_accept_reason"] = decision.get("accept_reason")
+            return response
+        next_reason = str(decision.get("fallback_reason") or "field_completeness_below_threshold")
+        response["fallback_trigger_reason"] = next_reason
 
-    if note_id:
-        v2_response = _call(
-            WEB_V2_V2_ENDPOINT,
-            {"note_id": note_id},
-            "web_v2_v2_note_id",
-            fallback_reason=app_fallback_reason,
-        )
-        if v2_response.get("ok"):
-            v2_response["_attempts"] = attempts
-            return v2_response
-
-    web_params: Dict[str, Any] = {}
-    if share_text:
-        web_params["share_text"] = share_text
-    if note_id:
-        web_params["note_id"] = note_id
-
-    web_response = _call(WEB_ENDPOINT, web_params, "web_v7", fallback_reason=app_fallback_reason)
-    web_response["_attempts"] = attempts
-    return web_response
+    final_response["_attempts"] = attempts
+    final_response["_route_plan"] = route_plan
+    return final_response
 
 
 def _extract_subtitle_urls(payload: Any) -> List[str]:
@@ -1344,6 +1570,7 @@ def _build_result(
     metadata_fields: Optional[Dict[str, Any]] = None,
     asr_source: Optional[str] = None,
     timings: Optional[Dict[str, int]] = None,
+    stage_status: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     metadata = metadata_fields or {}
     summary_block = summarize_content(raw_content, source=f"xiaohongshu:{text_source}")
@@ -1371,7 +1598,7 @@ def _build_result(
     analysis_eligibility = "eligible" if primary_text else "incomplete"
     analysis_exclusion_reason = "" if analysis_eligibility == "eligible" else ("video_asr_unavailable" if work_modality == "video" else "caption_raw_missing")
 
-    return {
+    payload = {
         "platform": "xiaohongshu",
         "content_kind": "note",
         "source": source_input,
@@ -1427,6 +1654,9 @@ def _build_result(
         "request_id": request_id,
         "timings": dict(timings or {}),
     }
+    if isinstance(stage_status, dict):
+        payload["stage_status"] = dict(stage_status)
+    return payload
 
 
 def run_xiaohongshu_extract(
@@ -1601,11 +1831,35 @@ def run_xiaohongshu_extract(
     timings["u1_total_ms"] = _elapsed_ms(u1_started_at)
 
     attempts = note_response.get("_attempts") or []
+    stage_status = build_stage_status(
+        stage="fetch",
+        status="succeeded" if note_response.get("ok") else "failed",
+        route_plan=list(note_response.get("_route_plan") or []),
+        attempted_routes=list(attempts),
+        chosen_route=str(note_response.get("_route_label") or ""),
+        accept_reason=str(note_response.get("_accept_reason") or ""),
+        fallback_reason=str(note_response.get("fallback_trigger_reason") or ""),
+        error_reason=None if note_response.get("ok") else "single_fetch_all_routes_failed",
+        all_routes_failed=not bool(note_response.get("ok")),
+    )
     for index, attempt in enumerate(attempts, start=1):
         response = attempt.get("response") if isinstance(attempt, dict) else None
         endpoint = attempt.get("endpoint") if isinstance(attempt, dict) else None
-        label = attempt.get("label") if isinstance(attempt, dict) else None
+        label = attempt.get("route_label") if isinstance(attempt, dict) else None
         if not isinstance(response, dict):
+            if attempt.get("skipped"):
+                trace.append(
+                    {
+                        "step": f"u1_get_note_info_attempt_{index}",
+                        "route_label": label,
+                        "endpoint": endpoint,
+                        "accept_reason": attempt.get("accept_reason"),
+                        "fallback_reason": attempt.get("fallback_reason"),
+                        "param_readiness": attempt.get("param_readiness"),
+                        "param_reason": attempt.get("param_reason"),
+                        "skipped": True,
+                    }
+                )
             continue
         step = "u1_get_note_info_effective" if index == len(attempts) else f"u1_get_note_info_attempt_{index}"
         trace.append(
@@ -1625,10 +1879,7 @@ def run_xiaohongshu_extract(
     trace.append(
         {
             "step": "u1_get_note_info_route_decision",
-            "chosen_route": note_response.get("_route_label"),
-            "request_id": note_response.get("request_id"),
-            "field_completeness": note_response.get("_field_completeness"),
-            "attempt_count": len(attempts),
+            **stage_status,
         }
     )
 
@@ -1636,7 +1887,7 @@ def run_xiaohongshu_extract(
         error_ctx = resolve_trace_error_context(
             responses=[note_response],
             extract_trace=trace,
-            default_error_reason="u1_get_note_info_failed",
+            default_error_reason="single_fetch_all_routes_failed",
         )
         result = _build_result(
             source_input=source_input,
@@ -1660,6 +1911,7 @@ def run_xiaohongshu_extract(
             missing_fields=[{"field": "u1_note_info", "reason": "all_routes_failed"}],
             metadata_fields=metadata_fields,
             timings=timings,
+            stage_status={"fetch": stage_status},
         )
         if write_card:
             card_started_at = time.perf_counter()
@@ -1835,6 +2087,7 @@ def run_xiaohongshu_extract(
                 missing_fields=missing_fields,
                 metadata_fields=metadata_fields,
                 timings=timings,
+                stage_status={"fetch": stage_status},
             )
             if write_card:
                 card_started_at = time.perf_counter()
@@ -1900,6 +2153,7 @@ def run_xiaohongshu_extract(
                 missing_fields=missing_fields,
                 metadata_fields=metadata_fields,
                 timings=timings,
+                stage_status={"fetch": stage_status},
             )
             if write_card:
                 card_started_at = time.perf_counter()
@@ -2046,6 +2300,7 @@ def run_xiaohongshu_extract(
                 missing_fields=missing_fields,
                 metadata_fields=metadata_fields,
                 timings=timings,
+                stage_status={"fetch": stage_status},
             )
             if write_card:
                 card_started_at = time.perf_counter()
@@ -2110,6 +2365,7 @@ def run_xiaohongshu_extract(
             missing_fields=missing_fields,
             metadata_fields=metadata_fields,
             timings=timings,
+            stage_status={"fetch": stage_status},
         )
 
         if write_card:
@@ -2184,6 +2440,7 @@ def run_xiaohongshu_extract(
         missing_fields=missing_fields,
         metadata_fields=metadata_fields,
         timings=timings,
+        stage_status={"fetch": stage_status},
     )
 
     if write_card:

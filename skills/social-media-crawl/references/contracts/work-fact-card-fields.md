@@ -42,6 +42,7 @@
 - Fact fields for the Markdown card go into frontmatter. Do not emit a separate `## Facts` section.
 - The work-library directory writes only the Markdown card and no extra `.json` sidecar in the same directory.
 - `primary_text` is the text that is best suited for reading and indexing in the current task.
+- `asr_raw` and `subtitle_raw` are internal preserved text fields. Keep them in the normalized card data, but do not render them as standalone sections in the Markdown body.
 - `play_count` may be `null`. Leave it empty when missing, and keep `0` only when the platform explicitly returns `0`.
 - Preferred order for video works:
   - `subtitle_raw`

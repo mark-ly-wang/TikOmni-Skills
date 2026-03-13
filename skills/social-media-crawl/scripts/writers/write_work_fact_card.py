@@ -359,18 +359,10 @@ def _markdown_lines(card: Dict[str, Any]) -> List[str]:
     lines = _frontmatter_lines(card)
     primary_text = _safe_text(card.get("primary_text"))
     caption_raw = _safe_text(card.get("caption_raw"))
-    subtitle_raw = _safe_text(card.get("subtitle_raw"))
-    asr_raw = _safe_text(card.get("asr_raw"))
 
     lines.extend(["", "## 主文本", primary_text or ""])
     if caption_raw and caption_raw != primary_text:
         lines.extend(["", "## 原始文案", caption_raw])
-    if asr_raw and subtitle_raw and asr_raw == subtitle_raw and asr_raw != primary_text:
-        lines.extend(["", "## 原始转写", asr_raw])
-    elif subtitle_raw and subtitle_raw != primary_text:
-        lines.extend(["", "## 原始字幕", subtitle_raw])
-    if asr_raw and asr_raw not in {primary_text, subtitle_raw}:
-        lines.extend(["", "## 原始转写", asr_raw])
     if card.get("missing_fields"):
         lines.extend(["", "## 缺失字段"])
         for entry in card["missing_fields"]:

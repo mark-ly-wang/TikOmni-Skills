@@ -62,6 +62,13 @@ def _safe_optional_int(value: Any) -> Optional[int]:
         return None
 
 
+def _safe_optional_positive_int(value: Any) -> Optional[int]:
+    parsed = _safe_optional_int(value)
+    if parsed is None or parsed <= 0:
+        return None
+    return parsed
+
+
 def _source_dict(payload: Dict[str, Any]) -> Dict[str, Any]:
     source = payload.get("source")
     return source if isinstance(source, dict) else {}
@@ -250,6 +257,7 @@ def build_work_fact_card(payload: Dict[str, Any], platform: Optional[str] = None
         "create_time_sec": payload.get("create_time_sec"),
         "publish_time_source": _safe_text(payload.get("publish_time_source")),
         "published_date": _resolve_published_date(payload),
+        "duration_ms": _safe_optional_positive_int(payload.get("duration_ms")),
         "digg_count": _safe_int(payload.get("digg_count")),
         "comment_count": _safe_int(payload.get("comment_count")),
         "collect_count": _safe_int(payload.get("collect_count")),
@@ -324,6 +332,7 @@ def _frontmatter_lines(card: Dict[str, Any]) -> List[str]:
         ("title", card.get("title")),
         ("published_date", card.get("published_date")),
         ("work_modality", card.get("work_modality")),
+        ("duration_ms", card.get("duration_ms")),
         ("digg_count", card.get("digg_count")),
         ("comment_count", card.get("comment_count")),
         ("collect_count", card.get("collect_count")),

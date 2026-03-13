@@ -20,6 +20,7 @@ from scripts.pipelines.douyin_metadata import (
     extract_douyin_title,
     normalize_douyin_author_handle,
 )
+from scripts.pipelines.douyin_video_type_matrix import normalize_douyin_video_type
 from scripts.pipelines.media_url_rules import is_probable_video_url as is_shared_probable_video_url
 from scripts.core.tikomni_common import deep_find_all, deep_find_first
 from scripts.pipelines.select_low_quality_video_url import select_low_quality_video_url
@@ -52,6 +53,15 @@ def _optional_i(value: Any) -> int | None:
         return int(float(text.replace(",", ""))) if text else None
     except Exception:
         return None
+
+
+def _normalize_duration_ms(value: Any) -> int:
+    parsed = _optional_i(value)
+    if parsed is None or parsed <= 0:
+        return 0
+    if 0 < parsed < 10000:
+        return parsed * 1000
+    return parsed
 
 
 def _first(payload: Any, keys: List[str], default: Any = "") -> Any:
@@ -134,6 +144,16 @@ def _extract_douyin_video_down_url(item: Dict[str, Any]) -> str:
     return _t(selected.get("video_down_url"))
 
 
+def _extract_douyin_duration_ms(item: Dict[str, Any]) -> int:
+    raw = item.get("duration_ms")
+    if raw is None:
+        raw = item.get("duration")
+    video = item.get("video")
+    if raw is None and isinstance(video, dict):
+        raw = video.get("duration")
+    return _normalize_duration_ms(raw)
+
+
 def _extract_xhs_video_down_url(item: Dict[str, Any]) -> str:
     urls = _pick_http_urls(
         item,
@@ -152,6 +172,33 @@ def _extract_xhs_video_down_url(item: Dict[str, Any]) -> str:
         if _is_probable_video_url(url):
             return url
     return ""
+
+
+def _extract_xhs_duration_ms(item: Dict[str, Any]) -> int:
+    video_info_v2 = item.get("video_info_v2") if isinstance(item.get("video_info_v2"), dict) else {}
+    media = video_info_v2.get("media") if isinstance(video_info_v2.get("media"), dict) else {}
+    media_video = media.get("video") if isinstance(media.get("video"), dict) else {}
+    capa = video_info_v2.get("capa") if isinstance(video_info_v2.get("capa"), dict) else {}
+    raw_candidates = [
+        item.get("duration_ms"),
+        item.get("duration"),
+        item.get("video_duration"),
+        item.get("duration_sec"),
+        media_video.get("duration"),
+        capa.get("duration"),
+    ]
+    video = item.get("video")
+    if isinstance(video, dict):
+        raw_candidates.append(video.get("duration"))
+    note = item.get("note")
+    if isinstance(note, dict):
+        raw_candidates.append(note.get("duration"))
+
+    for candidate in raw_candidates:
+        normalized = _normalize_duration_ms(candidate)
+        if normalized > 0:
+            return normalized
+    return 0
 
 
 def _normalize_text_list(value: Any) -> List[str]:
@@ -276,9 +323,9 @@ def _extract_xhs_subtitle_urls(item: Dict[str, Any]) -> List[str]:
 
 def _extract_xhs_work_modality(item: Dict[str, Any], *, video_download_url: str, subtitle_inline: str) -> str:
     content_type_raw = _t(_first(item, ["type", "note_type", "model_type"])).lower()
-    if content_type_raw in {"video", "0", "normal", "mixed", "mix", "video_note", "note_video"}:
+    if content_type_raw in {"video", "0", "mixed", "mix", "video_note", "note_video"}:
         return "video"
-    if content_type_raw in {"image", "1", "photo", "album", "note", "text"}:
+    if content_type_raw in {"normal", "image", "1", "photo", "album", "note", "text"}:
         return "text"
     if video_download_url or subtitle_inline:
         return "video"
@@ -393,6 +440,9 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
         if not isinstance(item, dict):
             continue
         aweme_id = _t(_first(item, ["aweme_id", "item_id", "id"]))
+        video_type_info = normalize_douyin_video_type(item)
+        is_video = bool(video_type_info.get("is_video"))
+        duration_ms = _extract_douyin_duration_ms(item)
         author_info = extract_douyin_author(item)
         metrics = extract_douyin_metrics(item)
         video_down_url = _extract_douyin_video_down_url(item)
@@ -417,9 +467,9 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
             subtitle_raw="",
             subtitle_source="missing",
             publish_time=_t(_first(item, ["create_time", "publish_time"])),
-            work_modality="video",
-            content_type="video",
-            duration_ms=_i(_first(item, ["duration_ms", "duration"], 0)),
+            work_modality="video" if is_video else "text",
+            content_type="video" if is_video else "text",
+            duration_ms=duration_ms,
             tags=tags,
             metrics={
                 "digg_count": int(metrics.get("digg_count") or 0),
@@ -438,10 +488,13 @@ def adapt_douyin_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[
             asr_status="pending",
             asr_error_reason="",
             asr_source="fallback_none",
+            is_video=is_video,
             platform_native_refs={
                 "douyin_sec_uid": _t(author_info.get("douyin_sec_uid") or internal_author_id),
                 "douyin_aweme_author_id": _t(author_info.get("douyin_aweme_author_id") or stable_author_id or author_id),
                 "douyin_unique_id": _t(author_info.get("unique_id")),
+                "douyin_video_type_reason": _t(video_type_info.get("video_type_reason")),
+                "douyin_video_type_field": _t(video_type_info.get("matched_field")),
             },
             raw_ref={"aweme_id": aweme_id, "raw_item": item},
         )
@@ -519,6 +572,7 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
         subtitle_inline = _extract_xhs_subtitle_inline(item)
         subtitle_urls = _extract_xhs_subtitle_urls(item)
         video_down_url = _extract_xhs_video_down_url(item)
+        duration_ms = _extract_xhs_duration_ms(item)
         content_type_raw = _t(_first(item, ["type", "note_type", "model_type"]))
         work_modality = _extract_xhs_work_modality(item, video_download_url=video_down_url, subtitle_inline=subtitle_inline)
         content_type = "video" if work_modality == "video" else (content_type_raw or "text")
@@ -541,7 +595,7 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
             publish_time=_t(_first(item, ["publish_time", "time", "create_time", "publishTime", "created_at"])),
             work_modality=work_modality,
             content_type=content_type,
-            duration_ms=_i(_first(item, ["duration_ms", "duration", "video_duration"], 0)),
+            duration_ms=duration_ms,
             tags=_extract_xhs_tags(item),
             metrics=metrics,
             cover_image=cover_image,
@@ -551,6 +605,7 @@ def adapt_xhs_author_home(raw: Dict[str, Any]) -> Tuple[Dict[str, Any], List[Dic
             asr_status="subtitle_ready" if subtitle_inline else "pending",
             asr_error_reason="",
             asr_source="native_subtitle" if subtitle_inline else "fallback_none",
+            is_video=work_modality == "video",
             platform_native_refs={"xhs_user_id": author_id, "xhs_red_id": author_handle},
             raw_ref={
                 "note_id": note_id,

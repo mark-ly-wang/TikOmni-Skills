@@ -18,6 +18,7 @@ from scripts.core.asr_pipeline import (
     run_u2_asr_candidates_with_timeout_retry,
 )
 from scripts.core.u3_fallback import run_u3_public_url_fallback
+from scripts.pipelines.douyin_video_type_matrix import normalize_douyin_video_type
 
 DEFAULT_BATCH_SUBMIT_SIZE = 50
 MAX_BATCH_SUBMIT_SIZE = 100
@@ -76,13 +77,17 @@ def _resolve_is_video(work: Dict[str, Any], *, platform: str) -> bool:
         return False
 
     if platform == "douyin":
-        return True
+        raw_ref = work.get("raw_ref") if isinstance(work.get("raw_ref"), dict) else {}
+        raw_item = raw_ref.get("raw_item") if isinstance(raw_ref.get("raw_item"), dict) else {}
+        if raw_item:
+            return bool(normalize_douyin_video_type(raw_item).get("is_video"))
+        return False
 
     raw_ref = work.get("raw_ref") if isinstance(work.get("raw_ref"), dict) else {}
     xhs_type_hint = normalize_text(raw_ref.get("type") or raw_ref.get("note_type")).lower()
-    if xhs_type_hint in {"video", "0", "normal", "mixed", "mix"}:
+    if xhs_type_hint in {"video", "0", "mixed", "mix", "video_note", "note_video"}:
         return True
-    if xhs_type_hint in {"image", "1", "note", "photo"}:
+    if xhs_type_hint in {"normal", "image", "1", "note", "photo", "text", "album"}:
         return False
 
     return False
@@ -275,7 +280,8 @@ def _run_u2_for_work(
     gate = _evaluate_u2_gate(work, platform=platform)
     if not gate.get("can_u2"):
         gate_reason = normalize_text(gate.get("gate_reason")) or "skip:unknown"
-        return _fallback_none_result(gate_reason), {
+        fallback_result = _video_caption_fallback_result(work, gate_reason) if gate.get("is_video") else _fallback_none_result(gate_reason)
+        return fallback_result, {
             "step": "author_home.asr.u2_gate",
             "platform_work_id": work.get("platform_work_id"),
             "ok": False,
@@ -325,19 +331,7 @@ def _run_u2_for_work(
             asr_source="external_asr",
         ), trace
 
-    return {
-        "subtitle_raw": "",
-        "subtitle_source": "missing",
-        "asr_raw": "",
-        "asr_clean": "",
-        "primary_text": "",
-        "primary_text_source": "asr_clean",
-        "analysis_eligibility": "incomplete",
-        "analysis_exclusion_reason": "video_asr_unavailable",
-        "asr_status": "failed",
-        "asr_error_reason": normalize_text(poll_result.get("error_reason")) or "u2_failed",
-        "asr_source": "fallback_none",
-    }, trace
+    return _video_caption_fallback_result(work, normalize_text(poll_result.get("error_reason")) or "u2_failed"), trace
 
 
 def _iter_xhs_interface_text_candidates(work: Dict[str, Any]) -> List[Tuple[str, str]]:
@@ -489,6 +483,23 @@ def _fallback_none_result(reason: str) -> Dict[str, Any]:
     }
 
 
+def _video_caption_fallback_result(work: Dict[str, Any], reason: str) -> Dict[str, Any]:
+    caption_raw = normalize_text(work.get("caption_raw"))
+    return {
+        "subtitle_raw": "",
+        "subtitle_source": "missing",
+        "asr_raw": "",
+        "asr_clean": "",
+        "primary_text": caption_raw,
+        "primary_text_source": "caption_raw" if caption_raw else "missing",
+        "analysis_eligibility": "eligible" if caption_raw else "incomplete",
+        "analysis_exclusion_reason": "" if caption_raw else (normalize_text(reason) or "video_asr_unavailable"),
+        "asr_status": "failed",
+        "asr_error_reason": normalize_text(reason) or "asr_failed",
+        "asr_source": "fallback_none",
+    }
+
+
 def _run_xhs_u3_then_u2_batch_for_entries(
     *,
     batch_id: str,
@@ -517,7 +528,7 @@ def _run_xhs_u3_then_u2_batch_for_entries(
         subtitle_invalid = normalize_text(entry.get("subtitle_invalid")) or "subtitle_missing"
 
         if not source_url:
-            work.update(_fallback_none_result("skip:video_download_url_missing"))
+            work.update(_video_caption_fallback_result(work, "skip:video_download_url_missing"))
             trace.append(
                 {
                     "step": "author_home.asr.xhs_u3",
@@ -554,7 +565,7 @@ def _run_xhs_u3_then_u2_batch_for_entries(
         )
 
         if not u3_result.get("ok") or not public_url:
-            work.update(_fallback_none_result(normalize_text(u3_result.get("error_reason")) or "u3_bridge_failed"))
+            work.update(_video_caption_fallback_result(work, normalize_text(u3_result.get("error_reason")) or "u3_bridge_failed"))
             u3_failed_count += 1
             continue
 
@@ -597,7 +608,7 @@ def _run_xhs_u3_then_u2_batch_for_entries(
         work = entry.get("work")
         if not isinstance(work, dict):
             continue
-        work.update(_fallback_none_result(normalize_text(entry.get("fallback_reason")) or "xhs_u3_then_u2_failed"))
+        work.update(_video_caption_fallback_result(work, normalize_text(entry.get("fallback_reason")) or "xhs_u3_then_u2_failed"))
 
     return {
         "trace": trace,
@@ -905,7 +916,10 @@ def enrich_author_home_asr(
                 )
 
                 if not gate.get("can_u2"):
-                    work.update(_fallback_none_result(str(gate.get("gate_reason") or "skip:unknown")))
+                    if gate.get("is_video"):
+                        work.update(_video_caption_fallback_result(work, str(gate.get("gate_reason") or "skip:unknown")))
+                    else:
+                        work.update(_mark_text_work_ready(work))
                 else:
                     batch_u2_entries.append(
                         {
@@ -987,7 +1001,7 @@ def enrich_author_home_asr(
                     }
                 )
                 if not gate.get("can_u2"):
-                    work.update(_fallback_none_result(str(gate.get("gate_reason") or "skip:unknown")))
+                    work.update(_video_caption_fallback_result(work, str(gate.get("gate_reason") or "skip:unknown")))
                 else:
                     batch_xhs_u3_entries.append(
                         {

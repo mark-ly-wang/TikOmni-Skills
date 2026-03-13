@@ -108,9 +108,9 @@ def _infer_work_modality(*, work_modality: str, is_video: Any, content_type: str
         return "video"
 
     content_type_value = _to_text(content_type).lower()
-    if content_type_value in {"video", "mixed", "mix", "video_note", "note_video", "normal", "0"}:
+    if content_type_value in {"video", "mixed", "mix", "video_note", "note_video", "0"}:
         return "video"
-    if content_type_value in {"text", "note", "image", "photo", "album", "1"}:
+    if content_type_value in {"normal", "text", "note", "image", "photo", "album", "1"}:
         return "text"
 
     if subtitle_raw or video_download_url:

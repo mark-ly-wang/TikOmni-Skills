@@ -424,7 +424,6 @@ def _u1_fetch_one_video(
             fallback_reason="" if app_response.get("ok") else (
                 "primary_timeout_retry_exhausted" if app_response.get("timeout_retry_exhausted") else "primary_non_timeout_failure"
             ),
-            extra={"response": app_response},
         )
     )
     if app_response.get("ok"):
@@ -458,7 +457,6 @@ def _u1_fetch_one_video(
             fallback_reason="" if web_response.get("ok") else (
                 "fallback_timeout_retry_exhausted" if web_response.get("timeout_retry_exhausted") else "fallback_non_timeout_failure"
             ),
-            extra={"response": web_response},
         )
     )
     web_response["_attempts"] = attempts
@@ -891,23 +889,24 @@ def run_douyin_single_video(
         all_routes_failed=not bool(one_video_response.get("ok")),
     )
     for index, attempt in enumerate(attempts, start=1):
-        response = attempt.get("response") if isinstance(attempt, dict) else None
+        if not isinstance(attempt, dict):
+            continue
+        response = attempt.get("response") if isinstance(attempt.get("response"), dict) else attempt
         endpoint = attempt.get("endpoint") if isinstance(attempt, dict) else None
         label = attempt.get("route_label") if isinstance(attempt, dict) else None
-        if not isinstance(response, dict):
-            if attempt.get("skipped"):
-                trace.append(
-                    {
-                        "step": f"u1_fetch_one_video_attempt_{index}",
-                        "route_label": label,
-                        "endpoint": endpoint,
-                        "accept_reason": attempt.get("accept_reason"),
-                        "fallback_reason": attempt.get("fallback_reason"),
-                        "param_readiness": attempt.get("param_readiness"),
-                        "param_reason": attempt.get("param_reason"),
-                        "skipped": True,
-                    }
-                )
+        if attempt.get("skipped"):
+            trace.append(
+                {
+                    "step": f"u1_fetch_one_video_attempt_{index}",
+                    "route_label": label,
+                    "endpoint": endpoint,
+                    "accept_reason": attempt.get("accept_reason"),
+                    "fallback_reason": attempt.get("fallback_reason"),
+                    "param_readiness": attempt.get("param_readiness"),
+                    "param_reason": attempt.get("param_reason"),
+                    "skipped": True,
+                }
+            )
             continue
         _emit_http_progress(progress, stage="single_video.fetch", response=response, route_label=str(label or "route"))
         step = "u1_fetch_one_video_effective" if index == len(attempts) else f"u1_fetch_one_video_attempt_{index}"

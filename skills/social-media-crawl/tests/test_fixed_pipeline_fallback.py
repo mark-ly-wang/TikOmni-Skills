@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 import unittest
@@ -14,10 +15,59 @@ if str(SKILL_ROOT) not in sys.path:
 
 from scripts.core.asr_pipeline import run_u2_asr_batch_with_timeout_retry
 from scripts.pipelines import homepage_collectors
+from scripts.pipelines import run_douyin_single_work
 from scripts.pipelines import run_xiaohongshu_single_work
 
 
 class FixedPipelineFallbackTest(unittest.TestCase):
+    def test_douyin_single_fetch_attempt_trace_is_json_serializable(self) -> None:
+        def fake_call_json_api(**_: object) -> dict:
+            return {
+                "ok": True,
+                "status_code": 200,
+                "request_id": "req-dy-single",
+                "error_reason": None,
+                "data": {"aweme_detail": {"aweme_id": "123"}},
+            }
+
+        with patch.object(run_douyin_single_work, "call_json_api", side_effect=fake_call_json_api):
+            response = run_douyin_single_work._u1_fetch_one_video(
+                base_url="https://api.tikomni.com",
+                token="test-token",
+                share_url="https://v.douyin.com/test-single/",
+                app_timeout_ms=1000,
+                web_timeout_ms=1000,
+            )
+
+        json.dumps(response, ensure_ascii=False)
+        self.assertNotIn("response", response["_attempts"][0])
+
+    def test_xhs_single_fetch_attempt_trace_is_json_serializable(self) -> None:
+        def fake_call_json_api(**_: object) -> dict:
+            return {
+                "ok": True,
+                "status_code": 200,
+                "request_id": "req-xhs-single",
+                "error_reason": None,
+                "data": {
+                    "title": "test title",
+                    "desc": "test content",
+                    "video": {"master_url": "https://example.com/video.mp4"},
+                },
+            }
+
+        with patch.object(run_xiaohongshu_single_work, "call_json_api", side_effect=fake_call_json_api):
+            response = run_xiaohongshu_single_work._fetch_note_info(
+                base_url="https://api.tikomni.com",
+                token="test-token",
+                timeout_ms=1000,
+                source_input={"share_text": "https://xhslink.com/test-single", "note_id": "note123"},
+                progress=None,
+            )
+
+        json.dumps(response, ensure_ascii=False)
+        self.assertNotIn("response", response["_attempts"][0])
+
     def test_xhs_single_route_plan_respects_version_priority_and_cookie_gate(self) -> None:
         source_input = {
             "share_text": (

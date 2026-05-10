@@ -67,7 +67,7 @@
 
 | Skill | 作用 |
 | --- | --- |
-| `social-media-crawl` | 跨平台结构化抓取、固定 pipeline、事实卡入库、MCP-first 通用调用 |
+| `social-media-crawl` | TikOmni API-only 社媒数据获取、固定 pipeline、ASR 支持和事实卡入库 |
 
 ## 30 秒快速开始
 
@@ -214,8 +214,8 @@ TIKOMNI_CARD_ROOT="/absolute/path/to/tikomni-cards"
 - “提取这个抖音视频的结构化字段和主文本。”
 - “抓取这个小红书作品并写入事实卡。”
 - “抓取这个主页的作品并持续入库到作者目录。”
-- “通过 TikOmni MCP 获取这个评论线程并输出标准 JSON。”
-- “通过 TikOmni MCP 获取搜索或榜单结果，并保持结构化返回。”
+- “通过 TikOmni API 获取这个评论线程并输出标准 JSON。”
+- “通过 TikOmni API 获取搜索或榜单结果，并保持结构化返回。”
 
 ## 版本与发布
 

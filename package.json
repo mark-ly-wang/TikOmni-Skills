@@ -1,6 +1,6 @@
 {
   "name": "@tikomni/skills",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "TikOmni skill installer CLI for structured social media crawling in Codex, Claude Code, and OpenClaw",
   "license": "MIT",
   "homepage": "https://github.com/mark-ly-wang/TikOmni-Skills#readme",
@@ -27,7 +27,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test",
+    "test": "node --test && python3 -m unittest discover -s skills/social-media-crawl/tests -p 'test_*.py'",
     "pack:dry-run": "npm pack --dry-run"
   },
   "publishConfig": {

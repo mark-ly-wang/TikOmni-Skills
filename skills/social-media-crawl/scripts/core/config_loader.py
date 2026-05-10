@@ -23,7 +23,6 @@ BUILTIN_DEFAULT_CONFIG: Dict[str, Any] = {
     "profile": "default",
     "runtime": {
         "base_url": "https://api.tikomni.com",
-        "mcp_url": "https://mcp.tikomni.com/mcp",
         "auth_env_key": "TIKOMNI_API_KEY",
         "timeout_ms": 60000,
         "u2_pending_timeout_sec": 60,
@@ -246,7 +245,6 @@ def apply_env_overrides(config: Dict[str, Any], env_values: Optional[Dict[str, s
 
     for env_key, config_key in {
         "TIKOMNI_BASE_URL": "base_url",
-        "TIKOMNI_MCP_URL": "mcp_url",
     }.items():
         value = _env_text(env_key, env_values=env_values)
         if value is not None:

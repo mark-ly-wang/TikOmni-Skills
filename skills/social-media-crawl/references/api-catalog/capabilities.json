@@ -1,0 +1,362 @@
+[
+  {
+    "aliases": [
+      "article",
+      "article_detail",
+      "公众号文章",
+      "文章内容",
+      "文章详情"
+    ],
+    "operation_count": 15,
+    "platforms": [
+      "douyin",
+      "toutiao",
+      "wechat_mp",
+      "zhihu"
+    ],
+    "slug": "article_detail"
+  },
+  {
+    "aliases": [
+      "article_list",
+      "文章列表"
+    ],
+    "operation_count": 3,
+    "platforms": [
+      "wechat_mp",
+      "weibo"
+    ],
+    "slug": "article_list"
+  },
+  {
+    "aliases": [
+      "article_url",
+      "公众号链接",
+      "文章链接"
+    ],
+    "operation_count": 3,
+    "platforms": [
+      "wechat",
+      "wechat_mp"
+    ],
+    "slug": "article_url"
+  },
+  {
+    "aliases": [
+      "comment",
+      "comments",
+      "评论",
+      "评论列表"
+    ],
+    "operation_count": 138,
+    "platforms": [
+      "bilibili",
+      "douyin",
+      "instagram",
+      "kuaishou",
+      "lemon8",
+      "linkedin",
+      "pipixia",
+      "reddit",
+      "sora2",
+      "threads",
+      "tiktok",
+      "toutiao",
+      "twitter",
+      "wechat_channels",
+      "wechat_mp",
+      "weibo",
+      "xiaohongshu",
+      "xigua",
+      "youtube",
+      "zhihu"
+    ],
+    "slug": "comments"
+  },
+  {
+    "aliases": [
+      "general"
+    ],
+    "operation_count": 101,
+    "platforms": [
+      "bilibili",
+      "demo",
+      "douyin",
+      "health",
+      "instagram",
+      "ios_shortcut",
+      "kuaishou",
+      "lemon8",
+      "linkedin",
+      "pipixia",
+      "reddit",
+      "temp_mail",
+      "tiktok",
+      "twitter",
+      "weibo",
+      "xiaohongshu",
+      "youtube",
+      "zhihu"
+    ],
+    "slug": "general"
+  },
+  {
+    "aliases": [
+      "hot search",
+      "hot words",
+      "hot_search",
+      "热搜",
+      "热榜"
+    ],
+    "operation_count": 28,
+    "platforms": [
+      "bilibili",
+      "douyin",
+      "kuaishou",
+      "lemon8",
+      "pipixia",
+      "wechat_channels",
+      "weibo"
+    ],
+    "slug": "hot_search"
+  },
+  {
+    "aliases": [
+      "live",
+      "livestream",
+      "直播"
+    ],
+    "operation_count": 51,
+    "platforms": [
+      "bilibili",
+      "douyin",
+      "kuaishou",
+      "reddit",
+      "tiktok",
+      "wechat_channels",
+      "youtube"
+    ],
+    "slug": "livestream"
+  },
+  {
+    "aliases": [
+      "media_upload",
+      "upload",
+      "上传",
+      "媒体中转"
+    ],
+    "operation_count": 15,
+    "platforms": [
+      "bilibili",
+      "douyin",
+      "sora2",
+      "tiktok",
+      "u3",
+      "youtube"
+    ],
+    "slug": "media_upload"
+  },
+  {
+    "aliases": [
+      "music",
+      "音乐"
+    ],
+    "operation_count": 12,
+    "platforms": [
+      "douyin",
+      "instagram",
+      "tiktok",
+      "weibo"
+    ],
+    "slug": "music"
+  },
+  {
+    "aliases": [
+      "note",
+      "note_detail",
+      "小红书笔记",
+      "笔记",
+      "笔记详情"
+    ],
+    "operation_count": 30,
+    "platforms": [
+      "douyin",
+      "kuaishou",
+      "reddit",
+      "sora2",
+      "tiktok",
+      "weibo",
+      "xiaohongshu",
+      "youtube"
+    ],
+    "slug": "note_detail"
+  },
+  {
+    "aliases": [
+      "goods",
+      "product",
+      "product_detail",
+      "商品",
+      "商品详情"
+    ],
+    "operation_count": 40,
+    "platforms": [
+      "douyin",
+      "kuaishou",
+      "tiktok",
+      "xiaohongshu"
+    ],
+    "slug": "product_detail"
+  },
+  {
+    "aliases": [
+      "rank",
+      "ranking",
+      "排行",
+      "榜单"
+    ],
+    "operation_count": 61,
+    "platforms": [
+      "douyin",
+      "instagram",
+      "reddit",
+      "tiktok",
+      "twitter",
+      "weibo",
+      "xiaohongshu",
+      "youtube"
+    ],
+    "slug": "ranking"
+  },
+  {
+    "aliases": [
+      "search",
+      "搜索",
+      "检索"
+    ],
+    "operation_count": 202,
+    "platforms": [
+      "bilibili",
+      "douyin",
+      "douyin_search",
+      "instagram",
+      "kuaishou",
+      "lemon8",
+      "linkedin",
+      "pipixia",
+      "reddit",
+      "sora2",
+      "threads",
+      "tiktok",
+      "twitter",
+      "wechat_channels",
+      "weibo",
+      "xiaohongshu",
+      "xigua",
+      "youtube",
+      "zhihu"
+    ],
+    "slug": "search"
+  },
+  {
+    "aliases": [
+      "asr",
+      "transcription",
+      "字幕",
+      "语音识别",
+      "转写",
+      "转文案"
+    ],
+    "operation_count": 11,
+    "platforms": [
+      "bilibili",
+      "kuaishou",
+      "u2",
+      "weibo",
+      "youtube"
+    ],
+    "slug": "transcription"
+  },
+  {
+    "aliases": [
+      "posts",
+      "user_posts",
+      "主页作品",
+      "作品列表"
+    ],
+    "operation_count": 25,
+    "platforms": [
+      "bilibili",
+      "douyin",
+      "instagram",
+      "kuaishou",
+      "linkedin",
+      "pipixia",
+      "threads",
+      "tiktok",
+      "twitter",
+      "weibo",
+      "xiaohongshu",
+      "xigua"
+    ],
+    "slug": "user_posts"
+  },
+  {
+    "aliases": [
+      "author",
+      "creator",
+      "profile",
+      "user_profile",
+      "主页",
+      "用户信息"
+    ],
+    "operation_count": 259,
+    "platforms": [
+      "bilibili",
+      "douyin",
+      "instagram",
+      "kuaishou",
+      "lemon8",
+      "linkedin",
+      "pipixia",
+      "reddit",
+      "sora2",
+      "temp_mail",
+      "threads",
+      "tiktok",
+      "toutiao",
+      "twitter",
+      "wechat_channels",
+      "weibo",
+      "xiaohongshu",
+      "xigua",
+      "youtube",
+      "zhihu"
+    ],
+    "slug": "user_profile"
+  },
+  {
+    "aliases": [
+      "video",
+      "video_detail",
+      "作品详情",
+      "单个视频",
+      "视频详情"
+    ],
+    "operation_count": 60,
+    "platforms": [
+      "bilibili",
+      "douyin",
+      "hybrid",
+      "kuaishou",
+      "pipixia",
+      "tiktok",
+      "toutiao",
+      "wechat_channels",
+      "xigua",
+      "youtube",
+      "zhihu"
+    ],
+    "slug": "video_detail"
+  }
+]

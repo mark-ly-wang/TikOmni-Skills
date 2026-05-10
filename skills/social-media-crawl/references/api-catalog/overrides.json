@@ -1,0 +1,10 @@
+{
+  "capability_overrides": {},
+  "notes": [
+    "endpoint_id is generated automatically and must not be manually overridden.",
+    "Overrides may adjust platform, capability, recommended endpoint, alternatives, and aliases only."
+  ],
+  "platform_overrides": {},
+  "recommendation_overrides": {},
+  "schema_version": "v1"
+}

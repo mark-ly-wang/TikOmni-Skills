@@ -1,0 +1,463 @@
+[
+  {
+    "aliases": [
+      "b23.tv",
+      "bilibili",
+      "b站",
+      "哔哩哔哩"
+    ],
+    "capabilities": [
+      "comments",
+      "general",
+      "hot_search",
+      "livestream",
+      "media_upload",
+      "search",
+      "transcription",
+      "user_posts",
+      "user_profile",
+      "video_detail"
+    ],
+    "operation_count": 41,
+    "slug": "bilibili"
+  },
+  {
+    "aliases": [
+      "demo"
+    ],
+    "capabilities": [
+      "general"
+    ],
+    "operation_count": 1,
+    "slug": "demo"
+  },
+  {
+    "aliases": [
+      "douyin",
+      "dy",
+      "iesdouyin.com",
+      "v.douyin.com",
+      "抖音"
+    ],
+    "capabilities": [
+      "article_detail",
+      "comments",
+      "general",
+      "hot_search",
+      "livestream",
+      "media_upload",
+      "music",
+      "note_detail",
+      "product_detail",
+      "ranking",
+      "search",
+      "user_posts",
+      "user_profile",
+      "video_detail"
+    ],
+    "operation_count": 292,
+    "slug": "douyin"
+  },
+  {
+    "aliases": [
+      "douyin_search"
+    ],
+    "capabilities": [
+      "search"
+    ],
+    "operation_count": 1,
+    "slug": "douyin_search"
+  },
+  {
+    "aliases": [
+      "health"
+    ],
+    "capabilities": [
+      "general"
+    ],
+    "operation_count": 1,
+    "slug": "health"
+  },
+  {
+    "aliases": [
+      "hybrid"
+    ],
+    "capabilities": [
+      "video_detail"
+    ],
+    "operation_count": 1,
+    "slug": "hybrid"
+  },
+  {
+    "aliases": [
+      "ig",
+      "ins",
+      "instagram"
+    ],
+    "capabilities": [
+      "comments",
+      "general",
+      "music",
+      "ranking",
+      "search",
+      "user_posts",
+      "user_profile"
+    ],
+    "operation_count": 89,
+    "slug": "instagram"
+  },
+  {
+    "aliases": [
+      "ios_shortcut"
+    ],
+    "capabilities": [
+      "general"
+    ],
+    "operation_count": 1,
+    "slug": "ios_shortcut"
+  },
+  {
+    "aliases": [
+      "ks",
+      "kuaishou",
+      "快手"
+    ],
+    "capabilities": [
+      "comments",
+      "general",
+      "hot_search",
+      "livestream",
+      "note_detail",
+      "product_detail",
+      "search",
+      "transcription",
+      "user_posts",
+      "user_profile",
+      "video_detail"
+    ],
+    "operation_count": 34,
+    "slug": "kuaishou"
+  },
+  {
+    "aliases": [
+      "lemon8"
+    ],
+    "capabilities": [
+      "comments",
+      "general",
+      "hot_search",
+      "search",
+      "user_profile"
+    ],
+    "operation_count": 16,
+    "slug": "lemon8"
+  },
+  {
+    "aliases": [
+      "linkedin",
+      "领英"
+    ],
+    "capabilities": [
+      "comments",
+      "general",
+      "search",
+      "user_posts",
+      "user_profile"
+    ],
+    "operation_count": 25,
+    "slug": "linkedin"
+  },
+  {
+    "aliases": [
+      "pipixia",
+      "皮皮虾"
+    ],
+    "capabilities": [
+      "comments",
+      "general",
+      "hot_search",
+      "search",
+      "user_posts",
+      "user_profile",
+      "video_detail"
+    ],
+    "operation_count": 17,
+    "slug": "pipixia"
+  },
+  {
+    "aliases": [
+      "reddit"
+    ],
+    "capabilities": [
+      "comments",
+      "general",
+      "livestream",
+      "note_detail",
+      "ranking",
+      "search",
+      "user_profile"
+    ],
+    "operation_count": 24,
+    "slug": "reddit"
+  },
+  {
+    "aliases": [
+      "sora2"
+    ],
+    "capabilities": [
+      "comments",
+      "media_upload",
+      "note_detail",
+      "search",
+      "user_profile"
+    ],
+    "operation_count": 17,
+    "slug": "sora2"
+  },
+  {
+    "aliases": [
+      "temp_mail"
+    ],
+    "capabilities": [
+      "general",
+      "user_profile"
+    ],
+    "operation_count": 3,
+    "slug": "temp_mail"
+  },
+  {
+    "aliases": [
+      "threads"
+    ],
+    "capabilities": [
+      "comments",
+      "search",
+      "user_posts",
+      "user_profile"
+    ],
+    "operation_count": 11,
+    "slug": "threads"
+  },
+  {
+    "aliases": [
+      "tik tok",
+      "tiktok"
+    ],
+    "capabilities": [
+      "comments",
+      "general",
+      "livestream",
+      "media_upload",
+      "music",
+      "note_detail",
+      "product_detail",
+      "ranking",
+      "search",
+      "user_posts",
+      "user_profile",
+      "video_detail"
+    ],
+    "operation_count": 208,
+    "slug": "tiktok"
+  },
+  {
+    "aliases": [
+      "toutiao",
+      "今日头条",
+      "头条"
+    ],
+    "capabilities": [
+      "article_detail",
+      "comments",
+      "user_profile",
+      "video_detail"
+    ],
+    "operation_count": 7,
+    "slug": "toutiao"
+  },
+  {
+    "aliases": [
+      "twitter",
+      "x",
+      "x.com",
+      "推特"
+    ],
+    "capabilities": [
+      "comments",
+      "general",
+      "ranking",
+      "search",
+      "user_posts",
+      "user_profile"
+    ],
+    "operation_count": 13,
+    "slug": "twitter"
+  },
+  {
+    "aliases": [
+      "asr",
+      "transcription",
+      "u2",
+      "语音转写",
+      "转文案"
+    ],
+    "capabilities": [
+      "transcription"
+    ],
+    "operation_count": 2,
+    "slug": "u2"
+  },
+  {
+    "aliases": [
+      "media upload",
+      "u3",
+      "upload",
+      "中转",
+      "媒体上传"
+    ],
+    "capabilities": [
+      "media_upload"
+    ],
+    "operation_count": 2,
+    "slug": "u3"
+  },
+  {
+    "aliases": [
+      "wechat"
+    ],
+    "capabilities": [
+      "article_url"
+    ],
+    "operation_count": 1,
+    "slug": "wechat"
+  },
+  {
+    "aliases": [
+      "wechat channels",
+      "wechat_channels",
+      "微信视频号",
+      "视频号"
+    ],
+    "capabilities": [
+      "comments",
+      "hot_search",
+      "livestream",
+      "search",
+      "user_profile",
+      "video_detail"
+    ],
+    "operation_count": 10,
+    "slug": "wechat_channels"
+  },
+  {
+    "aliases": [
+      "mp.weixin.qq.com",
+      "wechat official accounts",
+      "wechat_mp",
+      "公众号",
+      "微信公众号"
+    ],
+    "capabilities": [
+      "article_detail",
+      "article_list",
+      "article_url",
+      "comments"
+    ],
+    "operation_count": 10,
+    "slug": "wechat_mp"
+  },
+  {
+    "aliases": [
+      "weibo",
+      "微博"
+    ],
+    "capabilities": [
+      "article_list",
+      "comments",
+      "general",
+      "hot_search",
+      "music",
+      "note_detail",
+      "ranking",
+      "search",
+      "transcription",
+      "user_posts",
+      "user_profile"
+    ],
+    "operation_count": 64,
+    "slug": "weibo"
+  },
+  {
+    "aliases": [
+      "xhs",
+      "xhslink.com",
+      "xiaohongshu",
+      "xiaohongshu.com",
+      "小红书"
+    ],
+    "capabilities": [
+      "comments",
+      "general",
+      "note_detail",
+      "product_detail",
+      "ranking",
+      "search",
+      "user_posts",
+      "user_profile"
+    ],
+    "operation_count": 78,
+    "slug": "xiaohongshu"
+  },
+  {
+    "aliases": [
+      "xigua",
+      "西瓜视频"
+    ],
+    "capabilities": [
+      "comments",
+      "search",
+      "user_posts",
+      "user_profile",
+      "video_detail"
+    ],
+    "operation_count": 7,
+    "slug": "xigua"
+  },
+  {
+    "aliases": [
+      "youtu.be",
+      "youtube",
+      "yt"
+    ],
+    "capabilities": [
+      "comments",
+      "general",
+      "livestream",
+      "media_upload",
+      "note_detail",
+      "ranking",
+      "search",
+      "transcription",
+      "user_profile",
+      "video_detail"
+    ],
+    "operation_count": 44,
+    "slug": "youtube"
+  },
+  {
+    "aliases": [
+      "zhihu",
+      "知乎"
+    ],
+    "capabilities": [
+      "article_detail",
+      "comments",
+      "general",
+      "search",
+      "user_profile",
+      "video_detail"
+    ],
+    "operation_count": 34,
+    "slug": "zhihu"
+  }
+]

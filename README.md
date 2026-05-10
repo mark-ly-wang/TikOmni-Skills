@@ -67,7 +67,7 @@ The npm package currently exposes:
 
 | Skill | Role |
 | --- | --- |
-| `social-media-crawl` | Cross-platform structured crawling, fixed pipelines, fact-card persistence, and MCP-first generic retrieval |
+| `social-media-crawl` | TikOmni API-only social-media retrieval, fixed pipelines, ASR support, and fact-card persistence |
 
 ## 30-Second Quick Start
 
@@ -214,8 +214,8 @@ Once configured, you can trigger tasks in natural language, for example:
 - "Extract the structured fields and primary text from this Douyin video."
 - "Fetch this Xiaohongshu note and write a fact card."
 - "Collect works from this creator home and persist them into the author archive."
-- "Use TikOmni MCP to fetch a comment thread and return normalized JSON."
-- "Use TikOmni MCP to fetch search or ranking results and keep the output structured."
+- "Fetch a comment thread through TikOmni API and return normalized JSON."
+- "Fetch search or ranking results through TikOmni API and keep the output structured."
 
 ## Versioning and Releases
 

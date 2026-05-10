@@ -1,0 +1,237 @@
+{
+  "capabilities": {
+    "article_detail": [
+      "article",
+      "article_detail",
+      "公众号文章",
+      "文章内容",
+      "文章详情"
+    ],
+    "article_list": [
+      "article_list",
+      "文章列表"
+    ],
+    "article_url": [
+      "article_url",
+      "公众号链接",
+      "文章链接"
+    ],
+    "comments": [
+      "comment",
+      "comments",
+      "评论",
+      "评论列表"
+    ],
+    "general": [
+      "general"
+    ],
+    "hot_search": [
+      "hot search",
+      "hot words",
+      "hot_search",
+      "热搜",
+      "热榜"
+    ],
+    "livestream": [
+      "live",
+      "livestream",
+      "直播"
+    ],
+    "media_upload": [
+      "media_upload",
+      "upload",
+      "上传",
+      "媒体中转"
+    ],
+    "music": [
+      "music",
+      "音乐"
+    ],
+    "note_detail": [
+      "note",
+      "note_detail",
+      "小红书笔记",
+      "笔记",
+      "笔记详情"
+    ],
+    "product_detail": [
+      "goods",
+      "product",
+      "product_detail",
+      "商品",
+      "商品详情"
+    ],
+    "ranking": [
+      "rank",
+      "ranking",
+      "排行",
+      "榜单"
+    ],
+    "search": [
+      "search",
+      "搜索",
+      "检索"
+    ],
+    "transcription": [
+      "asr",
+      "transcription",
+      "字幕",
+      "语音识别",
+      "转写",
+      "转文案"
+    ],
+    "user_posts": [
+      "posts",
+      "user_posts",
+      "主页作品",
+      "作品列表"
+    ],
+    "user_profile": [
+      "author",
+      "creator",
+      "profile",
+      "user_profile",
+      "主页",
+      "用户信息"
+    ],
+    "video_detail": [
+      "video",
+      "video_detail",
+      "作品详情",
+      "单个视频",
+      "视频详情"
+    ]
+  },
+  "platforms": {
+    "bilibili": [
+      "b23.tv",
+      "bilibili",
+      "b站",
+      "哔哩哔哩"
+    ],
+    "demo": [
+      "demo"
+    ],
+    "douyin": [
+      "douyin",
+      "dy",
+      "iesdouyin.com",
+      "v.douyin.com",
+      "抖音"
+    ],
+    "douyin_search": [
+      "douyin_search"
+    ],
+    "health": [
+      "health"
+    ],
+    "hybrid": [
+      "hybrid"
+    ],
+    "instagram": [
+      "ig",
+      "ins",
+      "instagram"
+    ],
+    "ios_shortcut": [
+      "ios_shortcut"
+    ],
+    "kuaishou": [
+      "ks",
+      "kuaishou",
+      "快手"
+    ],
+    "lemon8": [
+      "lemon8"
+    ],
+    "linkedin": [
+      "linkedin",
+      "领英"
+    ],
+    "pipixia": [
+      "pipixia",
+      "皮皮虾"
+    ],
+    "reddit": [
+      "reddit"
+    ],
+    "sora2": [
+      "sora2"
+    ],
+    "temp_mail": [
+      "temp_mail"
+    ],
+    "threads": [
+      "threads"
+    ],
+    "tiktok": [
+      "tik tok",
+      "tiktok"
+    ],
+    "toutiao": [
+      "toutiao",
+      "今日头条",
+      "头条"
+    ],
+    "twitter": [
+      "twitter",
+      "x",
+      "x.com",
+      "推特"
+    ],
+    "u2": [
+      "asr",
+      "transcription",
+      "u2",
+      "语音转写",
+      "转文案"
+    ],
+    "u3": [
+      "media upload",
+      "u3",
+      "upload",
+      "中转",
+      "媒体上传"
+    ],
+    "wechat": [
+      "wechat"
+    ],
+    "wechat_channels": [
+      "wechat channels",
+      "wechat_channels",
+      "微信视频号",
+      "视频号"
+    ],
+    "wechat_mp": [
+      "mp.weixin.qq.com",
+      "wechat official accounts",
+      "wechat_mp",
+      "公众号",
+      "微信公众号"
+    ],
+    "weibo": [
+      "weibo",
+      "微博"
+    ],
+    "xiaohongshu": [
+      "xhs",
+      "xhslink.com",
+      "xiaohongshu",
+      "xiaohongshu.com",
+      "小红书"
+    ],
+    "xigua": [
+      "xigua",
+      "西瓜视频"
+    ],
+    "youtube": [
+      "youtu.be",
+      "youtube",
+      "yt"
+    ],
+    "zhihu": [
+      "zhihu",
+      "知乎"
+    ]
+  }
+}
